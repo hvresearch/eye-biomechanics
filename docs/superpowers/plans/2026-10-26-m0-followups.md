@@ -28,29 +28,16 @@ in that commit.
 - `schemas/scenario.schema.json` uses `$ref` to the EyeParameters schema; no test
   compiles it. Add an Ajv2020 compile test in TS and, in Python, resolve the
   reference with `referencing.Registry`. (M6, Task 6.1)
-- `Surface.conic`, `tilt`, and `decenter` are optional with schema default zero;
-  `buildSurfaces` must apply the defaults rather than trust the document. (M1,
-  Task 1.9)
 - Negative schema tests assert only `ok === false`; also assert the error names
-  the offending key. (M1, first task that edits `schema.test.ts`)
+  the offending key. (first task that edits `schema.test.ts`)
 - `science/eyebiomech/schema.py` reads the schema from the repository checkout;
   packaging `eyebiomech` outside the repo needs the schema bundled as package
   data. (M4, Task 4.6 CLI)
-- Add a type-drift guard: a test that the hand-written `types.ts` matches the
-  schema (for example, generate types with `json-schema-to-typescript` in a test
-  and diff). (M1, Task 1.9)
 - Python `re.fullmatch(..., re.ASCII)` and the TS regex agree, but the schema
   pattern's `$` tolerates a trailing newline in some regex engines. Cosmetic.
 
 ## Web workspace
 
-- `web/apps/viewer/tsconfig.json` applies `node` types to `src/` as well as
-  `vite.config.ts`; split the config so browser code cannot see Node globals.
-  (M1, Task 1.10)
-- `@types/node` versions differ between the viewer (26.x) and the packages'
-  test configs (22.x); align them. (M1, Task 1.10)
-- Vite dev server needs `server.fs.allow` for `schemas/` and `data/`, which live
-  outside `web/`. (M1, Task 1.11)
 - `web/package.json` engines is `>=22.12`; Vitest 5 excludes Node 25. Works in
   practice and the cloud VM runs Node 22. No action unless CI breaks.
 
@@ -68,8 +55,10 @@ in that commit.
   composite action if a third workflow appears.
 - `pages.yml` does not depend on the CI `web` job; `workflow_run` would enforce
   it. Main is protected by required checks, so a red commit cannot land anyway.
-- Remove the `hashFiles` guard on the Playwright steps once
-  `web/apps/viewer/e2e/` exists. (M1, Task 1.11, local follow-up PR)
+- Remove the `hashFiles` guard on the Playwright steps now that
+  `web/apps/viewer/e2e/` exists (M1 added it). Local follow-up PR.
+- The viewer bundle is ~1.3 MB minified (three.js); add a `manualChunks` split
+  for `three` if Pages load time matters. (M6)
 
 ## Docs
 

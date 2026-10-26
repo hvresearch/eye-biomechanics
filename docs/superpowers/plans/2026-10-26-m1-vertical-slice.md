@@ -1,7 +1,7 @@
 # Milestone 1: Vertical slice
 
 Date: 2026-10-26
-Status: in progress
+Status: complete 2026-10-26 (PR "Milestone 1: Vertical slice")
 Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 1 section)
 
 **Goal:** One right eye in sagittal cutaway regenerating from `EyeParameters`; a target-distance slider; an accommodation controller driving lens shape; a traced ray fan to the retina; a live defocus readout in diopters. Every layer of the architecture is exercised end to end.
@@ -19,6 +19,13 @@ Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 1 sec
 3. **Navarro accommodation conic equations.** The radius, thickness, aqueous depth, and index equations of Navarro's Table 4 were confirmed by excerpt. The conic-constant equations were not, so they carry `verified: false` individually inside the table and the lens-geometry test checks only the verified ones against hand values.
 4. **Anderson 2008 check points.** The paper's per-age group means were not retrievable; the amplitude test checks the transcribed sigmoid at ages 20 and 50 against hand-evaluated values of the same equation and checks the shape claims the abstract makes (stable below 20, steep decline 20–50, near zero beyond 50).
 5. **Interfaces simplified where the master plan was loose.** `lensGeometry` reads the relaxed values and the accommodation model from an `EyeParameters` document instead of a separate table type. `SceneState` gains `preset`. Exact signatures are given per task below.
+
+## Outcome notes (post-execution)
+
+- The retinal defocus readout is the best-RMS focus through the 4 mm pupil, so it carries the Navarro eye's spherical aberration (about −0.34 D at distance) on top of the paraxial defocus. The tooltip says so.
+- Navarro's Table 4 accommodation parameter overshoots the paraxial far point by ~15% (A = 2 D gives −2.33 D); the controller passes its response straight to the table, so a 30-year-old at 0.33 m reads about −0.2 to −0.5 D rather than zero. Recorded in `paraxial.test.ts` and `defocus.test.ts`.
+- `data/anatomy/globe-cutaway.json` (unverified, drawing only) holds the scleral, retinal, iris, and ciliary dimensions used by the cutaway. The globe is drawn as the sphere of the retina radius, which widens the anterior segment relative to a real eye.
+- Playwright is pinned to the version the cloud image ships (1.63.0) so the e2e suite runs in cloud sessions without a browser download.
 
 ## Global Constraints
 
@@ -105,12 +112,12 @@ web/apps/viewer/e2e/slice.spec.ts, playwright.config.ts
   ```
   `lensAccommodationModel` on the returned document is `{ form, coefficients }`.
 
-- [ ] Step 1: Write the Navarro table from the confirmed Table 1 and Table 4 excerpts (indices at 589.3 nm). Write the Zapata-Díaz stub. Fix the fixture index.
-- [ ] Step 2: Failing test: `loadPreset("navarro-1985")` validates, has 4 refracting surfaces, cornea index 1.376; `loadPreset("zapata-diaz-2019")` throws `PresetNotTranscribedError` naming the preset.
-- [ ] Step 3: Implement `load.ts`; run; PASS.
-- [ ] Step 4: Spec §5.6 reconciled; literature DOIs filled where confirmed; follow-up lines resolved or moved.
-- [ ] Step 5: After Task 1.6 passes, set `verified: true` and `verifiedDate` on the Navarro table.
-- [ ] Step 6: Full gate; commit `feat(eye-model): schematic eye tables and preset loader`.
+- [x] Step 1: Write the Navarro table from the confirmed Table 1 and Table 4 excerpts (indices at 589.3 nm). Write the Zapata-Díaz stub. Fix the fixture index.
+- [x] Step 2: Failing test: `loadPreset("navarro-1985")` validates, has 4 refracting surfaces, cornea index 1.376; `loadPreset("zapata-diaz-2019")` throws `PresetNotTranscribedError` naming the preset.
+- [x] Step 3: Implement `load.ts`; run; PASS.
+- [x] Step 4: Spec §5.6 reconciled; literature DOIs filled where confirmed; follow-up lines resolved or moved.
+- [x] Step 5: After Task 1.6 passes, set `verified: true` and `verifiedDate` on the Navarro table.
+- [x] Step 6: Full gate; commit `feat(eye-model): schematic eye tables and preset loader`.
 
 ### Task 1.2: Vector math and conic surfaces
 
@@ -133,9 +140,9 @@ web/apps/viewer/e2e/slice.spec.ts, playwright.config.ts
   ```
   Tilt and decenter are carried but, in this milestone, only decenter is applied (tilt must be zero; the function throws otherwise so the limitation is loud).
 
-- [ ] Step 1: Failing tests per the master plan (sphere sag, paraboloid sag, vertex normal, axial hit `t`, aperture miss → null, flat surface, decenter shift).
-- [ ] Step 2: Implement with the closed-form conic quadratic in `t`, choosing the smallest positive root inside the aperture.
-- [ ] Step 3: PASS; commit `feat(optics): vec3 and conic surface geometry`.
+- [x] Step 1: Failing tests per the master plan (sphere sag, paraboloid sag, vertex normal, axial hit `t`, aperture miss → null, flat surface, decenter shift).
+- [x] Step 2: Implement with the closed-form conic quadratic in `t`, choosing the smallest positive root inside the aperture.
+- [x] Step 3: PASS; commit `feat(optics): vec3 and conic surface geometry`.
 
 ### Task 1.3: Accommodative amplitude from age
 
@@ -144,9 +151,9 @@ web/apps/viewer/e2e/slice.spec.ts, playwright.config.ts
 **Interfaces:** `amplitudeForAge(ageYears: number): number` (D); `AMPLITUDE_TABLE` typed export of the JSON.
 Equation (Anderson et al. 2008 abstract): `A = 7.083 / (1 + exp(0.2031·(age − 36.2) − 0.6109))`, clamped: age < 6 uses 6; age > 90 returns 0.
 
-- [ ] Step 1: Transcribe JSON with citation, equation string, and coefficients.
-- [ ] Step 2: Failing tests: monotone non-increasing 6→90; `amplitudeForAge(3) === amplitudeForAge(6)`; `amplitudeForAge(95) === 0`; NaN input throws; age 20 ≈ 6.94 and age 50 ≈ 0.71 (hand evaluation) within 0.05 D.
-- [ ] Step 3: Implement; PASS; commit `feat(eye-model): accommodative amplitude vs age (Anderson 2008)`.
+- [x] Step 1: Transcribe JSON with citation, equation string, and coefficients.
+- [x] Step 2: Failing tests: monotone non-increasing 6→90; `amplitudeForAge(3) === amplitudeForAge(6)`; `amplitudeForAge(95) === 0`; NaN input throws; age 20 ≈ 6.94 and age 50 ≈ 0.71 (hand evaluation) within 0.05 D.
+- [x] Step 3: Implement; PASS; commit `feat(eye-model): accommodative amplitude vs age (Anderson 2008)`.
 
 ### Task 1.4: Lens geometry as a function of accommodation
 
@@ -159,8 +166,8 @@ lensGeometry(params: EyeParameters, accommodationD: number): LensGeometry
 ```
 Dispatches on `params.lensAccommodationModel.form`; absent model → relaxed geometry at any A (documented, used for raw fixtures). Navarro form: `R_a = R_a0 − 1.75 ln(1+A)`, `R_p = R_p0 + 0.2294 ln(1+A)`, `t = t0 + 0.1 ln(1+A)`, `ACD = ACD0 − 0.05 ln(1+A)`, `n = n0 + 9e-5 (10A + A²)`, `Q_a = Q_a0 − 0.34 ln(1+A)`, `Q_p = Q_p0 − 0.125 ln(1+A)`, every coefficient read from the document's coefficients.
 
-- [ ] Step 1: Failing tests: A=0 equals the relaxed table; anterior radius at A=4 equals `10.2 − 1.75·ln 5`; monotone radius decrease and thickness increase; negative A throws.
-- [ ] Step 2: Implement; PASS; commit `feat(eye-model): accommodation-dependent lens geometry`.
+- [x] Step 1: Failing tests: A=0 equals the relaxed table; anterior radius at A=4 equals `10.2 − 1.75·ln 5`; monotone radius decrease and thickness increase; negative A throws.
+- [x] Step 2: Implement; PASS; commit `feat(eye-model): accommodation-dependent lens geometry`.
 
 ### Task 1.5: Accommodation controller
 
@@ -175,8 +182,8 @@ defaultLag: LagModel   // piecewise-linear: 0 below onsetD, slope·(demand − o
 accommodationResponse(demandD: number, amplitudeD: number, lag: LagModel = defaultLag): number
 ```
 
-- [ ] Step 1: Failing tests from the master plan plus `demandFromDistance(-1, 0)` throws.
-- [ ] Step 2: Implement; PASS; commit `feat(eye-model): accommodation demand and response controller`.
+- [x] Step 1: Failing tests from the master plan plus `demandFromDistance(-1, 0)` throws.
+- [x] Step 2: Implement; PASS; commit `feat(eye-model): accommodation demand and response controller`.
 
 ### Task 1.6: Paraxial power and the optics acceptance fixture
 
@@ -184,8 +191,8 @@ accommodationResponse(demandD: number, amplitudeD: number, lag: LagModel = defau
 
 **Interfaces:** `paraxialPower(surfaces: Surface[], indexBefore = 1): { powerD; backFocalLengthMm; farPointD; imageZMm }` — `imageZMm` is the absolute z where a collimated paraxial ray crosses the axis; `farPointD` is the object vergence (D) that images onto the retina surface when a surface named `retina` is present, else `NaN`.
 
-- [ ] Step 1: Failing tests: Navarro power within 0.05 D of 60.416 and image within 0.05 mm of the retina vertex; thin-lens check; `farPointD` within 0.05 D of 0 for the fixture.
-- [ ] Step 2: Implement; PASS. Mark the Navarro table verified (Task 1.1 Step 5). Commit `feat(optics): paraxial ABCD power with Navarro fixture`.
+- [x] Step 1: Failing tests: Navarro power within 0.05 D of 60.416 and image within 0.05 mm of the retina vertex; thin-lens check; `farPointD` within 0.05 D of 0 for the fixture.
+- [x] Step 2: Implement; PASS. Mark the Navarro table verified (Task 1.1 Step 5). Commit `feat(optics): paraxial ABCD power with Navarro fixture`.
 
 ### Task 1.7: Sequential exact ray trace
 
@@ -193,8 +200,8 @@ accommodationResponse(demandD: number, amplitudeD: number, lag: LagModel = defau
 
 **Interfaces:** as in the master plan. `traceRay` stops at the first vignetting surface and records `vignettedAt`; a surface whose `mediumAfter.index555` equals the incoming index (the retina) is hit without refraction.
 
-- [ ] Step 1: Failing tests per the master plan.
-- [ ] Step 2: Implement; PASS; commit `feat(optics): exact sequential ray tracing with vignetting`.
+- [x] Step 1: Failing tests per the master plan.
+- [x] Step 2: Implement; PASS; commit `feat(optics): exact sequential ray tracing with vignetting`.
 
 ### Task 1.8: Retinal defocus metric
 
@@ -202,8 +209,8 @@ accommodationResponse(demandD: number, amplitudeD: number, lag: LagModel = defau
 
 **Interfaces:** `retinalDefocusD(surfaces: Surface[], objectDistanceM: number, pupilSemiDiamMm: number, opts?: { gridN?: number; searchHalfWidthMm?: number }): { defocusD; bestFocusZMm; retinaZMm; rmsSpotMm }`; throws `InsufficientRaysError` below 60% unvignetted rays.
 
-- [ ] Step 1: Failing tests per the master plan; the A=2 case builds the accommodated Navarro surfaces by applying the Table 4 equations inside the test.
-- [ ] Step 2: Golden-section search over z; PASS; commit `feat(optics): retinal defocus metric`.
+- [x] Step 1: Failing tests per the master plan; the A=2 case builds the accommodated Navarro surfaces by applying the Table 4 equations inside the test.
+- [x] Step 2: Golden-section search over z; PASS; commit `feat(optics): retinal defocus metric`.
 
 ### Task 1.9: Build optics surfaces from EyeParameters and EyeState
 
@@ -218,8 +225,8 @@ buildSurfaces(params: EyeParameters, state: EyeState): Surface[]   // last surfa
 ```
 Pupil fixed at the document's `pupil.params.diameterMm` (fixed model) else 4 mm from `data/accommodation/lag-default.json`? No: pupil default lives in the preset table; `deriveEyeState` reads `params.pupil` and throws for unknown models.
 
-- [ ] Step 1: Failing tests per the master plan plus defaults (missing conic/tilt/decenter → 0) and the type-drift guard.
-- [ ] Step 2: Implement; PASS; commit `feat(eye-model): scene→eye state derivation and surface builder`.
+- [x] Step 1: Failing tests per the master plan plus defaults (missing conic/tilt/decenter → 0) and the type-drift guard.
+- [x] Step 2: Implement; PASS; commit `feat(eye-model): scene→eye state derivation and surface builder`.
 
 ### Task 1.10: Optics web worker and typed client
 
@@ -227,15 +234,15 @@ Pupil fixed at the document's `pupil.params.diameterMm` (fixed model) else 4 mm 
 
 **Interfaces:** `OpticsRequest { id; surfaces; objectDistanceM; pupilSemiDiamMm; fanRays }`, `OpticsResponse { id; defocusD; bestFocusZMm; fan: Vec3[][] }`, `handle(req): OpticsResponse`, `OpticsClient.request(req): Promise<OpticsResponse>` resolving only the latest id.
 
-- [ ] Step 1: Failing test: 11 polylines, each with one vertex per surface plus the start point.
-- [ ] Step 2: Implement; PASS; commit `feat(viewer): optics web worker`.
+- [x] Step 1: Failing test: 11 polylines, each with one vertex per surface plus the start point.
+- [x] Step 2: Implement; PASS; commit `feat(viewer): optics web worker`.
 
 ### Task 1.11: Store, cutaway stage, ray fan, inspector, readout, e2e
 
 **Files:** create `web/apps/viewer/src/store/scene.ts`, `src/scene/Stage.tsx`, `src/scene/EyeCutaway.tsx`, `src/scene/RayFan.tsx`, `src/ui/Inspector.tsx`, `src/ui/Readout.tsx`, `src/theme.css`, `e2e/slice.spec.ts`, `playwright.config.ts`; modify `src/App.tsx`, `src/main.tsx`, `vite.config.ts` (`server.fs.allow` for `data/` and `schemas/`), `package.json` (`e2e` script).
 
-- [ ] Step 1: Write the Playwright spec per the master plan (data-testids `defocus`, `accommodation`, `target-distance`, `age`).
-- [ ] Step 2: Store with debounced worker requests; derived state recomputed synchronously on the main thread (cheap).
-- [ ] Step 3: Stage, cutaway (lathe meshes clipped by a sagittal plane), ray fan, inspector, readout, theme tokens.
-- [ ] Step 4: `pnpm --filter @eye/viewer e2e` passes locally; build passes.
-- [ ] Step 5: Commit `feat(viewer): vertical slice — cutaway eye, target slider, accommodation, ray fan, defocus`; open the PR.
+- [x] Step 1: Write the Playwright spec per the master plan (data-testids `defocus`, `accommodation`, `target-distance`, `age`).
+- [x] Step 2: Store with debounced worker requests; derived state recomputed synchronously on the main thread (cheap).
+- [x] Step 3: Stage, cutaway (lathe meshes clipped by a sagittal plane), ray fan, inspector, readout, theme tokens.
+- [x] Step 4: `pnpm --filter @eye/viewer e2e` passes locally; build passes.
+- [x] Step 5: Commit `feat(viewer): vertical slice — cutaway eye, target slider, accommodation, ray fan, defocus`; open the PR.

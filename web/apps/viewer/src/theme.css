@@ -1,0 +1,251 @@
+/* Eye Biomechanics design tokens: clinical, restrained; one hot color reserved for
+   muscle activation (Milestone 2). Charts and the 3D stage share these. */
+:root {
+  --font-ui: "Inter", "SF Pro Text", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  --bg: #0f1419;
+  --bg-elev: #161c23;
+  --bg-panel: rgba(22, 28, 35, 0.92);
+  --line: #273039;
+  --text: #e6ebef;
+  --text-dim: #9aa6b2;
+  --text-faint: #5f6b77;
+
+  --accent: #6fc3c1; /* rays, controls */
+  --accent-strong: #8fe0dd;
+  --warn: #e0b35a;
+  --hot: #ff6a3d; /* reserved: muscle activation */
+  --ok: #7cc98b;
+
+  --cornea: #a9d6ea;
+  --aqueous: #cfe8f2;
+  --iris: #4d6b8a;
+  --lens: #f1d9a3;
+  --ciliary: #c88a8a;
+  --vitreous: #d9e6ea;
+  --retina: #d77a5a;
+  --sclera: #ece7df;
+
+  --radius: 10px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 18px;
+  --fs-xl: 26px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: 1fr auto;
+  height: 100%;
+}
+
+.stage {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  position: relative;
+  min-width: 0;
+}
+
+.stage canvas {
+  display: block;
+}
+
+.stage-title {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-5);
+  pointer-events: none;
+}
+
+.stage-title h1 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.stage-title p {
+  margin: 2px 0 0;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+
+.hover-label {
+  position: absolute;
+  left: var(--space-5);
+  bottom: var(--space-4);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  pointer-events: none;
+}
+
+.inspector {
+  grid-column: 2;
+  grid-row: 1;
+  overflow: auto;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  border-left: 1px solid var(--line);
+  background: var(--bg-elev);
+}
+
+.readout {
+  grid-column: 2;
+  grid-row: 2;
+  border-left: 1px solid var(--line);
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.panel + .panel {
+  margin-top: var(--space-5);
+}
+
+.panel h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.field label {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+
+.field input[type="range"] {
+  grid-column: 1 / span 2;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.field input[type="number"],
+.field select {
+  width: 96px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+.field select {
+  width: 100%;
+  grid-column: 1 / span 2;
+  text-align: left;
+  font-family: var(--font-ui);
+}
+
+.note {
+  margin: var(--space-2) 0 0;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+.banner {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: rgba(224, 179, 90, 0.08);
+  color: var(--warn);
+  font-size: var(--fs-sm);
+}
+
+.readout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3) var(--space-4);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat .k {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stat .v {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.stat .v.big {
+  font-size: var(--fs-xl);
+  color: var(--accent-strong);
+}
+
+.stat .u {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  margin-left: 4px;
+}
+
+.stat.pending .v {
+  opacity: 0.5;
+}
+
+abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr 300px;
+  }
+}
