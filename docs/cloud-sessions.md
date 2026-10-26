@@ -9,7 +9,7 @@ Most development happens in Claude Code cloud sessions. A cloud session is a fre
 
 ## Setup hook
 
-`.claude/settings.json` registers a `SessionStart` hook running `scripts/install_pkgs.sh`. It runs on every session start and resume, so it is idempotent, and it exits immediately unless `CLAUDE_CODE_REMOTE=true`, leaving local sessions unaffected. It installs web dependencies (`pnpm install --frozen-lockfile`), syncs the Python environment (`uv sync --all-groups`), and attempts to install Playwright Chromium.
+`.claude/settings.json` sets the default model (`claude-opus-5-5`) and effort level (`high`) for every session that reads it, cloud and local alike; user-level settings are not read in cloud sessions, so this is the only place a default sticks. Switch mid-session with `/model <alias>` and `/effort low|medium|high|xhigh|max`; consider `xhigh` for the numerically delicate tasks in Milestones 3 to 5. The same file registers a `SessionStart` hook running `scripts/install_pkgs.sh`. It runs on every session start and resume, so it is idempotent, and it exits immediately unless `CLAUDE_CODE_REMOTE=true`, leaving local sessions unaffected. It installs web dependencies (`pnpm install --frozen-lockfile`), syncs the Python environment (`uv sync --all-groups`), and attempts to install Playwright Chromium.
 
 The same file raises `BASH_DEFAULT_TIMEOUT_MS` and `BASH_MAX_TIMEOUT_MS` to 600000 (cloud default is 2 minutes, max 10) so installs do not time out. The same env block applies to local sessions in this repo too.
 
