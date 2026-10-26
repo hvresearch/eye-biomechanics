@@ -1,4 +1,6 @@
 {
+  "model": "claude-opus-5-5",
+  "effortLevel": "high",
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
     "BASH_MAX_TIMEOUT_MS": "600000"
@@ -7,7 +9,10 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/install_pkgs.sh" }
+          {
+            "type": "command",
+            "command": "bash \"$CLAUDE_PROJECT_DIR\"/scripts/install_pkgs.sh"
+          }
         ]
       }
     ]
