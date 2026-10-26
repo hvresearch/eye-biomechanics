@@ -18,8 +18,20 @@ describe("validateEyeParameters", () => {
   it("rejects a different major version with the version in the message", () => {
     const r = validateEyeParameters({ ...fixture(), schemaVersion: "2.0.0" });
     expect(r.ok).toBe(false);
-    if (!r.ok) expect(r.errors.some((e) => e.includes("2.0.0"))).toBe(true);
+    if (!r.ok) {
+      expect(r.kind).toBe("version");
+      expect(r.errors.some((e) => e.includes("2.0.0"))).toBe(true);
+    }
   });
+
+  it.each(["1", "1e0.0.0", " 1.0.0", "1.0", "1.0.0-beta"])(
+    "rejects malformed schemaVersion %j naming schemaVersion",
+    (v) => {
+      const r = validateEyeParameters({ ...fixture(), schemaVersion: v });
+      expect(r.ok).toBe(false);
+      if (!r.ok) expect(r.errors.some((e) => e.includes("schemaVersion"))).toBe(true);
+    },
+  );
 
   it("rejects a missing surfaces array", () => {
     const { surfaces: _surfaces, ...rest } = fixture();
@@ -27,7 +39,9 @@ describe("validateEyeParameters", () => {
   });
 
   it("rejects unknown top-level keys", () => {
-    expect(validateEyeParameters({ ...fixture(), bogus: 1 }).ok).toBe(false);
+    const r = validateEyeParameters({ ...fixture(), bogus: 1 });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.some((e) => e.includes("bogus"))).toBe(true);
   });
 
   it("rejects a toric surface lacking axisDeg", () => {
@@ -35,7 +49,9 @@ describe("validateEyeParameters", () => {
     const surfaces = [...(doc.surfaces as Record<string, unknown>[])];
     const { radiusMm: _r, ...base } = surfaces[0] as Record<string, unknown>;
     surfaces[0] = { ...base, type: "toric", rxMm: 7.7, ryMm: 7.9 };
-    expect(validateEyeParameters({ ...doc, surfaces }).ok).toBe(false);
+    const r = validateEyeParameters({ ...doc, surfaces });
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.errors.some((e) => e.includes("axisDeg"))).toBe(true);
   });
 
   it("never throws on non-object input", () => {

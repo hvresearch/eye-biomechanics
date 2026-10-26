@@ -1,6 +1,7 @@
 """Validation of EyeParameters JSON documents against the shared schema."""
 
 import json
+import re
 from pathlib import Path
 
 from jsonschema import Draft202012Validator
@@ -24,11 +25,9 @@ def _check_major(doc: object) -> None:
     version = doc.get("schemaVersion")
     if not isinstance(version, str):
         return
-    try:
-        major = int(version.split(".")[0])
-    except ValueError:
-        major = None
-    if major != _SUPPORTED_MAJOR:
+    # Malformed versions fall through to the schema's pattern check.
+    match = re.fullmatch(r"(\d+)\.\d+\.\d+", version, re.ASCII)
+    if match and int(match.group(1)) != _SUPPORTED_MAJOR:
         raise SchemaError(
             [f"Unsupported schemaVersion {version!r}: supported major is {_SUPPORTED_MAJOR}"]
         )

@@ -25,6 +25,15 @@ def test_wrong_major_version():
     assert "2.0.0" in str(excinfo.value)
 
 
+@pytest.mark.parametrize("version", ["1", "1e0.0.0", " 1.0.0", "1.0", "1.0.0-beta", "１.0.0"])
+def test_malformed_version(version):
+    doc = load()
+    doc["schemaVersion"] = version
+    with pytest.raises(SchemaError) as excinfo:
+        validate_eye_parameters(doc)
+    assert "schemaVersion" in str(excinfo.value)
+
+
 def test_missing_surfaces():
     doc = load()
     del doc["surfaces"]
@@ -35,8 +44,9 @@ def test_missing_surfaces():
 def test_unknown_top_level_key():
     doc = load()
     doc["bogus"] = 1
-    with pytest.raises(SchemaError):
+    with pytest.raises(SchemaError) as excinfo:
         validate_eye_parameters(doc)
+    assert "bogus" in str(excinfo.value)
 
 
 def test_toric_missing_axis():
@@ -44,5 +54,6 @@ def test_toric_missing_axis():
     s = doc["surfaces"][0]
     del s["radiusMm"]
     s.update(type="toric", rxMm=7.7, ryMm=7.9)
-    with pytest.raises(SchemaError):
+    with pytest.raises(SchemaError) as excinfo:
         validate_eye_parameters(doc)
+    assert "axisDeg" in str(excinfo.value)
