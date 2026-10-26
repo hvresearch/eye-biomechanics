@@ -19,3 +19,6 @@ export {
   demandFromDistance,
 } from "./accommodation/controller";
 export type { LagModel, LagTable } from "./accommodation/controller";
+export type { EyeState, SceneState } from "./state/types";
+export { SchemaVersionError, assertSupported, deriveEyeState, pupilDiameterMm } from "./state/derive";
+export { RETINA_SURFACE_NAME, buildSurfaces } from "./build/surfaces";

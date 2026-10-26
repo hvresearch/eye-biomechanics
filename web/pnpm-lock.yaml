@@ -205,6 +205,9 @@ importers:
 
   packages/eye-model:
     dependencies:
+      '@eye/optics':
+        specifier: workspace:*
+        version: link:../optics
       ajv:
         specifier: ^8.20.0
         version: 8.20.0
