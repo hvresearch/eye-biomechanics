@@ -7,15 +7,19 @@ in that commit.
 
 ## Spec and literature
 
-- `docs/literature/README.md`: fill in DOIs, volumes, and pages for the rows
-  still marked "to be added"; cite the BCSC volume rather than a DOI. (M1,
-  Task 1.1, while the papers are open)
-- Spec §5.6: the Navarro 1985 fixture's paraxial power computes to 60.60 D with
-  BFD 16.341 mm against a 16.40 mm vitreous; the spec quotes ≈60.4 D. Reconcile
-  against the paper, including the index wavelength, and set the Task 1.6
-  tolerance from the reconciled value. (M1, Task 1.1 / 1.6)
-- Spec §8: the 20/40 acuity threshold should read "default, configurable", as
-  §12 does. (M1, any spec edit)
+- `docs/literature/README.md`: DOIs still "to be added" for Rozema 2016,
+  Feil 2017, Atchison & Thibos 2016, the material, remodeling, eyelid, and
+  dynamics rows; fill them in the milestone that transcribes each source.
+- `data/schematic-eyes/zapata-diaz-2019.json` is a stub: the cloud session
+  network policy denies every literature host, so the paper's Table 1 could
+  not be transcribed. Transcribe it (open access, doi
+  10.1016/j.optom.2018.01.003, PMC6318498) in a session with document access,
+  set `transcribed: true`, and switch the viewer's default preset to it. (M3 at
+  the latest, before refractive presets; blocks the release gate on
+  `verified: true` for the default preset)
+- `data/schematic-eyes/navarro-1985.json`: the two conic-constant coefficients
+  of Table 4 (−0.34 and −0.125 per ln(1+A)) are listed as `unverified`; confirm
+  against the paper in the same session. (M3)
 - Spec §4.2: the accommodation "time constant ≈ 0.3 s" is uncited; cross-reference
   the §4.4 dynamics bullet (Kasthurirangan & Glasser 2005). (M2, Task 2.5)
 
