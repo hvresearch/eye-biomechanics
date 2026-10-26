@@ -11,3 +11,11 @@ export { AMPLITUDE_TABLE, amplitudeForAge } from "./accommodation/amplitude";
 export type { AmplitudeTable } from "./accommodation/amplitude";
 export { SURFACE_NAMES, findSurface, lensGeometry, relaxedLensGeometry } from "./accommodation/lens";
 export type { LensGeometry } from "./accommodation/lens";
+export {
+  LAG_TABLE,
+  MIN_TARGET_DISTANCE_M,
+  accommodationResponse,
+  defaultLag,
+  demandFromDistance,
+} from "./accommodation/controller";
+export type { LagModel, LagTable } from "./accommodation/controller";
