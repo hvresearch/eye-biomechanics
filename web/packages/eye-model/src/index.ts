@@ -7,3 +7,5 @@ export {
   presetTable,
 } from "./presets/load";
 export type { LensAccommodationModel, PresetName, SchematicEyeTable } from "./presets/load";
+export { AMPLITUDE_TABLE, amplitudeForAge } from "./accommodation/amplitude";
+export type { AmplitudeTable } from "./accommodation/amplitude";
