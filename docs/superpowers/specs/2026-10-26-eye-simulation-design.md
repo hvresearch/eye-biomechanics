@@ -180,12 +180,13 @@ near-triad miosis: a configurable linear reduction per diopter of accommodation
 - Kinematics: gaze from target position. Hering's law for yoked movements,
   vergence from target and interpupillary distance (default 63 mm), torsion by
   Listing's law (rotation axes in Listing's plane). Output per eye: a quaternion.
-- Activation: a simplified static model. For a given gaze, each muscle's
-  activation is the solution of a small quadratic program minimizing total
-  activation subject to net torque balance, with reciprocal innervation; v1 may
-  instead use a length-based proxy. This is an approximation and is labeled so
-  in the UI. Reference: Robinson 1975 and Miller & Robinson's Orbit model for the
-  intended level of fidelity in later versions.
+- Activation (v1): a length-based proxy. Each muscle's activation is a
+  monotone function of its shortening from primary position, with reciprocal
+  innervation so the antagonist relaxes as the agonist shortens. This is an
+  approximation and is labeled so in the UI.
+- Activation (v2, deferred): a static equilibrium solved as a small quadratic
+  program minimizing total activation subject to net torque balance, at the
+  fidelity of Robinson 1975 and Miller & Robinson's Orbit model.
 
 ### 4.5 State model
 
