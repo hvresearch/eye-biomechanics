@@ -7,8 +7,8 @@ set -euo pipefail
 
 cd "$(git rev-parse --show-toplevel)"
 
-corepack enable || npm install -g pnpm
+command -v pnpm >/dev/null 2>&1 || corepack enable || npm install -g pnpm
 
 (cd web && pnpm install --frozen-lockfile)
 (cd science && uv sync --all-groups)
-(cd web && pnpm exec playwright install --with-deps chromium) || echo "playwright browsers unavailable; CI runs e2e"
+(cd web && pnpm --filter @eye/viewer exec playwright install --with-deps chromium) || echo "playwright browsers unavailable; CI runs e2e"

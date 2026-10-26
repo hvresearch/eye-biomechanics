@@ -33,7 +33,7 @@ jobs:
         if: hashFiles('web/apps/viewer/e2e/**') != ''
         working-directory: web
         run: |
-          pnpm exec playwright install --with-deps chromium
+          pnpm --filter @eye/viewer exec playwright install --with-deps chromium
           pnpm --filter @eye/viewer e2e
 
   python:
@@ -48,7 +48,7 @@ jobs:
         run: uv python install
       - name: Sync
         working-directory: science
-        run: uv sync --all-groups
+        run: uv sync --locked --all-groups
       - name: Lint
         working-directory: science
         run: uv run ruff check .
