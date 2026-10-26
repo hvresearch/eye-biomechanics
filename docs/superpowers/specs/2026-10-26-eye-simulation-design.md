@@ -85,15 +85,27 @@ that crosses the TypeScript/Python boundary.
 ```
 EyeParameters {
   schemaVersion: string
-  id, label, provenance { source, citation | "assumption", generatedBy, date }
+  id, label
+  provenance { source, citation, generatedBy, gitHash, date, verified }
+                                 citation may be "assumption"
   surfaces: Surface[]            ordered from object space to retina
   lensAccommodationModel         accommodation coefficient set (see 4.2)
   pupil { model, params }
   axialLengthMm
   retina { radiusMm, conic }
-  extraocularMuscles: Muscle[6]  origin, pulley, insertion (globe-fixed), width
+  visualAxis { alphaDeg, kappaDeg }
+  pupilDecenterMm { x, y }
+  extraocularMuscles[6] { name, originMm[3], pulleyMm[3] | null,
+                          insertionDistFromLimbusMm, insertionWidthMm,
+                          tendon { stiffnessNPerMm, slackLengthMm } }
+  eyelid { upperPressureKPa, lowerPressureKPa, apertureMm } | null
   age, interpupillaryDistanceMm
 }
+
+Each eye has its own EyeParameters document, so left and right eyes are
+independent; the viewer's mirror shortcut copies one document to the other with
+lateral parameters reflected. Lens tilt and decenter are carried by the
+per-surface tilt and decenter fields below.
 
 Surface {
   name                            e.g. "cornea.anterior"
@@ -134,8 +146,10 @@ homogeneous-equivalent index (*J Vis* 14(13):21, 2014), and the Polans, Jaeken,
 McNabb, Artal & Izatt wide-field model with a tilted and decentered lens
 (*Optica* 2(2):124-134, 2015). The 1985 Navarro, Santamaría & Bescós model
 (*JOSA A* 2:1273) is kept only as a regression fixture whose paraxial power is
-well documented; it is not a preset offered in the UI. Atchison & Thibos
-(*Clin Exp Optom* 99(2):99-106, 2016) is the review used for literature notes.
+well documented; it is not a preset offered in the UI. Wavelength-dependent
+media indices (the dispersion model, regardless of which schematic eye is the
+default) come from Escudero-Sanz & Navarro (*J Opt Soc Am A* 16(8):1881-1891,
+1999). Atchison & Thibos (*Clin Exp Optom* 99(2):99-106, 2016) is the review used for literature notes.
 
 All numeric constants live in `data/schematic-eyes/*.json`, each with a
 `citation` field and a `verified: true|false` flag. Values are transcribed from

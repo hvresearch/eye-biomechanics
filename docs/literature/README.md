@@ -32,6 +32,12 @@ Anderson HA, Hentz G, Glasser A, Stuebing KK, Manny RE. *Invest Ophthalmol Vis S
 DOI: to be added
 Used for: accommodative amplitude versus age (sigmoid fit), replacing Hofstetter.
 
+## Escudero-Sanz & Navarro 1999
+
+Escudero-Sanz I, Navarro R. *J Opt Soc Am A* 16(8):1881-1891, 1999.
+DOI: to be added
+Used for: wavelength-dependent refractive indices (dispersion model) for polychromatic mode.
+
 ## Watson & Yellott 2012
 
 Watson AB, Yellott JI. *J Vis* 12(10):12, 2012.
