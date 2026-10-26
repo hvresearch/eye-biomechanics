@@ -18,7 +18,11 @@ scripts/             helper scripts (install_pkgs.sh SessionStart hook)
 
 ## Commands
 
-Run `pnpm -r test && (cd science && uv run pytest)` before every commit.
+Run the full gate before every commit (each half runs from its own directory, never `pnpm -r` from the repo root):
+
+```sh
+(cd web && pnpm -r lint && pnpm -r test && pnpm --filter @eye/viewer build) && (cd science && uv run ruff check . && uv run pytest)
+```
 
 Web:
 
@@ -48,6 +52,19 @@ cd science && uv sync --all-groups && uv run ruff check . && uv run pytest
 
 - Work on feature branches and merge to `main` through pull requests; CI (jobs `web` and `python`) must pass.
 - Commit often, one task per commit, with the trailer `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+
+## Plan conventions
+
+Used when the superpowers skills are not available (for example in cloud sessions):
+
+- Plan file at `docs/superpowers/plans/YYYY-MM-DD-mN-<name>.md`.
+- Header with Goal, Architecture, Tech Stack, and Spec.
+- Global Constraints and Review Focus sections.
+- Each task has Files, Interfaces (Consumes/Produces with exact signatures), and checkbox steps in TDD order: write failing test, run to see it fail, implement, run to see it pass, commit.
+- One commit per task; run the full gate before each commit.
+- Open a PR when the milestone's tasks pass.
+
+The viewer package must expose an `e2e` script (Playwright) once `web/apps/viewer/e2e/` exists; CI runs it with `pnpm --filter @eye/viewer e2e`.
 
 ## Where things are decided
 
