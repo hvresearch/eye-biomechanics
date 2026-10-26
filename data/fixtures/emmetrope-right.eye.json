@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "emmetrope-right",
+  "label": "Navarro 1985 relaxed emmetrope, right eye (fixture)",
+  "provenance": {
+    "source": "fixture",
+    "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985 (values transcribed from memory; verify)",
+    "generatedBy": "hand",
+    "gitHash": "",
+    "date": "2026-10-26",
+    "verified": false
+  },
+  "surfaces": [
+    {
+      "name": "cornea.anterior", "type": "conic", "radiusMm": 7.72, "conic": -0.26,
+      "tilt": { "xDeg": 0, "yDeg": 0 }, "decenter": { "xMm": 0, "yMm": 0 },
+      "thicknessToNextMm": 0.55, "mediumAfter": { "name": "cornea", "index555": 1.367 },
+      "apertureSemiDiamMm": 6.0
+    },
+    {
+      "name": "cornea.posterior", "type": "conic", "radiusMm": 6.5, "conic": 0,
+      "tilt": { "xDeg": 0, "yDeg": 0 }, "decenter": { "xMm": 0, "yMm": 0 },
+      "thicknessToNextMm": 3.05, "mediumAfter": { "name": "aqueous", "index555": 1.3374 },
+      "apertureSemiDiamMm": 6.0
+    },
+    {
+      "name": "lens.anterior", "type": "conic", "radiusMm": 10.2, "conic": -3.1316,
+      "tilt": { "xDeg": 0, "yDeg": 0 }, "decenter": { "xMm": 0, "yMm": 0 },
+      "thicknessToNextMm": 4.0, "mediumAfter": { "name": "lens", "index555": 1.42 },
+      "apertureSemiDiamMm": 5.0
+    },
+    {
+      "name": "lens.posterior", "type": "conic", "radiusMm": -6.0, "conic": -1.0,
+      "tilt": { "xDeg": 0, "yDeg": 0 }, "decenter": { "xMm": 0, "yMm": 0 },
+      "thicknessToNextMm": 16.4, "mediumAfter": { "name": "vitreous", "index555": 1.336 },
+      "apertureSemiDiamMm": 5.0
+    }
+  ],
+  "pupil": { "model": "fixed", "params": { "diameterMm": 4.0 } },
+  "axialLengthMm": 24.0,
+  "retina": { "radiusMm": -12.0, "conic": 0 },
+  "age": 30,
+  "interpupillaryDistanceMm": 63
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/scenario.schema.json",
+  "title": "Scenario",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "scene": {
+      "type": "object"
+    },
+    "eyes": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "$ref": "eye-parameters.schema.json"
+        },
+        "right": {
+          "$ref": "eye-parameters.schema.json"
+        }
+      },
+      "additionalProperties": false
+    },
+    "timeline": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "name",
+    "scene",
+    "eyes",
+    "timeline"
+  ],
+  "additionalProperties": false
+}
