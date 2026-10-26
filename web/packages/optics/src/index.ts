@@ -5,3 +5,7 @@ export { intersect, normalAt, sag } from "./surfaces/conic";
 export { surfacesFromSequential } from "./surfaces/sequential";
 export { paraxialPower } from "./paraxial/abcd";
 export type { ParaxialResult } from "./paraxial/abcd";
+export type { Ray, TraceHit, TraceResult, VignetteReason } from "./trace/ray";
+export { refract } from "./trace/refract";
+export { traceRay } from "./trace/sequential";
+export { collimatedBundle, fieldDirection, pointSourceBundle, pupilGrid } from "./trace/bundle";
