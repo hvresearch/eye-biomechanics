@@ -120,6 +120,10 @@ Surface {
 }
 ```
 
+`lensAccommodationModel`, `visualAxis`, `pupilDecenterMm`, `extraocularMuscles`,
+and `eyelid` are optional; absent means not modeled. Surface `tilt`, `decenter`,
+and `conic` default to zero when absent.
+
 Both sides validate against `schemas/eye-parameters.schema.json`. The Python
 biomechanics writes it; the viewer loads and saves it. A `Scenario` document
 holds a scene state plus a list of EyeParameters and a timeline.
@@ -285,7 +289,11 @@ from a paraxial seed. Result is displayed beside any manual prescription.
 ### 5.6 Validation suite (acceptance tests)
 
 - Relaxed Navarro eye paraxial power matches the published value (≈60.4 D) to
-  0.1 D; far point at infinity.
+  0.1 D; far point at infinity. Value unverified. A paraxial matrix trace of the
+  hand fixture data/fixtures/emmetrope-right.eye.json gives 60.60 D with back
+  focal distance 16.341 mm vs 16.40 mm vitreous (≈0.3 D). Task 1.1 reconciles
+  both against Navarro 1985 (including the wavelength the indices refer to)
+  before Task 1.6 writes the test.
 - Diffraction-limited circular pupil yields an Airy pattern with the correct first
   dark ring radius (1.22 λ/D).
 - A pure defocus wavefront fits to a single C(2,0) coefficient with others below
