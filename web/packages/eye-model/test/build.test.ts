@@ -12,10 +12,14 @@ const relaxed: EyeState = {
   amplitudeD: 6,
   pupilMm: 4,
   gaze: [0, 0, 0, 1],
+  gazeDeg: { xDeg: 0, yDeg: 0 },
+  targetDistanceM: Number.POSITIVE_INFINITY,
   ciliaryActivation: 0,
   lensParameterA: 0,
   eomActivation: [],
   eomLengthMm: [],
+  eomRestLengthMm: [],
+  eomPaths: [],
 };
 
 describe("buildSurfaces", () => {

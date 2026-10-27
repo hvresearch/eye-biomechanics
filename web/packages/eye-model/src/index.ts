@@ -25,8 +25,11 @@ export {
   demandFromDistance,
 } from "./accommodation/controller";
 export type { LagModel, LagTable } from "./accommodation/controller";
-export type { EyeState, SceneState } from "./state/types";
-export { SchemaVersionError, assertSupported, deriveEyeState, pupilDiameterMm } from "./state/derive";
+export type { BinocularState, EyeState, SceneState } from "./state/types";
+export { SchemaVersionError, assertSupported, deriveBinocular, deriveEyeState, pupilDiameterMm } from "./state/derive";
+export type { BinocularOptions, EyeStateOverrides } from "./state/derive";
+export { SCENE_DEFAULTS, defaultScene } from "./scene/defaults";
+export type { SceneDefaults } from "./scene/defaults";
 export { RETINA_SURFACE_NAME, buildSurfaces, lensParameterFor } from "./build/surfaces";
 export type { Vec3 } from "./math/vec";
 export {

@@ -290,7 +290,7 @@ Data: `data/scene/defaults.json` = `{ ipdMm: 63 (spec §4.4 default, citation "s
 - `loadPreset` attaches `extraocularMuscles: toDocumentMuscles()` and reads `interpupillaryDistanceMm` from `SCENE_DEFAULTS`.
 - `SCENE_DEFAULTS` typed export; `defaultScene(preset): SceneState`.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - midline target: left and right `eomActivation` are equal within 1e-12;
   - target 20° to the subject's right at 6 m: the right lateral rectus and the left medial rectus are above baseline, and the right medial rectus and left lateral rectus are below;
   - moving a midline target from 6 m to 0.33 m increases `vergenceDeg` and both medial-rectus activations;
@@ -298,8 +298,8 @@ Data: `data/scene/defaults.json` = `{ ipdMm: 63 (spec §4.4 default, citation "s
   - `loadPreset("navarro-1985").extraocularMuscles` has six entries and validates;
   - existing derive tests still pass with the new fields;
   - the `SchemaVersionError` test still passes through `deriveBinocular`.
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate (viewer lint will need the `EyeState` changes threaded through; keep the viewer compiling with minimal edits).
-- [ ] **Step 3:** Commit: `feat(eye-model): binocular derivation of gaze, muscle length, and activation`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate (viewer lint will need the `EyeState` changes threaded through; keep the viewer compiling with minimal edits).
+- [x] **Step 3:** Commit: `feat(eye-model): binocular derivation of gaze, muscle length, and activation`.
 
 ### Task 2.7: Worker owns optics derivation; store rework
 
@@ -368,7 +368,7 @@ Closes the M1 follow-ups:
   - a ray 20° to the right gives `x = 20°`;
   - a ray parallel to the plane gives null;
   - `globeProfiles` uses the document's pupil diameter;
-  - the `profiles.test.ts` name "zero demand at 6 m" becomes "0.17 D demand at 6 m".
+  - the `profiles.test.ts` name "zero demand at 6 m" becomes "0.17 D demand at 6 m" (done early, in Task 2.6, when per-eye demand changed the asserted value).
 - [ ] **Step 2:** Run; FAIL. Implement the pure helpers; PASS. Implement the components. Run the full gate and e2e.
 - [ ] **Step 3:** Commit: `feat(viewer): binocular globes, extraocular muscles, orbit, and draggable target`.
 

@@ -1,0 +1,15 @@
+{
+  "name": "scene-defaults",
+  "verified": false,
+  "citation": "Starting values for the viewer's scene; see each field's note. Not physiological constants except ipdMm.",
+  "ipdMm": 63,
+  "ipdNote": "Spec §4.4 default interpupillary distance (a typical adult value); not transcribed from a population source.",
+  "ageYears": 30,
+  "ageNote": "Starting subject age; a choice inside the Anderson 2008 range where accommodation is ample.",
+  "luminanceCdM2": 100,
+  "luminanceNote": "Starting field luminance (typical indoor photopic); unused until the M3 pupil model.",
+  "targetDistanceM": 6,
+  "targetDistanceNote": "Starting target distance (a distant chart, 0.17 D of demand).",
+  "targetDirectionDeg": { "x": 0, "y": 0 },
+  "targetDirectionNote": "Straight ahead."
+}

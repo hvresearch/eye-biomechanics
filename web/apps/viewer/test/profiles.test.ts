@@ -47,10 +47,10 @@ describe("globeProfiles", () => {
 });
 
 describe("derive", () => {
-  it("uses the relaxed far point so an emmetropic preset has zero demand at 6 m", () => {
+  it("uses the relaxed far point so an emmetropic preset has 0.17 D of demand at 6 m", () => {
     const d = derive(scene, loadPreset("navarro-1985"));
     expect(Math.abs(d.farPointD)).toBeLessThan(0.05);
-    expect(d.eye.demandD).toBeCloseTo(1 / 6 + d.farPointD, 12);
+    expect(d.eye.demandD).toBeCloseTo(1 / Math.hypot(6, scene.ipdMm / 2000) + d.farPointD, 12);
     // At 6 m the eye accommodates 0.17 D, so the accommodated power sits just above relaxed.
     expect(d.paraxialPowerD).toBeGreaterThan(60.42);
     expect(d.paraxialPowerD).toBeLessThan(60.9);

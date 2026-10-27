@@ -2,6 +2,8 @@ import navarro1985 from "../../../../../data/schematic-eyes/navarro-1985.json";
 import zapataDiaz2019 from "../../../../../data/schematic-eyes/zapata-diaz-2019.json";
 import type { EyeParameters, Surface } from "../schema/types";
 import { validateEyeParameters } from "../schema/validate";
+import { toDocumentMuscles } from "../eom/geometry";
+import { SCENE_DEFAULTS } from "../scene/defaults";
 
 export const PRESET_NAMES = ["navarro-1985", "zapata-diaz-2019"] as const;
 export type PresetName = (typeof PRESET_NAMES)[number];
@@ -83,7 +85,8 @@ export function loadPreset(name: PresetName): EyeParameters {
     axialLengthMm: table.axialLengthMm,
     retina: { ...table.retina },
     age: table.referenceAgeYears,
-    interpupillaryDistanceMm: DEFAULT_IPD_MM,
+    interpupillaryDistanceMm: SCENE_DEFAULTS.ipdMm,
+    extraocularMuscles: toDocumentMuscles(),
   };
   if (table.accommodation !== undefined) {
     doc.lensAccommodationModel = clone(table.accommodation);
@@ -100,5 +103,3 @@ function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
 }
 
-/** Spec §4.4 default interpupillary distance (63 mm); a scene-level default, not a per-eye constant. */
-const DEFAULT_IPD_MM = 63;

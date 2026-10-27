@@ -1,10 +1,13 @@
+import type { MusclePath } from "../eom/path";
+import type { GazeDeg } from "../gaze/listing";
+import type { Quat } from "../math/quat";
 import type { PresetName } from "../presets/load";
 
 /** Scene-level inputs shared by both eyes (spec §4.5). */
 export interface SceneState {
-  /** Target distance along the line of sight, meters; Infinity for a distant target. */
+  /** Target distance from the midpoint between the eyes, meters; Infinity for a distant target. */
   targetDistanceM: number;
-  /** Target direction, degrees from straight ahead (x temporal-right, y superior). */
+  /** Target direction, degrees from straight ahead in the head frame (x to the subject's right, y superior). */
   targetDirectionDeg: { x: number; y: number };
   luminanceCdM2: number;
   ageYears: number;
@@ -13,14 +16,18 @@ export interface SceneState {
   preset: PresetName;
 }
 
-/** Derived per-eye state (spec §4.5). Milestone 1 fills accommodation and a fixed pupil. */
+/** Derived per-eye state (spec §4.5). */
 export interface EyeState {
   accommodationD: number;
   demandD: number;
   amplitudeD: number;
   pupilMm: number;
-  /** Gaze quaternion [x, y, z, w]; identity until Milestone 2. */
-  gaze: readonly [number, number, number, number];
+  /** Orientation (Listing's law) in the eye's local frame, [x, y, z, w]. */
+  gaze: Quat;
+  /** Line of sight in the eye's local frame (x temporal, y superior), degrees. */
+  gazeDeg: GazeDeg;
+  /** This eye's distance to the target (from its center of rotation), meters. */
+  targetDistanceM: number;
   ciliaryActivation: number;
   /**
    * Parameter A of the document's lens accommodation model (Navarro 1985 Table 4) that
@@ -28,6 +35,17 @@ export interface EyeState {
    * Table 4's nominal A is not itself the far-point shift, so the two differ.
    */
   lensParameterA: number;
+  /** Per muscle, in `MUSCLE_NAMES` order. */
   eomActivation: number[];
   eomLengthMm: number[];
+  /** Primary-position lengths, the reference for the length-proxy activation. */
+  eomRestLengthMm: number[];
+  eomPaths: MusclePath[];
+}
+
+/** Both eyes from one scene (spec §4.5 `derive`). */
+export interface BinocularState {
+  left: EyeState;
+  right: EyeState;
+  vergenceDeg: number;
 }
