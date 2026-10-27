@@ -115,7 +115,7 @@ Closes the M1 follow-ups that touch only data and docs, so later tasks start fro
 ### Task 2.1: EOM geometry table
 
 **Files:**
-- Create: `data/eom/geometry-default.json`, `data/eom/README.md`, `web/packages/eye-model/src/math/quat.ts` (only the `Vec3` helpers needed here: re-export from `@eye/optics` types is not allowed at runtime, so eye-model gets its own small `vec.ts`), `web/packages/eye-model/src/math/vec.ts`, `web/packages/eye-model/src/eom/geometry.ts`, `web/packages/eye-model/test/eom-geometry.test.ts`
+- Create: `data/eom/geometry-default.json`, `data/eom/README.md`, `web/packages/eye-model/src/math/vec.ts` (eye-model imports `@eye/optics` for types only, so it gets its own small vector helpers), `web/packages/eye-model/src/eom/geometry.ts`, `web/packages/eye-model/test/eom-geometry.test.ts`
 - Modify: `web/packages/eye-model/src/index.ts`
 
 **Data shape** (`data/eom/geometry-default.json`, right eye, globe-centered frame: x temporal, y superior, z posterior, mm):
@@ -285,7 +285,7 @@ Data: `data/scene/defaults.json` = `{ ipdMm: 63 (spec §4.4 default, citation "s
 - `deriveEyeState(scene, params, side, farPointD = 0, farPointOf?, gazeOverride?: GazeDeg, accommodationOverride?: number): EyeState`.
   - Gaze comes from `eyeDirections(scene target, scene.ipdMm)[side]` unless `gazeOverride` is given (dynamics).
   - Demand uses this eye's own distance.
-  - Muscles come from `musclesFromDocument(params)`, mirrored for nothing: muscle tables are in the local frame, and only the gaze is mirrored.
+  - Muscles come from `musclesFromDocument(params)`. Muscle tables are in each eye's local frame (x temporal), so no muscle coordinate is mirrored; only the gaze is converted to the local frame.
 - `deriveBinocular(scene, eyes: { left: EyeParameters; right: EyeParameters }, opts?: { farPointD?: {left; right}; dynamics?: DynamicState }): { left: EyeState; right: EyeState; vergenceDeg: number }` (spec §4.5).
 - `loadPreset` attaches `extraocularMuscles: toDocumentMuscles()` and reads `interpupillaryDistanceMm` from `SCENE_DEFAULTS`.
 - `SCENE_DEFAULTS` typed export; `defaultScene(preset): SceneState`.
