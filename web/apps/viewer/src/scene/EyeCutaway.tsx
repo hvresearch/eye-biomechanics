@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from "react";
-import { DoubleSide, LatheGeometry, Plane, Vector2, Vector3 } from "three";
+import { DoubleSide, Plane, Vector3 } from "three";
 import { useScene } from "../store/scene";
+import { lathe } from "./lathe";
 import { globeProfiles, type ProfilePoint } from "./profiles";
 
 /** Sagittal cut: keep x ≤ 0 (nasal half of the right eye), expose the section toward +x. */
@@ -24,57 +25,55 @@ const STRUCTURES: StructureSpec[] = [
   { key: "cornea", label: "Cornea", color: "#a9d6ea", opacity: 0.45 },
 ];
 
-function lathe(profile: ProfilePoint[]): LatheGeometry {
-  const pts = profile.map(([r, z]) => new Vector2(Math.max(0, r), z));
-  const g = new LatheGeometry(pts, 96, 0, Math.PI * 2);
-  // LatheGeometry revolves about +Y; rotate so the axis of revolution is world +Z.
-  g.rotateX(Math.PI / 2);
-  g.scale(1, -1, 1);
-  g.computeVertexNormals();
-  return g;
+/**
+ * One cutaway structure. Its lathe is rebuilt only when its own profile changes, so the
+ * cornea, sclera, retina, and ciliary body are not regenerated on every accommodation step.
+ */
+function Structure({ spec, profile }: { spec: StructureSpec; profile: ProfilePoint[] }) {
+  const setHovered = useScene((s) => s.setHovered);
+  const signature = profile.map(([r, z]) => `${r},${z}`).join(";");
+  // The signature stands in for the profile's contents, which arrive as a new array each update.
+  const geometry = useMemo(() => lathe(profile), [signature]);
+  // React Three Fiber disposes objects only on unmount, not when a `geometry` prop is
+  // replaced, so free each superseded geometry's GPU buffers.
+  useEffect(() => () => geometry.dispose(), [geometry]);
+
+  return (
+    <mesh
+      geometry={geometry}
+      name={spec.label}
+      onPointerOver={(e) => {
+        e.stopPropagation();
+        setHovered(spec.label);
+      }}
+      onPointerOut={() => setHovered(null)}
+    >
+      <meshStandardMaterial
+        color={spec.color}
+        transparent={spec.opacity < 1}
+        opacity={spec.opacity}
+        roughness={0.55}
+        metalness={0}
+        side={DoubleSide}
+        clippingPlanes={[CUT_PLANE]}
+        depthWrite={spec.opacity > 0.5}
+      />
+    </mesh>
+  );
 }
 
 export function EyeCutaway() {
   const surfaces = useScene((s) => s.derived.surfaces);
   const params = useScene((s) => s.params);
-  const setHovered = useScene((s) => s.setHovered);
-  const geometries = useMemo(() => {
-    const p = globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm);
-    return STRUCTURES.map((spec) => ({ spec, geometry: lathe(p[spec.key]) }));
-  }, [surfaces, params]);
-  // React Three Fiber disposes objects only on unmount, not when a `geometry` prop is
-  // replaced, so free each generation's GPU buffers once it has been superseded.
-  useEffect(
-    () => () => {
-      for (const { geometry } of geometries) geometry.dispose();
-    },
-    [geometries],
+  const profiles = useMemo(
+    () => globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm),
+    [surfaces, params],
   );
 
   return (
     <group>
-      {geometries.map(({ spec, geometry }) => (
-        <mesh
-          key={spec.key}
-          geometry={geometry}
-          name={spec.label}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(spec.label);
-          }}
-          onPointerOut={() => setHovered(null)}
-        >
-          <meshStandardMaterial
-            color={spec.color}
-            transparent={spec.opacity < 1}
-            opacity={spec.opacity}
-            roughness={0.55}
-            metalness={0}
-            side={DoubleSide}
-            clippingPlanes={[CUT_PLANE]}
-            depthWrite={spec.opacity > 0.5}
-          />
-        </mesh>
+      {STRUCTURES.map((spec) => (
+        <Structure key={spec.key} spec={spec} profile={profiles[spec.key]} />
       ))}
     </group>
   );

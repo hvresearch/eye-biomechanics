@@ -57,7 +57,8 @@ test("regenerating the eye frees the old geometry (no GPU memory growth)", async
   await expect(page.getByTestId("defocus")).not.toHaveText("…");
   await page.waitForTimeout(500);
   const before = await geometries();
-  // Each distance changes the accommodated lens, so all eight cutaway lathes regenerate.
+  // Each distance changes the accommodated lens, so the lens, aqueous, iris, and vitreous
+  // lathes regenerate; the cornea, sclera, retina, and ciliary body are reused.
   for (const d of ["2", "1", "0.5", "0.4", "0.33", "0.25"]) {
     const prev = await page.getByTestId("demand").textContent();
     await page.getByTestId("target-distance").fill(d);
@@ -65,6 +66,6 @@ test("regenerating the eye frees the old geometry (no GPU memory growth)", async
     await page.waitForTimeout(150);
   }
   await page.waitForTimeout(500);
-  // A leak keeps eight geometries per regeneration (48 here); allow small drift elsewhere.
+  // A leak keeps four geometries per regeneration (24 here); allow small drift elsewhere.
   expect((await geometries()) - before).toBeLessThan(8);
 });
