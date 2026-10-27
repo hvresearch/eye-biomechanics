@@ -1,5 +1,4 @@
 import type { SequentialSurface, Surface } from "@eye/optics";
-import { surfacesFromSequential } from "@eye/optics";
 import { SURFACE_NAMES, lensGeometry } from "../accommodation/lens";
 import type { EyeParameters, Surface as SchemaSurface } from "../schema/types";
 import type { EyeState } from "./../state/types";
@@ -20,6 +19,30 @@ function toSequential(s: SchemaSurface): SequentialSurface {
     mediumAfter: { name: s.mediumAfter.name, index555: s.mediumAfter.index555 },
     apertureSemiDiamMm: s.apertureSemiDiamMm,
   };
+}
+
+/**
+ * Absolute vertex positions from thicknesses, first vertex at z = 0. Done here rather than
+ * with `surfacesFromSequential` so that eye-model depends on optics for types only.
+ */
+function place(seq: readonly SequentialSurface[]): Surface[] {
+  const out: Surface[] = [];
+  let z = 0;
+  for (const s of seq) {
+    out.push({
+      name: s.name,
+      kind: "conic",
+      radiusMm: s.radiusMm,
+      conic: s.conic ?? 0,
+      apertureSemiDiamMm: s.apertureSemiDiamMm,
+      vertexZMm: z,
+      tilt: s.tilt ? { ...s.tilt } : { xDeg: 0, yDeg: 0 },
+      decenter: s.decenter ? { ...s.decenter } : { xMm: 0, yMm: 0 },
+      mediumAfter: { ...s.mediumAfter },
+    });
+    z += s.thicknessToNextMm;
+  }
+  return out;
 }
 
 /**
@@ -63,5 +86,5 @@ export function buildSurfaces(params: EyeParameters, state: EyeState): Surface[]
     mediumAfter: { ...last.mediumAfter },
     apertureSemiDiamMm: Math.abs(params.retina.radiusMm),
   });
-  return surfacesFromSequential(seq, 0);
+  return place(seq);
 }
