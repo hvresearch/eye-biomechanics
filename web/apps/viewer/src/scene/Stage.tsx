@@ -5,8 +5,8 @@ import { EyeCutaway } from "./EyeCutaway";
 import { RayFan } from "./RayFan";
 
 export function Stage() {
-  const hovered = useScene((s) => s.hovered);
-  const preset = useScene((s) => s.params.label);
+  const hovered = useScene((s) => (s.hovered?.kind === "structure" ? s.hovered.label : null));
+  const preset = useScene((s) => s.eyes.right.label);
   return (
     <div className="stage" data-testid="stage">
       <Canvas

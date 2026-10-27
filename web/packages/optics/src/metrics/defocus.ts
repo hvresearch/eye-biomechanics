@@ -29,6 +29,12 @@ export interface DefocusOptions {
   launchOffsetMm?: number;
 }
 
+/**
+ * Default distance in front of the first vertex at which bundles are launched and aimed, mm
+ * (a numerical choice, not physiology). Exported so drawn ray fans aim at the same plane.
+ */
+export const DEFAULT_LAUNCH_OFFSET_MM = 1;
+
 /** Fraction of launched rays that must reach image space before a defocus is reported. */
 const MIN_VALID_FRACTION = 0.6;
 
@@ -122,7 +128,7 @@ export function retinalDefocusD(
 ): DefocusResult {
   if (!(objectDistanceM > 0)) throw new RangeError(`objectDistanceM must be > 0, got ${objectDistanceM}`);
   const gridN = opts.gridN ?? 16;
-  const launchOffset = opts.launchOffsetMm ?? 1;
+  const launchOffset = opts.launchOffsetMm ?? DEFAULT_LAUNCH_OFFSET_MM;
   const { refracting, image } = splitImageSurface(surfaces);
   const first = refracting[0];
   if (!first) throw new Error("No refracting surfaces");

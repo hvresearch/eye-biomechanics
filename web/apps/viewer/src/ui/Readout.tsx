@@ -1,4 +1,4 @@
-import { useScene } from "../store/scene";
+import { eyeOptics, useScene } from "../store/scene";
 import { readoutTooltips } from "./tooltips";
 
 function Stat({
@@ -34,10 +34,11 @@ function Stat({
 const signed = (x: number, digits: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(digits)}`;
 
 export function Readout() {
-  const eye = useScene((s) => s.derived.eye);
-  const powerD = useScene((s) => s.derived.paraxialPowerD);
-  const optics = useScene((s) => s.optics);
+  const eye = useScene((s) => s.binocular.right);
+  const optics = useScene((s) => eyeOptics(s.optics, "right"));
+  const elapsedMs = useScene((s) => s.optics?.elapsedMs ?? 0);
   const pending = useScene((s) => s.pending);
+  const powerD = optics?.paraxialPowerD ?? Number.NaN;
   const focusOffsetMm = optics ? optics.bestFocusZMm - optics.retinaZMm : Number.NaN;
   const tips = readoutTooltips(eye.pupilMm);
 
@@ -82,7 +83,14 @@ export function Readout() {
           testId="ciliary"
           title={tips.ciliaryActivation}
         />
-        <Stat k="Paraxial power" v={powerD.toFixed(2)} u="D" testId="power" title={tips.paraxialPower} />
+        <Stat
+          k="Paraxial power"
+          v={optics ? powerD.toFixed(2) : "…"}
+          u="D"
+          pending={pending}
+          testId="power"
+          title={tips.paraxialPower}
+        />
         <Stat
           k="Pupil"
           v={eye.pupilMm.toFixed(1)}
@@ -93,7 +101,7 @@ export function Readout() {
       </div>
       {optics && (
         <p className="note">
-          Worker: {optics.elapsedMs.toFixed(1)} ms, {optics.fan.length} rays drawn
+          Worker: {elapsedMs.toFixed(1)} ms for both eyes, {optics.fan.length} rays drawn
           {optics.vignettedRays > 0 ? `, ${optics.vignettedRays} vignetted` : ""}.
         </p>
       )}

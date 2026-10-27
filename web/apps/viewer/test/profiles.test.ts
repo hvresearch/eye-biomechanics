@@ -1,7 +1,18 @@
-import { buildSurfaces, deriveEyeState, loadPreset, type SceneState } from "@eye/eye-model";
+import { buildSurfaces, deriveEyeState, loadPreset, type EyeParameters, type SceneState } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
 import { globeProfiles } from "../src/scene/profiles";
-import { derive } from "../src/store/derive";
+import { handle } from "../src/worker/handle";
+
+/** The right eye's optics as the store would request them. */
+function derive(scene: SceneState, eye: EyeParameters) {
+  const state = deriveEyeState(scene, eye, "right");
+  const res = handle({
+    id: 1,
+    eyes: [{ side: "right", params: eye, accommodationD: state.accommodationD, objectDistanceM: state.targetDistanceM, pupilSemiDiamMm: 2, fanRays: 0 }],
+  });
+  const optics = res.eyes[0]!;
+  return { eye: state, surfaces: optics.surfaces, paraxialPowerD: optics.paraxialPowerD, farPointD: optics.farPointD };
+}
 
 const scene: SceneState = {
   targetDistanceM: 6,
@@ -43,18 +54,5 @@ describe("globeProfiles", () => {
       span(globeProfiles(far.surfaces, eye.axialLengthMm, eye.retina.radiusMm)),
     );
     expect(near.eye.accommodationD).toBeGreaterThan(far.eye.accommodationD);
-  });
-});
-
-describe("derive", () => {
-  it("uses the relaxed far point so an emmetropic preset has 0.17 D of demand at 6 m", () => {
-    const d = derive(scene, loadPreset("navarro-1985"));
-    expect(Math.abs(d.farPointD)).toBeLessThan(0.05);
-    expect(d.eye.demandD).toBeCloseTo(1 / Math.hypot(6, scene.ipdMm / 2000) + d.farPointD, 12);
-    // At 6 m the eye accommodates 0.17 D, so the accommodated power sits just above relaxed.
-    expect(d.paraxialPowerD).toBeGreaterThan(60.42);
-    expect(d.paraxialPowerD).toBeLessThan(60.9);
-    const inf = derive({ ...scene, targetDistanceM: Number.POSITIVE_INFINITY }, loadPreset("navarro-1985"));
-    expect(inf.paraxialPowerD).toBeCloseTo(60.42, 1);
   });
 });

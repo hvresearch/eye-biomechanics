@@ -337,7 +337,7 @@ Closes the M1 follow-ups:
   - `setPlaying(b)`, `tick(dtS)`, `scrub(timeS)`, `setHovered`, `setPinned`.
 - The initial derivation runs inside the same try/catch as updates. A failure sets `paramError` and keeps a safe fallback state, so the app renders the banner instead of blanking.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `handle` returns two eyes, each with 11 polylines of 1 + 5 vertices, and the right-eye defocus at 0.5 m with the controller's accommodation is below 0.6 D in magnitude for age 30;
   - the paraxial power and lens parameter returned for A = 2 match `paraxialPower(buildSurfaces(...))` computed in the test;
   - `handle` finishes both eyes in under 16 ms median over 5 runs (renamed "per-frame budget, two eyes");
@@ -345,8 +345,8 @@ Closes the M1 follow-ups:
   - store: `setTargetDistance(0)` stores 0.05;
   - store: a `"2.0.0"` document set through a test hook yields `paramError` naming the version, while `workerError` stays null;
   - store: a simulated worker success does not clear `paramError`.
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate, e2e included (the M1 e2e must still pass with the new store).
-- [ ] **Step 3:** Commit: `refactor(viewer): optics derivation in the worker, throttled requests, separate error fields`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate, e2e included (the M1 e2e must still pass with the new store).
+- [x] **Step 3:** Commit: `refactor(viewer): optics derivation in the worker, throttled requests, separate error fields`.
 
 ### Task 2.8: Binocular stage
 

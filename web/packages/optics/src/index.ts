@@ -9,5 +9,5 @@ export type { Ray, TraceHit, TraceResult, VignetteReason } from "./trace/ray";
 export { refract } from "./trace/refract";
 export { traceRay } from "./trace/sequential";
 export { collimatedBundle, fieldDirection, pointSourceBundle, pupilGrid } from "./trace/bundle";
-export { InsufficientRaysError, retinalDefocusD, splitImageSurface } from "./metrics/defocus";
+export { DEFAULT_LAUNCH_OFFSET_MM, InsufficientRaysError, retinalDefocusD, splitImageSurface } from "./metrics/defocus";
 export type { DefocusOptions, DefocusResult } from "./metrics/defocus";

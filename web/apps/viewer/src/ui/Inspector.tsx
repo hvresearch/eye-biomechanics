@@ -11,16 +11,22 @@ const formatAge = (years: number) => String(years);
 
 export function Inspector() {
   const scene = useScene((s) => s.scene);
-  const error = useScene((s) => s.error);
+  const paramError = useScene((s) => s.paramError);
+  const workerError = useScene((s) => s.workerError);
   const setTargetDistance = useScene((s) => s.setTargetDistance);
   const setAge = useScene((s) => s.setAge);
   const setPreset = useScene((s) => s.setPreset);
 
   return (
     <aside className="inspector">
-      {error && (
+      {paramError && (
         <div className="banner" role="alert" data-testid="error">
-          {error}
+          {paramError}
+        </div>
+      )}
+      {workerError && (
+        <div className="banner" role="alert" data-testid="worker-error">
+          Optics worker: {workerError}
         </div>
       )}
 

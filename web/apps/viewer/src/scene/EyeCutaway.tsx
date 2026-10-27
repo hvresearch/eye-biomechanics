@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { DoubleSide, Plane, Vector3 } from "three";
-import { useScene } from "../store/scene";
+import { eyeOptics, useScene } from "../store/scene";
 import { lathe } from "./lathe";
 import { globeProfiles, type ProfilePoint } from "./profiles";
 
@@ -44,7 +44,7 @@ function Structure({ spec, profile }: { spec: StructureSpec; profile: ProfilePoi
       name={spec.label}
       onPointerOver={(e) => {
         e.stopPropagation();
-        setHovered(spec.label);
+        setHovered({ kind: "structure", label: spec.label });
       }}
       onPointerOut={() => setHovered(null)}
     >
@@ -63,12 +63,14 @@ function Structure({ spec, profile }: { spec: StructureSpec; profile: ProfilePoi
 }
 
 export function EyeCutaway() {
-  const surfaces = useScene((s) => s.derived.surfaces);
-  const params = useScene((s) => s.params);
+  // The accommodated surfaces come from the optics worker (the lens solve is optics).
+  const surfaces = useScene((s) => eyeOptics(s.optics, "right")?.surfaces ?? null);
+  const params = useScene((s) => s.eyes.right);
   const profiles = useMemo(
-    () => globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm),
+    () => (surfaces ? globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm) : null),
     [surfaces, params],
   );
+  if (!profiles) return null;
 
   return (
     <group>

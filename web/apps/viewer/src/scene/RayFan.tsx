@@ -1,9 +1,9 @@
 import { Line } from "@react-three/drei";
-import { useScene } from "../store/scene";
+import { eyeOptics, useScene } from "../store/scene";
 
 /** Traced rays in the sagittal plane, plus a marker at the best-focus position. */
 export function RayFan() {
-  const optics = useScene((s) => s.optics);
+  const optics = useScene((s) => eyeOptics(s.optics, "right"));
   if (!optics) return null;
   const chief = Math.floor(optics.fan.length / 2);
   return (
