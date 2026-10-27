@@ -29,6 +29,42 @@ test("vertical slice: target distance drives accommodation and defocus", async (
   await expect.poll(async () => num(page, "defocus"), { timeout: 15_000 }).toBeGreaterThan(1.5);
 });
 
+test("typing into the number boxes key by key commits the typed value", async ({ page }) => {
+  test.setTimeout(120_000); // each committed keystroke regenerates the eye under software WebGL in CI
+  await page.goto("/");
+  await expect(page.getByTestId("defocus")).not.toHaveText("…");
+
+  // Partly typed values ("4", "0", "0.") are out of range and must not be clamped mid-entry.
+  const age = page.getByTestId("age");
+  await age.selectText();
+  await age.press("Backspace");
+  await age.pressSequentially("45", { delay: 50 });
+  await age.press("Enter");
+  await expect(age).toHaveValue("45");
+  await expect(page.getByTestId("amplitude")).toHaveText(/^1\.\d\d$/); // Anderson 2008 at 45 y
+
+  const distance = page.getByTestId("target-distance");
+  await distance.selectText();
+  await distance.press("Backspace");
+  await distance.pressSequentially("0.33", { delay: 50 });
+  await distance.blur();
+  await expect(distance).toHaveValue("0.33");
+  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+
+  // An out-of-range entry is clamped once, when editing ends.
+  await age.selectText();
+  await age.pressSequentially("630", { delay: 50 });
+  await age.blur();
+  await expect(age).toHaveValue("90");
+
+  // Clearing the box and leaving it restores the current value rather than committing zero.
+  await distance.selectText();
+  await distance.press("Backspace");
+  await distance.blur();
+  await expect(distance).toHaveValue("0.33");
+  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+});
+
 test("selecting the untranscribed preset shows an error and keeps the eye", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("defocus")).not.toHaveText("…");

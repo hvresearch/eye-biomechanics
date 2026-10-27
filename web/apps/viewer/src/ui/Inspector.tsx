@@ -1,10 +1,13 @@
 import { PRESET_NAMES, presetTable, type PresetName } from "@eye/eye-model";
 import { useScene } from "../store/scene";
+import { NumberField } from "./NumberField";
 
 const MIN_M = 0.1;
 const MAX_M = 6;
 const toSlider = (m: number) => Math.log10(Math.min(MAX_M, Math.max(MIN_M, m)));
 const fromSlider = (v: number) => 10 ** v;
+const formatDistance = (m: number) => String(Number(m.toFixed(2)));
+const formatAge = (years: number) => String(years);
 
 export function Inspector() {
   const scene = useScene((s) => s.scene);
@@ -25,18 +28,15 @@ export function Inspector() {
         <h2>Scene</h2>
         <div className="field">
           <label htmlFor="target-distance">Target distance</label>
-          <input
+          <NumberField
             id="target-distance"
-            data-testid="target-distance"
-            type="number"
+            testId="target-distance"
             min={MIN_M}
             max={MAX_M}
             step={0.01}
-            value={Number(scene.targetDistanceM.toFixed(2))}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (Number.isFinite(v) && v > 0) setTargetDistance(v);
-            }}
+            value={scene.targetDistanceM}
+            format={formatDistance}
+            onCommit={setTargetDistance}
           />
           <input
             aria-label="Target distance slider"
@@ -56,18 +56,15 @@ export function Inspector() {
         <h2>Subject</h2>
         <div className="field">
           <label htmlFor="age">Age</label>
-          <input
+          <NumberField
             id="age"
-            data-testid="age"
-            type="number"
+            testId="age"
             min={6}
             max={90}
             step={1}
             value={scene.ageYears}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              if (Number.isFinite(v)) setAge(Math.min(90, Math.max(6, v)));
-            }}
+            format={formatAge}
+            onCommit={setAge}
           />
           <input
             aria-label="Age slider"
