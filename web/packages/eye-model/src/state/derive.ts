@@ -1,7 +1,9 @@
+import type { Surface } from "@eye/optics";
 import { amplitudeForAge } from "../accommodation/amplitude";
 import { accommodationResponse, demandFromDistance } from "../accommodation/controller";
 import type { EyeParameters } from "../schema/types";
 import { validateEyeParameters } from "../schema/validate";
+import { lensParameterFor } from "../build/surfaces";
 import type { EyeState, SceneState } from "./types";
 
 export class SchemaVersionError extends Error {
@@ -38,18 +40,25 @@ export function pupilDiameterMm(params: EyeParameters): number {
  * `farPointD` is the eye's refractive error in clinical sign (0 for the presets, which
  * are emmetropic by construction); the viewer passes the paraxial far point when it has
  * one so that ametropic documents reduce or increase demand (spec §4.2).
+ *
+ * `farPointOf` (the paraxial far point of built surfaces, injected by the composer so that
+ * eye-model does not call optics) lets the lens parameter be solved so the optics
+ * accommodate by exactly the response. Without it `lensParameterA` equals the response,
+ * which overstates the optical accommodation of the Navarro model by roughly 10%.
  */
 export function deriveEyeState(
   scene: SceneState,
   params: EyeParameters,
   side: "left" | "right",
   farPointD = 0,
+  farPointOf?: (surfaces: Surface[]) => number,
 ): EyeState {
   void side; // Both eyes derive identically until gaze arrives in Milestone 2.
   assertSupported(params);
   const amplitudeD = amplitudeForAge(scene.ageYears);
   const demandD = demandFromDistance(scene.targetDistanceM, farPointD);
   const accommodationD = accommodationResponse(demandD, amplitudeD);
+  const lensParameterA = farPointOf ? lensParameterFor(params, accommodationD, farPointOf) : accommodationD;
   return {
     accommodationD,
     demandD,
@@ -57,6 +66,7 @@ export function deriveEyeState(
     pupilMm: pupilDiameterMm(params),
     gaze: [0, 0, 0, 1],
     ciliaryActivation: amplitudeD > 0 ? accommodationD / amplitudeD : 0,
+    lensParameterA,
     eomActivation: [],
     eomLengthMm: [],
   };

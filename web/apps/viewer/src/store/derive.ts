@@ -16,10 +16,12 @@ export interface Derived {
  */
 export function derive(scene: SceneState, params: EyeParameters): Derived {
   const relaxed = deriveEyeState({ ...scene, targetDistanceM: Number.POSITIVE_INFINITY }, params, "right");
-  const relaxedSurfaces = buildSurfaces(params, { ...relaxed, accommodationD: 0 });
+  const relaxedSurfaces = buildSurfaces(params, { ...relaxed, accommodationD: 0, lensParameterA: 0 });
   const par = paraxialPower(relaxedSurfaces);
   const farPointD = Number.isFinite(par.farPointD) ? par.farPointD : 0;
-  const eye = deriveEyeState(scene, params, "right", farPointD);
+  // The lens parameter is solved so the optics accommodate by exactly the controller's
+  // response; without this the modeled lag of accommodation would not reach the optics.
+  const eye = deriveEyeState(scene, params, "right", farPointD, (s) => paraxialPower(s).farPointD);
   const surfaces = buildSurfaces(params, eye);
   return { eye, surfaces, paraxialPowerD: paraxialPower(surfaces).powerD, farPointD };
 }

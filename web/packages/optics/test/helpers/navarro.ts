@@ -20,7 +20,8 @@ export function navarroTable(): Table {
 /**
  * Relaxed (A = 0) or accommodated Navarro eye as optics surfaces, retina last. The
  * accommodated form applies Table 4 (L = ln(1 + A)) with the file's coefficients,
- * holding the vitreous thickness fixed.
+ * keeping the retina at the table's axial length (the vitreous absorbs the change), as
+ * eye-model's buildSurfaces does.
  */
 export function navarroSurfaces(accommodationD = 0): Surface[] {
   const t = navarroTable();
@@ -43,6 +44,7 @@ export function navarroSurfaces(accommodationD = 0): Surface[] {
   }
   const last = seq[seq.length - 1];
   if (!last) throw new Error("empty table");
+  last.thicknessToNextMm = t.axialLengthMm - seq.slice(0, -1).reduce((z, q) => z + q.thicknessToNextMm, 0);
   seq.push({
     name: "retina",
     radiusMm: t.retina.radiusMm,

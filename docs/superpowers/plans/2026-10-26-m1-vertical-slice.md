@@ -23,7 +23,7 @@ Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 1 sec
 ## Outcome notes (post-execution)
 
 - The retinal defocus readout is the best-RMS focus through the 4 mm pupil, so it carries the Navarro eye's spherical aberration (about −0.34 D at distance) on top of the paraxial defocus. The tooltip says so.
-- Navarro's Table 4 accommodation parameter overshoots the paraxial far point by ~15% (A = 2 D gives −2.33 D); the controller passes its response straight to the table, so a 30-year-old at 0.33 m reads about −0.2 to −0.5 D rather than zero. Recorded in `paraxial.test.ts` and `defocus.test.ts`.
+- Navarro's Table 4 accommodation parameter A is not the paraxial far-point shift (A = 2 D gives −2.18 D with the retina held at the axial length). The first implementation passed the controller's response straight in as A and also let the retina move back with the lens (vitreous held fixed, an uncited choice), which together made A = 2 D give −2.33 D and cancelled the modeled lag. After review, `buildSurfaces` keeps the retina at `axialLengthMm`, and `deriveEyeState` solves for the lens parameter (`EyeState.lensParameterA`, via an injected paraxial far-point function) so the optics accommodate by exactly the response. A 30-year-old at 0.33 m now shows the 0.30 D lag through a small pupil (about +0.14 D through 4 mm, where spherical aberration offsets part of it).
 - `data/anatomy/globe-cutaway.json` (unverified, drawing only) holds the scleral, retinal, iris, and ciliary dimensions used by the cutaway. The globe is drawn as the sphere of the retina radius, which widens the anterior segment relative to a real eye.
 - Playwright is pinned to the version the cloud image ships (1.63.0) so the e2e suite runs in cloud sessions without a browser download.
 
@@ -219,9 +219,9 @@ accommodationResponse(demandD: number, amplitudeD: number, lag: LagModel = defau
 **Interfaces:**
 ```ts
 interface SceneState { targetDistanceM; targetDirectionDeg: {x,y}; luminanceCdM2; ageYears; ipdMm; timeS; preset: PresetName }
-interface EyeState { accommodationD; demandD; amplitudeD; pupilMm; gaze: [x,y,z,w]; ciliaryActivation; eomActivation: number[]; eomLengthMm: number[] }
-deriveEyeState(scene: SceneState, params: EyeParameters, side: "left"|"right"): EyeState   // throws SchemaVersionError
-buildSurfaces(params: EyeParameters, state: EyeState): Surface[]   // last surface named "retina"
+interface EyeState { accommodationD; demandD; amplitudeD; pupilMm; gaze: [x,y,z,w]; ciliaryActivation; lensParameterA; eomActivation: number[]; eomLengthMm: number[] }
+deriveEyeState(scene: SceneState, params: EyeParameters, side: "left"|"right", farPointD = 0, farPointOf?: (s: Surface[]) => number): EyeState   // throws SchemaVersionError; farPointOf solves lensParameterA (review fix)
+buildSurfaces(params: EyeParameters, state: EyeState): Surface[]   // last surface named "retina", at axialLengthMm; lens from state.lensParameterA
 ```
 Pupil fixed at the document's `pupil.params.diameterMm` (fixed model) else 4 mm from `data/accommodation/lag-default.json`? No: pupil default lives in the preset table; `deriveEyeState` reads `params.pupil` and throws for unknown models.
 

@@ -9,7 +9,13 @@ export {
 export type { LensAccommodationModel, PresetName, SchematicEyeTable } from "./presets/load";
 export { AMPLITUDE_TABLE, amplitudeForAge } from "./accommodation/amplitude";
 export type { AmplitudeTable } from "./accommodation/amplitude";
-export { SURFACE_NAMES, findSurface, lensGeometry, relaxedLensGeometry } from "./accommodation/lens";
+export {
+  SURFACE_NAMES,
+  findSurface,
+  lensGeometry,
+  lensParameterForAccommodation,
+  relaxedLensGeometry,
+} from "./accommodation/lens";
 export type { LensGeometry } from "./accommodation/lens";
 export {
   LAG_TABLE,
@@ -21,4 +27,4 @@ export {
 export type { LagModel, LagTable } from "./accommodation/controller";
 export type { EyeState, SceneState } from "./state/types";
 export { SchemaVersionError, assertSupported, deriveEyeState, pupilDiameterMm } from "./state/derive";
-export { RETINA_SURFACE_NAME, buildSurfaces } from "./build/surfaces";
+export { RETINA_SURFACE_NAME, buildSurfaces, lensParameterFor } from "./build/surfaces";

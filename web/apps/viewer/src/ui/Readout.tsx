@@ -50,7 +50,7 @@ export function Readout() {
           big
           pending={pending}
           testId="defocus"
-          title="Approximation: position of minimum RMS spot found by exact ray tracing through a 4 mm pupil, converted with the paraxial back focal length; includes spherical aberration. Positive: focus behind the retina (hyperopic). Homogeneous lens index."
+          title="Approximation: position of minimum RMS spot found by exact ray tracing through a 4 mm pupil, expressed as the exact object-vergence difference to the retina; includes spherical aberration. Positive: focus behind the retina (hyperopic). Homogeneous lens index."
         />
         <Stat
           k="Best focus"
@@ -64,7 +64,7 @@ export function Readout() {
           v={eye.accommodationD.toFixed(2)}
           u="D"
           testId="accommodation"
-          title={`Approximation: response = demand − lag, clipped to amplitude. Lag model: ${LAG_TABLE.citation}`}
+          title={`Approximation: response = demand − lag, clipped to amplitude; the Navarro lens parameter is solved so the paraxial far point moves by exactly this response. Lag model: ${LAG_TABLE.citation}`}
         />
         <Stat k="Demand" v={eye.demandD.toFixed(2)} u="D" testId="demand" />
         <Stat

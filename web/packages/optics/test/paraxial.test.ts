@@ -50,15 +50,15 @@ describe("paraxialPower", () => {
   });
 
   it("moves the far point inward by roughly the Navarro accommodation parameter", () => {
-    // Navarro's Table 4 is parametrized by nominal accommodation A; the paraxial far
-    // point it produces overshoots A by about 15% at 2 D (−2.33 D here, vitreous held
-    // fixed). The eye-model controller treats A as the response; the overshoot is a
-    // property of the published model, recorded here rather than hidden.
+    // Navarro's Table 4 is parametrized by nominal accommodation A, which is not exactly
+    // the paraxial far-point shift: with the retina held at the axial length, A = 2 D gives
+    // −2.18 D here. eye-model therefore solves for the A that realises a given response
+    // (lensParameterForAccommodation) instead of passing the response in as A.
     const p0 = paraxialPower(navarroSurfaces(0));
     const p2 = paraxialPower(navarroSurfaces(2));
     expect(p2.powerD - p0.powerD).toBeGreaterThan(1.5);
     expect(p2.powerD - p0.powerD).toBeLessThan(3.0);
-    expect(p2.farPointD).toBeLessThan(-1.7);
-    expect(p2.farPointD).toBeGreaterThan(-2.6);
+    expect(p2.farPointD).toBeLessThan(-2.1);
+    expect(p2.farPointD).toBeGreaterThan(-2.25);
   });
 });

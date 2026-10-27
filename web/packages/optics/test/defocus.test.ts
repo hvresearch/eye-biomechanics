@@ -26,8 +26,8 @@ describe("retinalDefocusD", () => {
   });
 
   it("is small for a 0.5 m object once the Navarro lens is set to A = 2 D", () => {
-    // Navarro's A parameter overshoots the paraxial far point by ~0.3 D at 2 D (see
-    // paraxial.test.ts), so the residual here is a property of the published model.
+    // Navarro's A = 2 moves the paraxial far point to −2.18 D (see paraxial.test.ts), so
+    // a residual of about −0.2 D remains at 0.5 m.
     const r = retinalDefocusD(navarroSurfaces(2), 0.5, 1);
     expect(Math.abs(r.defocusD)).toBeLessThan(0.5);
   });

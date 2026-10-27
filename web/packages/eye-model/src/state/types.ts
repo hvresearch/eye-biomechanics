@@ -22,6 +22,12 @@ export interface EyeState {
   /** Gaze quaternion [x, y, z, w]; identity until Milestone 2. */
   gaze: readonly [number, number, number, number];
   ciliaryActivation: number;
+  /**
+   * Parameter A of the document's lens accommodation model (Navarro 1985 Table 4) that
+   * makes the built optics accommodate by `accommodationD` (paraxial far-point shift).
+   * Table 4's nominal A is not itself the far-point shift, so the two differ.
+   */
+  lensParameterA: number;
   eomActivation: number[];
   eomLengthMm: number[];
 }

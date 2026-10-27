@@ -81,3 +81,36 @@ export function lensGeometry(params: EyeParameters, accommodationD: number): Len
   }
   throw new Error(`Unknown lensAccommodationModel form "${String(form)}"`);
 }
+
+/** Largest lens parameter the solver will try before giving up on a larger response. */
+const MAX_LENS_PARAMETER_D = 64;
+
+/**
+ * Lens-model parameter A whose built optics accommodate by `accommodationD`, i.e. whose
+ * paraxial far point lies `accommodationD` diopters nearer than the relaxed eye's:
+ * farPointAt(0) − farPointAt(A) = accommodationD. `farPointAt(A)` returns the far point
+ * (clinical sign) of the eye built with parameter A; it is injected so that eye-model does
+ * not call optics. The shift grows monotonically with A, so the root is bracketed by
+ * doubling and refined by bisection. Throws when the model cannot reach the response.
+ */
+export function lensParameterForAccommodation(accommodationD: number, farPointAt: (lensParameterA: number) => number): number {
+  if (!(accommodationD >= 0)) throw new RangeError(`accommodationD must be >= 0, got ${accommodationD}`);
+  if (accommodationD === 0) return 0;
+  const far0 = farPointAt(0);
+  const shift = (A: number) => far0 - farPointAt(A);
+  let lo = 0;
+  let hi = Math.max(1, accommodationD);
+  while (shift(hi) < accommodationD) {
+    lo = hi;
+    hi *= 2;
+    if (hi > MAX_LENS_PARAMETER_D) {
+      throw new RangeError(`The lens accommodation model cannot reach ${accommodationD} D of accommodation`);
+    }
+  }
+  for (let i = 0; i < 60 && hi - lo > 1e-10; i++) {
+    const mid = (lo + hi) / 2;
+    if (shift(mid) < accommodationD) lo = mid;
+    else hi = mid;
+  }
+  return (lo + hi) / 2;
+}

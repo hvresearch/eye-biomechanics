@@ -1,5 +1,5 @@
 import type { SequentialSurface, Surface } from "@eye/optics";
-import { SURFACE_NAMES, lensGeometry } from "../accommodation/lens";
+import { SURFACE_NAMES, lensGeometry, lensParameterForAccommodation } from "../accommodation/lens";
 import type { EyeParameters, Surface as SchemaSurface } from "../schema/types";
 import type { EyeState } from "./../state/types";
 
@@ -51,12 +51,16 @@ function place(seq: readonly SequentialSurface[]): Surface[] {
  * the retina as a non-refracting image surface. The anterior corneal vertex is z = 0.
  * Schema defaults (conic, tilt, decenter absent → zero) are applied here.
  *
- * The vitreous thickness is kept at the document's value, so during accommodation the
- * retina moves by the change in lens thickness plus chamber depth (Navarro 1985 keeps the
- * vitreous fixed; `axialLengthMm` in the document describes the relaxed eye).
+ * The lens follows `state.lensParameterA` (the model parameter, see `EyeState`). The retina
+ * stays at `axialLengthMm`: accommodation reshapes the lens inside a globe of fixed length,
+ * so the vitreous takes up the change in chamber depth and lens thickness.
  */
 export function buildSurfaces(params: EyeParameters, state: EyeState): Surface[] {
-  const lens = lensGeometry(params, state.accommodationD);
+  return buildSurfacesAt(params, state.lensParameterA);
+}
+
+function buildSurfacesAt(params: EyeParameters, lensParameterA: number): Surface[] {
+  const lens = lensGeometry(params, lensParameterA);
   const seq: SequentialSurface[] = params.surfaces.map((s) => {
     const q = toSequential(s);
     switch (s.name) {
@@ -78,6 +82,12 @@ export function buildSurfaces(params: EyeParameters, state: EyeState): Surface[]
   });
   const last = seq[seq.length - 1];
   if (!last) throw new Error("EyeParameters has no surfaces");
+  const beforeLast = seq.slice(0, -1).reduce((z, q) => z + q.thicknessToNextMm, 0);
+  const vitreousMm = params.axialLengthMm - beforeLast;
+  if (!(vitreousMm > 0)) {
+    throw new Error(`axialLengthMm ${params.axialLengthMm} leaves no room behind the last surface (${beforeLast} mm)`);
+  }
+  seq[seq.length - 1] = { ...last, thicknessToNextMm: vitreousMm };
   seq.push({
     name: RETINA_SURFACE_NAME,
     radiusMm: params.retina.radiusMm,
@@ -87,4 +97,16 @@ export function buildSurfaces(params: EyeParameters, state: EyeState): Surface[]
     apertureSemiDiamMm: Math.abs(params.retina.radiusMm),
   });
   return place(seq);
+}
+
+/**
+ * `lensParameterForAccommodation` bound to this document: the far point of the eye built
+ * at each trial parameter is computed by the injected paraxial function.
+ */
+export function lensParameterFor(
+  params: EyeParameters,
+  accommodationD: number,
+  farPointOf: (surfaces: Surface[]) => number,
+): number {
+  return lensParameterForAccommodation(accommodationD, (A) => farPointOf(buildSurfacesAt(params, A)));
 }
