@@ -52,6 +52,14 @@ per-milestone kickoff prompts in `docs/cloud-sessions.md`.
    use the REST API through `gh api` instead (examples below).
 7. Do one step, then stop. Do not loop waiting for CI inside a run; the next
    fire will pick up the new state.
+8. Runs can overlap, because the routine fires on the hour and on every
+   pull-request and check-suite event. Before a review, a fix, or a merge on a
+   ready PR, post a lock comment on the PR:
+   `<!-- driver-lock step=<review|fix|merge> sha=<head sha> at=<UTC ISO time> -->`.
+   If a lock comment for the same sha and step exists and is less than
+   **90 minutes** old, another run owns that step: **exit** without acting. A
+   lock older than 90 minutes is stale and may be taken over. The draft PR is
+   the lock for implementation and needs no comment.
 
 ## Step 0: observe
 
@@ -90,7 +98,7 @@ Run `gh pr checks <n> -R $REPO`.
 - Any required check failing: check out the branch, reproduce the failure
   locally with the gate, fix it, commit, push. **Exit.** Do not merge in the
   same run.
-- All checks passing: fetch the issue comments
+- All checks passing: post or respect the lock comment (rule 8), then fetch the issue comments
   (`gh api repos/$REPO/issues/<n>/comments --paginate`) and look for a review
   marker whose `sha` equals `headRefOid`.
   - **No marker for this sha → review** (Step 1c).
