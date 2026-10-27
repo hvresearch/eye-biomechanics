@@ -1,7 +1,7 @@
 # Milestone 2: Extraocular muscles, gaze, dynamics
 
 Date: 2026-10-27
-Status: in progress (draft PR "Milestone 2: Extraocular muscles, gaze, dynamics")
+Status: complete 2026-10-27 (PR #10 "Milestone 2: Extraocular muscles, gaze, dynamics")
 Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 2 section)
 
 **Goal:** Two eyes track a target with vergence. Six extraocular muscles per eye are drawn as tapered tubes colored by activation. A muscle table lists length, change from primary position, and activation. Saccades, vergence, and accommodation animate under a transport control. The Milestone 1 follow-ups assigned to M2 are closed.
@@ -26,6 +26,26 @@ Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 2 sec
 4. **Playwright drives the target through inspector fields.** Dragging a 3D gizmo under software WebGL in CI is fragile. The e2e test sets the target azimuth and distance fields; dragging the target in the stage is checked manually and covered by a unit test of the drag-to-direction mapping.
 5. **Per-eye demand.** Each eye's demand uses its own distance to the target (from its center of rotation), not the cyclopean distance. At 0.33 m straight ahead with a 63 mm IPD the difference is 0.017 D.
 6. **No saccade latency.** The master plan lists none. Saccades start when the target changes; a dragged target retargets the saccade in flight from the current position.
+
+## Outcome notes (post-execution)
+
+- Primary-position path lengths with the common annulus origin and no pulleys:
+  - lateral rectus 48.6 mm (published muscle + tendon 48.1 mm), arc of contact 15.4 mm (published 10–12 mm);
+  - medial rectus 39.5 mm (published 44.5 mm), arc 6.3 mm (published 6–7 mm);
+  - superior rectus 42.0 mm and inferior rectus 43.1 mm (no published value transcribed);
+  - superior oblique 20.7 mm from the trochlea; inferior oblique 26.3 mm.
+
+  The `path.test.ts` tolerance (15%) records the medial rectus gap. The M2 follow-ups ask for Volkmann's origins and Demer's pulleys.
+- The activation compares each muscle's shortening with its antagonist's (gain 3, baseline 0.2), so reciprocity holds for every gaze within ±50°. In a 40° horizontal duction the agonist reaches about 0.75 and the antagonist 0.
+- The dynamics carry a vertical vergence (left minus right elevation), so they reproduce the static fixation of eccentric near targets exactly.
+- The optics worker handles both eyes in 2–6 ms (headless Chromium). The main thread runs only eye-model code. The stage draws the accommodated surfaces the worker returns, so the cutaway appears once the first response arrives.
+- The stage is the posterior-superior anatomy view, with the right eye in axial section (Task 2.8 *as built*).
+- Still unverified (`verified: false`), all listed in `2026-10-27-m2-followups.md` or in the data files' notes:
+  - the oblique geometry and the rectus origins, widths, and pulleys;
+  - every tendon stiffness;
+  - the dynamics time constants;
+  - the activation constants (an approximation by design);
+  - the Anderson table (pending the group means).
 
 ## Global Constraints
 
@@ -414,9 +434,9 @@ Closes the M1 follow-ups:
 
 ### Task 2.11: Finish
 
-- [ ] Update this plan's Status and add Outcome notes (what landed, the remaining unverified values).
-- [ ] Confirm every item in the table below is done, and that any new deferrals are in `2026-10-27-m2-followups.md`.
-- [ ] Full gate and e2e. Update the PR body with a summary and the verification run; mark the PR ready.
+- [x] Update this plan's Status and add Outcome notes (what landed, the remaining unverified values).
+- [x] Confirm every item in the table below is done, and that any new deferrals are in `2026-10-27-m2-followups.md`.
+- [x] Full gate and e2e. Update the PR body with a summary and the verification run; mark the PR ready.
 
 ## Follow-ups absorbed from earlier milestones
 

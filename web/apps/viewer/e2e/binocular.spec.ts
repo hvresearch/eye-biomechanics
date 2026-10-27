@@ -12,6 +12,7 @@ const commit = async (page: Page, id: string, value: string) => {
 };
 
 test("a target to the right recruits the right lateral and left medial recti", async ({ page }) => {
+  test.setTimeout(120_000); // two eyes and twelve muscles regenerate under software WebGL in CI
   await page.goto("/");
   await expect(page.getByTestId("defocus")).not.toHaveText("…");
   const rlr0 = await num(page, "muscle-right-lateralRectus-activation");
@@ -27,6 +28,7 @@ test("a target to the right recruits the right lateral and left medial recti", a
 });
 
 test("vergence grows as the target approaches", async ({ page }) => {
+  test.setTimeout(120_000);
   await page.goto("/");
   await expect(page.getByTestId("defocus")).not.toHaveText("…");
   expect(await num(page, "vergence")).toBeLessThan(1); // 6 m: about 0.6 degrees
@@ -37,6 +39,7 @@ test("vergence grows as the target approaches", async ({ page }) => {
 });
 
 test("the transport animates toward the static fixation and pausing snaps to it", async ({ page }) => {
+  test.setTimeout(150_000); // every animated frame regenerates the muscles under software WebGL in CI
   await page.goto("/");
   await expect(page.getByTestId("defocus")).not.toHaveText("…");
   await expect(page.getByTestId("transport-time")).toHaveText("0.00 s");
