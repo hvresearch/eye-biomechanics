@@ -132,6 +132,15 @@ Then:
   file for the milestone), run the gate, commit as `fix(review): ...`, push.
   **Exit.** The next run re-reviews the new head.
 
+**Round cap.** Count the `driver-review` markers already on the PR before
+posting a new one. A review is **round R = count + 1**. From round 4 on, the
+reviewer must confine itself to Critical findings and to Important findings
+that are regressions introduced since the previous reviewed head; everything
+else is Minor and goes to the followups file. A round-4 or later review with
+no Critical findings is an APPROVE. This mirrors the fix-round breaker in
+subagent-driven development: each fresh reviewer finds new things to say, and
+without a cap a PR never merges. Note the round number in the report header.
+
 ### 1d. Merge
 
 ```sh
