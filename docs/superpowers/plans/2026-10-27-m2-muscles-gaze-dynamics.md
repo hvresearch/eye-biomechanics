@@ -404,13 +404,13 @@ Closes the M1 follow-ups:
 - Create: `web/apps/viewer/e2e/binocular.spec.ts`
 - Modify: `web/apps/viewer/e2e/slice.spec.ts`
 
-- [ ] **Step 1:** Write the Playwright tests:
+- [x] **Step 1:** Write the Playwright tests:
   - `slice.spec.ts`: drive `target-distance-slider` to its minimum through `fill`/keyboard and assert the demand reads above 9 D (log mapping, 0.1 m); restore 0.33 m via the slider and assert a demand of 3.0x D. This closes the M1 slider follow-up;
   - `binocular.spec.ts`, target direction: set the azimuth to 20; the right lateral rectus activation and the left medial rectus activation each rise above their primary-position values read beforehand;
   - `binocular.spec.ts`, vergence: set the distance from 6 to 0.33; the vergence readout increases from below 1° to above 10°;
   - `binocular.spec.ts`, transport: press play and set a new azimuth; the time readout advances and the activations settle to the static values within 2 s.
-- [ ] **Step 2:** Run `pnpm --filter @eye/viewer e2e`; fix until PASS. Full gate.
-- [ ] **Step 3:** Commit: `test(viewer): binocular end-to-end tests`.
+- [x] **Step 2:** Run `pnpm --filter @eye/viewer e2e`; fix until PASS. Full gate.
+- [x] **Step 3:** Commit: `test(viewer): binocular end-to-end tests`.
 
 ### Task 2.11: Finish
 
