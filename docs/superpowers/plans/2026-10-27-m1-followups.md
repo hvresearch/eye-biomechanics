@@ -1,7 +1,7 @@
 # Milestone 1 follow-ups
 
 Minor findings deferred from the Milestone 1 driver reviews of PR #3 (2026-10-27,
-heads 5a5e34d and 903e329; the Critical and Important findings were fixed on
+heads 5a5e34d, 903e329, and 0618e91; the Critical and Important findings were fixed on
 the PR). Each
 line names the milestone that should absorb it. Resolve an item in the task that
 touches the same file, and delete its line here in that commit.
@@ -43,6 +43,12 @@ touches the same file, and delete its line here in that commit.
   duplicating the `launchOffsetMm = 1` default in
   `web/packages/optics/src/metrics/defocus.ts`; export one constant from
   `optics` or pass it in the request. (M2)
+- `web/apps/viewer/src/ui/Readout.tsx`: the Demand readout has no tooltip,
+  although its far-point term comes from the homogeneous-index paraxial trace;
+  add an "Approximation: …" tooltip. (M2)
+- `web/apps/viewer/src/ui/tooltips.ts`: the Amplitude tooltip does not say that
+  ages above 70 extrapolate the Anderson 2008 fit, as the table's
+  `domain.note` does; derive the wording from the table. (M2)
 - `web/apps/viewer/test/worker.test.ts`: the test named "per-frame budget"
   asserts under 100 ms while `handle` measures 1–6 ms; tighten to 16 ms or
   rename. (M2)
