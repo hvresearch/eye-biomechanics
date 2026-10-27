@@ -187,7 +187,7 @@ The construction for the trochlea and the IO origin runs once in a test helper t
   - `targetPoint(distanceM: number, directionDeg: {x, y}): Vec3 | null` in the head frame, mm (null for an infinite distance).
   - `eyeDirections(target: { distanceM: number; directionDeg: {x, y} }, ipdMm: number): { left: GazeDeg; right: GazeDeg; vergenceDeg: number; distanceMm: { left: number; right: number } }`. Each eye's center is at `x = ±ipd/2`, right eye at `+ipd/2`. Directions are converted to each eye's local frame with x mirrored for the left eye. For an infinite distance both eyes take `directionDeg` (mirrored for the left), vergence is 0, and distances are `Infinity`.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - primary gaze is the identity quaternion;
   - for gazes on a 10° grid within ±40°, `quatRotate(gazeQuaternion(g), [0,0,−1])` equals `gazeDirection(g)` within 1e-12, the quaternion's z component is 0 within 1e-12 (Listing), and its norm is 1;
   - `gazeFromDirection(gazeDirection(g))` round-trips;
@@ -196,8 +196,8 @@ The construction for the trochlea and the IO origin runs once in a test helper t
   - an infinite target gives vergence 0 and equal (mirrored) directions;
   - a target 20° to the subject's right gives the right eye a temporal (positive) azimuth and the left eye a nasal (negative) azimuth;
   - a midline target gives `left.xDeg === right.xDeg`.
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
-- [ ] **Step 3:** Commit: `feat(eye-model): Listing's law gaze and vergence geometry`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
+- [x] **Step 3:** Commit: `feat(eye-model): Listing's law gaze and vergence geometry`.
 
 ### Task 2.3: Muscle path and length
 

@@ -40,3 +40,16 @@ export {
   toDocumentMuscles,
 } from "./eom/geometry";
 export type { EomMuscle, EomTable, MuscleName } from "./eom/geometry";
+export type { Quat } from "./math/quat";
+export { QUAT_IDENTITY, quatFromAxisAngle, quatMultiply, quatNormalize, quatRotate } from "./math/quat";
+export {
+  PRIMARY_DIRECTION,
+  directionFromQuaternion,
+  fickTorsionDeg,
+  gazeDirection,
+  gazeFromDirection,
+  gazeQuaternion,
+} from "./gaze/listing";
+export type { GazeDeg } from "./gaze/listing";
+export { eyeDirections, targetPoint } from "./gaze/vergence";
+export type { EyeDirections, SceneTarget } from "./gaze/vergence";
