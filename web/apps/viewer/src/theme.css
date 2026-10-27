@@ -112,6 +112,25 @@ body {
   pointer-events: none;
 }
 
+.hover-label.muscle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 420px;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+
+.hover-label.muscle strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.hover-label.muscle small {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
 .inspector {
   grid-column: 2;
   grid-row: 1;

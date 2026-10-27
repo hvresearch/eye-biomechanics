@@ -27,3 +27,21 @@ export function readoutTooltips(pupilMm: number): ReadoutTooltips {
     pupil: "Approximation: fixed pupil diameter from the schematic eye; the luminance-dependent pupil (Watson & Yellott 2012) arrives in Milestone 3.",
   };
 }
+
+const MUSCLE_LABELS: Record<string, string> = {
+  lateralRectus: "Lateral rectus",
+  medialRectus: "Medial rectus",
+  superiorRectus: "Superior rectus",
+  inferiorRectus: "Inferior rectus",
+  superiorOblique: "Superior oblique",
+  inferiorOblique: "Inferior oblique",
+};
+
+export function muscleLabel(name: string): string {
+  return MUSCLE_LABELS[name] ?? name;
+}
+
+/** Hover and header text for every muscle readout (CLAUDE.md: approximations are labeled). */
+export function muscleTooltip(): string {
+  return "Approximation: length-proxy activation (shortening from primary position against the antagonist's), no pulleys, center of rotation at the globe center; geometry partly unverified (data/eom).";
+}

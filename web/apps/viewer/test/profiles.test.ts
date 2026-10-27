@@ -1,4 +1,4 @@
-import { buildSurfaces, deriveEyeState, loadPreset, type EyeParameters, type SceneState } from "@eye/eye-model";
+import { buildSurfaces, deriveEyeState, loadPreset, pupilDiameterMm, type EyeParameters, type SceneState } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
 import { globeProfiles } from "../src/scene/profiles";
 import { handle } from "../src/worker/handle";
@@ -28,7 +28,7 @@ describe("globeProfiles", () => {
   it("produces finite, non-negative-radius profiles that start on the axis for solids", () => {
     const eye = loadPreset("navarro-1985");
     const s = buildSurfaces(eye, deriveEyeState(scene, eye, "right"));
-    const p = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm);
+    const p = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, pupilDiameterMm(eye));
     for (const [name, profile] of Object.entries(p)) {
       expect(profile.length, name).toBeGreaterThan(2);
       for (const [r, z] of profile) {
@@ -50,9 +50,17 @@ describe("globeProfiles", () => {
       const zs = pf.lens.map(([, z]) => z);
       return Math.max(...zs) - Math.min(...zs);
     };
-    expect(span(globeProfiles(near.surfaces, eye.axialLengthMm, eye.retina.radiusMm))).toBeGreaterThan(
-      span(globeProfiles(far.surfaces, eye.axialLengthMm, eye.retina.radiusMm)),
+    expect(span(globeProfiles(near.surfaces, eye.axialLengthMm, eye.retina.radiusMm, 4))).toBeGreaterThan(
+      span(globeProfiles(far.surfaces, eye.axialLengthMm, eye.retina.radiusMm, 4)),
     );
     expect(near.eye.accommodationD).toBeGreaterThan(far.eye.accommodationD);
+  });
+
+  it("draws the pupil from the document's pupil model, not a fixed size", () => {
+    const eye = loadPreset("navarro-1985");
+    const s = buildSurfaces(eye, deriveEyeState(scene, eye, "right"));
+    const iris = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, 3).iris;
+    expect(iris[0]?.[0]).toBeCloseTo(1.5, 12);
+    expect(globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, pupilDiameterMm(eye)).iris[0]?.[0]).toBeCloseTo(2, 12);
   });
 });

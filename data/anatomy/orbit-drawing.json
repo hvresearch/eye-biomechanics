@@ -1,0 +1,36 @@
+{
+  "name": "orbit-drawing",
+  "purpose": "Sizes used only to draw the orbit, optic nerve, and muscles in the binocular stage. None of these affects any computed quantity.",
+  "verified": false,
+  "citation": "drawing approximation; typical adult proportions pending transcription (orbital rim about 35 mm high and 40 mm wide, orbital depth about 40-45 mm, optic nerve about 3-4 mm in diameter).",
+  "orbit": {
+    "rimHalfWidthMm": 20,
+    "rimHalfHeightMm": 17.5,
+    "rimZMm": -10,
+    "apexZMm": 34,
+    "rimSegments": 48,
+    "note": "Each orbit is drawn as a cone from an elliptical rim, centered on the eye, to the annulus of Zinn at the apex; rimZMm is measured from the globe center (negative is anterior)."
+  },
+  "opticNerve": {
+    "radiusMm": 1.6,
+    "exitOffsetNasalMm": 3,
+    "note": "The nerve leaves the globe about 3 mm nasal to the posterior pole and runs to the annulus."
+  },
+  "muscle": {
+    "bellyRadiusMm": 1.9,
+    "tendonRadiusMm": 0.55,
+    "tubularSegments": 48,
+    "radialSegments": 12,
+    "note": "Tube radii are drawing values; the belly tapers to the tendon over its last tendon length.",
+    "superiorObliqueBelly": "The model's superior oblique path starts at the trochlea (its functional origin); the drawing adds the muscle belly from the annulus of Zinn to the trochlea and draws the modeled path as tendon."
+  },
+  "annulus": {
+    "radiusMm": 4.5,
+    "tubeMm": 0.6
+  },
+  "targetDrawing": {
+    "maxDrawDistanceMm": 1000,
+    "radiusMm": 4,
+    "note": "Targets farther than maxDrawDistanceMm are drawn at that radius along their direction; the inspector shows the true distance."
+  }
+}

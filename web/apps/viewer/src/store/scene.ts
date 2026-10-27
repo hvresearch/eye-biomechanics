@@ -66,6 +66,8 @@ export interface SceneStore {
   hovered: Hover | null;
   setTargetDistance: (m: number) => void;
   setTargetDirection: (deg: { x: number; y: number }) => void;
+  /** Distance and direction at once (dragging the target in the stage). */
+  setTarget: (t: { distanceM: number; directionDeg: { x: number; y: number } }) => void;
   setAge: (years: number) => void;
   setIpd: (mm: number) => void;
   setPreset: (name: PresetName) => void;
@@ -194,6 +196,12 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
 
       setTargetDistance: (m) => update({ ...get().scene, targetDistanceM: clampDistance(m) }),
       setTargetDirection: (deg) => update({ ...get().scene, targetDirectionDeg: { x: deg.x, y: deg.y } }),
+      setTarget: (t) =>
+        update({
+          ...get().scene,
+          targetDistanceM: clampDistance(t.distanceM),
+          targetDirectionDeg: { x: t.directionDeg.x, y: t.directionDeg.y },
+        }),
       setAge: (years) => update({ ...get().scene, ageYears: years }),
       setIpd: (mm) => update({ ...get().scene, ipdMm: mm }),
       setPreset: (name) => {

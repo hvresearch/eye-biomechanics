@@ -360,17 +360,18 @@ Closes the M1 follow-ups:
 - `dragToTarget(rayOrigin: Vec3, rayDir: Vec3, planeZMm: number): { distanceM; directionDeg: {x, y} } | null`, which intersects the pointer ray with the frontal plane through the current target.
 - Globe placement: each eye's center of rotation at `(±ipd/2, 0, 0)` in the head frame, oriented by `EyeState.gaze` (left mirrored). The right eye renders the existing cutaway lathe (translated so the globe center is the origin) with its ray fan. The left eye renders a closed globe (sclera, cornea, iris, pupil).
 - The cut plane follows the right globe's rotation (local clipping plane updated from the group's world matrix each frame).
+- *As built:* the stage looks at both eyes from above and behind, the classic anatomy view. The right eye is cut horizontally (an axial section): the cutaway and its sagittal ray fan are turned a quarter turn about the optical axis, which the rotationally symmetric optics allow. The target is drawn at its true distance up to 1 m, so the lines of sight meet it. The superior oblique's modeled path starts at the trochlea, so a drawing-only belly runs from the annulus to the trochlea. The left eye's geometry is mirrored explicitly rather than by a negative scale, which breaks drei's screen-space lines.
 - Hover on a muscle sets `hovered` to `{ kind: "muscle", side, name }`; the label shows name, length, activation, and "Approximation: length-proxy activation; no pulleys".
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `taperedRadius` equals the tendon radius at u = 1 and the belly maximum in the belly;
   - `dragToTarget` straight ahead at plane z = −333 gives 0.333 m and 0°;
   - a ray 20° to the right gives `x = 20°`;
   - a ray parallel to the plane gives null;
   - `globeProfiles` uses the document's pupil diameter;
   - the `profiles.test.ts` name "zero demand at 6 m" becomes "0.17 D demand at 6 m" (done early, in Task 2.6, when per-eye demand changed the asserted value).
-- [ ] **Step 2:** Run; FAIL. Implement the pure helpers; PASS. Implement the components. Run the full gate and e2e.
-- [ ] **Step 3:** Commit: `feat(viewer): binocular globes, extraocular muscles, orbit, and draggable target`.
+- [x] **Step 2:** Run; FAIL. Implement the pure helpers; PASS. Implement the components. Run the full gate and e2e.
+- [x] **Step 3:** Commit: `feat(viewer): binocular globes, extraocular muscles, orbit, and draggable target`.
 
 ### Task 2.9: Inspector, muscle table, transport, readouts
 

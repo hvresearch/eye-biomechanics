@@ -1,11 +1,13 @@
-import { useEffect, useMemo } from "react";
-import { DoubleSide, Plane, Vector3 } from "three";
-import { eyeOptics, useScene } from "../store/scene";
+import { useFrame } from "@react-three/fiber";
+import { useEffect, useMemo, useRef } from "react";
+import { DoubleSide, Plane, Vector3, type Group } from "three";
+import { pupilDiameterMm } from "@eye/eye-model";
+import { eyeOptics, useScene, type Side } from "../store/scene";
 import { lathe } from "./lathe";
 import { globeProfiles, type ProfilePoint } from "./profiles";
 
-/** Sagittal cut: keep x ≤ 0 (nasal half of the right eye), expose the section toward +x. */
-export const CUT_PLANE = new Plane(new Vector3(-1, 0, 0), 0);
+/** Sagittal cut in the eye's own frame: keep x ≤ 0 (nasal half), expose the section toward +x. */
+const LOCAL_CUT = new Plane(new Vector3(-1, 0, 0), 0);
 
 interface StructureSpec {
   key: keyof ReturnType<typeof globeProfiles>;
@@ -25,26 +27,40 @@ const STRUCTURES: StructureSpec[] = [
   { key: "cornea", label: "Cornea", color: "#a9d6ea", opacity: 0.45 },
 ];
 
+/** Structures drawn for an uncut eye (the inner media would be hidden by the sclera anyway). */
+const CLOSED = new Set<StructureSpec["key"]>(["sclera", "cornea", "iris"]);
+
 /**
  * One cutaway structure. Its lathe is rebuilt only when its own profile changes, so the
  * cornea, sclera, retina, and ciliary body are not regenerated on every accommodation step.
  */
-function Structure({ spec, profile }: { spec: StructureSpec; profile: ProfilePoint[] }) {
+function Structure({
+  spec,
+  profile,
+  side,
+  clip,
+}: {
+  spec: StructureSpec;
+  profile: ProfilePoint[];
+  side: Side;
+  clip: Plane | null;
+}) {
   const setHovered = useScene((s) => s.setHovered);
   const signature = profile.map(([r, z]) => `${r},${z}`).join(";");
   // The signature stands in for the profile's contents, which arrive as a new array each update.
-  const geometry = useMemo(() => lathe(profile), [signature]);
+  const geometry = useMemo(() => lathe(profile, clip === null), [signature, clip]);
   // React Three Fiber disposes objects only on unmount, not when a `geometry` prop is
   // replaced, so free each superseded geometry's GPU buffers.
   useEffect(() => () => geometry.dispose(), [geometry]);
+  const label = `${spec.label} (${side} eye)`;
 
   return (
     <mesh
       geometry={geometry}
-      name={spec.label}
+      name={label}
       onPointerOver={(e) => {
         e.stopPropagation();
-        setHovered({ kind: "structure", label: spec.label });
+        setHovered({ kind: "structure", label });
       }}
       onPointerOut={() => setHovered(null)}
     >
@@ -55,27 +71,38 @@ function Structure({ spec, profile }: { spec: StructureSpec; profile: ProfilePoi
         roughness={0.55}
         metalness={0}
         side={DoubleSide}
-        clippingPlanes={[CUT_PLANE]}
+        clippingPlanes={clip ? [clip] : []}
         depthWrite={spec.opacity > 0.5}
       />
     </mesh>
   );
 }
 
-export function EyeCutaway() {
-  // The accommodated surfaces come from the optics worker (the lens solve is optics).
-  const surfaces = useScene((s) => eyeOptics(s.optics, "right")?.surfaces ?? null);
-  const params = useScene((s) => s.eyes.right);
+/**
+ * One eye's anterior segment and globe, drawn in the optical frame (corneal vertex at z = 0)
+ * from the accommodated surfaces the optics worker returned. With `cut`, the eye is sliced
+ * by its own sagittal plane, which follows the globe as it rotates.
+ */
+export function EyeCutaway({ side, cut }: { side: Side; cut: boolean }) {
+  const surfaces = useScene((s) => eyeOptics(s.optics, side)?.surfaces ?? null);
+  const params = useScene((s) => s.eyes[side]);
   const profiles = useMemo(
-    () => (surfaces ? globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm) : null),
+    () =>
+      surfaces ? globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm, pupilDiameterMm(params)) : null,
     [surfaces, params],
   );
-  if (!profiles) return null;
+  const group = useRef<Group>(null);
+  const clip = useMemo(() => (cut ? LOCAL_CUT.clone() : null), [cut]);
+  useFrame(() => {
+    if (!clip || !group.current) return;
+    clip.copy(LOCAL_CUT).applyMatrix4(group.current.matrixWorld);
+  });
 
+  if (!profiles) return null;
   return (
-    <group>
-      {STRUCTURES.map((spec) => (
-        <Structure key={spec.key} spec={spec} profile={profiles[spec.key]} />
+    <group ref={group}>
+      {STRUCTURES.filter((spec) => cut || CLOSED.has(spec.key)).map((spec) => (
+        <Structure key={spec.key} spec={spec} profile={profiles[spec.key]} side={side} clip={clip} />
       ))}
     </group>
   );
