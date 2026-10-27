@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { DoubleSide, LatheGeometry, Plane, Vector2, Vector3 } from "three";
 import { useScene } from "../store/scene";
 import { globeProfiles, type ProfilePoint } from "./profiles";
@@ -42,6 +42,14 @@ export function EyeCutaway() {
     const p = globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm);
     return STRUCTURES.map((spec) => ({ spec, geometry: lathe(p[spec.key]) }));
   }, [surfaces, params]);
+  // React Three Fiber disposes objects only on unmount, not when a `geometry` prop is
+  // replaced, so free each generation's GPU buffers once it has been superseded.
+  useEffect(
+    () => () => {
+      for (const { geometry } of geometries) geometry.dispose();
+    },
+    [geometries],
+  );
 
   return (
     <group>
