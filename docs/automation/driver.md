@@ -140,7 +140,7 @@ gh api -X PUT repos/$REPO/pulls/<n>/merge \
   -f commit_title="<PR title> (#<n>)" \
   -f commit_message="<first paragraph of the PR body>
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+Co-Authored-By: Claude <model name> <noreply@anthropic.com>"
 gh api -X DELETE repos/$REPO/git/refs/heads/<branch>
 ```
 
