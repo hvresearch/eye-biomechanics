@@ -212,15 +212,15 @@ The construction for the trochlea and the IO origin runs once in a test helper t
   - `lengthMm` = (origin→pulley) + straight segment + arc length.
   - `pullDir` is the unit vector from the tangent point toward the free end, or from the insertion when there is no arc.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - in primary position the medial-rectus path length is within 15% of 44.5 mm (muscle 40.8 + tendon 3.7, StatPearls). The model gives about 39.5 mm, 11% short; the test comment says why (common annulus origin, no pulley) and points to the follow-up;
   - the medial-rectus arc of contact is within the published 6–7 mm ± 1;
   - rotating the eye 20° toward each rectus's action (LR temporal, MR nasal, SR up, IR down) shortens it and lengthens its antagonist;
   - every path point has `|p| ≥ R − 1e-9`;
   - with the insertion rotated to face the origin (no wrap), the length equals the straight distance;
   - the length is continuous across the wrap/no-wrap boundary within 1e-6.
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
-- [ ] **Step 3:** Commit: `feat(eye-model): muscle path over the globe`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
+- [x] **Step 3:** Commit: `feat(eye-model): muscle path over the globe`.
 
 ### Task 2.4: Length-proxy activation
 

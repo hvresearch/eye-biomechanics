@@ -13,7 +13,11 @@ same file, and delete its line here in that commit.
   the README. (M3 or any session with document access)
 - `data/eom/geometry-default.json`: rectus pulleys are `null`; transcribe fixed
   pulley coordinates from Clark, Miller & Demer, IOVS 41:3787-3797, 2000.
-  (M3 or any session with document access)
+  Without pulleys and with one annulus point, the primary-position medial
+  rectus path is 39.5 mm against 44.5 mm published (muscle + tendon) and the
+  lateral rectus arc of contact is 15.4 mm against 10-12 mm; tighten the
+  `path.test.ts` tolerance once pulleys land. (M3 or any session with document
+  access)
 - `data/eom/geometry-default.json`: superior and inferior rectus insertion widths
   and tendon lengths and the oblique widths are assumptions; transcribe the BCSC
   table. Tendon stiffness is a 0 placeholder; transcribe from Miller &

@@ -53,3 +53,5 @@ export {
 export type { GazeDeg } from "./gaze/listing";
 export { eyeDirections, targetPoint } from "./gaze/vergence";
 export type { EyeDirections, SceneTarget } from "./gaze/vergence";
+export { musclePath } from "./eom/path";
+export type { MusclePath } from "./eom/path";
