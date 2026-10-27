@@ -100,17 +100,17 @@ Closes the M1 follow-ups that touch only data and docs, so later tasks start fro
 **Interfaces:**
 - Consumes: none. Produces: none (data text and flags only).
 
-- [ ] **Step 1:** Write a failing test in `web/packages/eye-model/test/provenance.test.ts`: `AMPLITUDE_TABLE.verified === false` with a `verificationNote` that says the group means were not compared; `LAG_TABLE.note` does not contain "0.72"; the Navarro `accommodation.description` does not contain "axial length grows".
-- [ ] **Step 2:** Run `cd web && pnpm --filter @eye/eye-model test`; expect FAIL.
-- [ ] **Step 3:** Edit the data:
+- [x] **Step 1:** Write a failing test in `web/packages/eye-model/test/provenance.test.ts`: `AMPLITUDE_TABLE.verified === false` with a `verificationNote` that says the group means were not compared; `LAG_TABLE.note` does not contain "0.72"; the Navarro `accommodation.description` does not contain "axial length grows".
+- [x] **Step 2:** Run `cd web && pnpm --filter @eye/eye-model test`; expect FAIL.
+- [x] **Step 3:** Edit the data:
   - Anderson: `verified: false`, `verifiedDate: null`, and a note: "verified means compared with the paper's group means, which this session could not reach".
   - Lag: remove the unsourced Zapata-Díaz slope quote and keep the replace-when-transcribed note without a number.
-  - Globe cutaway: make `oraSerrataZMm` 6.0 and note that the ora serrata is referenced from the limbus (about 6–8 mm behind it), so the earlier value was about 2 mm too far forward. This is still drawing only and unverified.
+  - Globe cutaway: make `oraSerrataZMm` 10.0 and note that the ora serrata is referenced from the limbus (about 6–8 mm behind it, and the limbus plane is about 2 mm behind the corneal vertex), so the earlier 8.0 was about 2 mm too far forward. This is still drawing only and unverified.
   - Schematic-eye README: Navarro status "transcribed; paraxial power verified (Task 1.6)".
   - Navarro accommodation description: "the retina stays at axialLengthMm and the vitreous absorbs the lens change".
   - M1 plan, Task 1.8 Step 2: replace "golden-section search over z" with "closed-form best-RMS focus".
-- [ ] **Step 4:** Run the eye-model tests; PASS. Run the full gate.
-- [ ] **Step 5:** Commit: `chore(data): provenance follow-ups from the M1 review`.
+- [x] **Step 4:** Run the eye-model tests; PASS. Run the full gate.
+- [x] **Step 5:** Commit: `chore(data): provenance follow-ups from the M1 review`.
 
 ### Task 2.1: EOM geometry table
 
