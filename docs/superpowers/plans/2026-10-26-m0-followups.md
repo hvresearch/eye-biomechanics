@@ -7,15 +7,19 @@ in that commit.
 
 ## Spec and literature
 
-- `docs/literature/README.md`: fill in DOIs, volumes, and pages for the rows
-  still marked "to be added"; cite the BCSC volume rather than a DOI. (M1,
-  Task 1.1, while the papers are open)
-- Spec §5.6: the Navarro 1985 fixture's paraxial power computes to 60.60 D with
-  BFD 16.341 mm against a 16.40 mm vitreous; the spec quotes ≈60.4 D. Reconcile
-  against the paper, including the index wavelength, and set the Task 1.6
-  tolerance from the reconciled value. (M1, Task 1.1 / 1.6)
-- Spec §8: the 20/40 acuity threshold should read "default, configurable", as
-  §12 does. (M1, any spec edit)
+- `docs/literature/README.md`: DOIs still "to be added" for Rozema 2016,
+  Feil 2017, Atchison & Thibos 2016, the material, remodeling, eyelid, and
+  dynamics rows; fill them in the milestone that transcribes each source.
+- `data/schematic-eyes/zapata-diaz-2019.json` is a stub: the cloud session
+  network policy denies every literature host, so the paper's Table 1 could
+  not be transcribed. Transcribe it (open access, doi
+  10.1016/j.optom.2018.01.003, PMC6318498) in a session with document access,
+  set `transcribed: true`, and switch the viewer's default preset to it. (M3 at
+  the latest, before refractive presets; blocks the release gate on
+  `verified: true` for the default preset)
+- `data/schematic-eyes/navarro-1985.json`: the two conic-constant coefficients
+  of Table 4 (−0.34 and −0.125 per ln(1+A)) are listed as `unverified`; confirm
+  against the paper in the same session. (M3)
 - Spec §4.2: the accommodation "time constant ≈ 0.3 s" is uncited; cross-reference
   the §4.4 dynamics bullet (Kasthurirangan & Glasser 2005). (M2, Task 2.5)
 
@@ -24,29 +28,16 @@ in that commit.
 - `schemas/scenario.schema.json` uses `$ref` to the EyeParameters schema; no test
   compiles it. Add an Ajv2020 compile test in TS and, in Python, resolve the
   reference with `referencing.Registry`. (M6, Task 6.1)
-- `Surface.conic`, `tilt`, and `decenter` are optional with schema default zero;
-  `buildSurfaces` must apply the defaults rather than trust the document. (M1,
-  Task 1.9)
 - Negative schema tests assert only `ok === false`; also assert the error names
-  the offending key. (M1, first task that edits `schema.test.ts`)
+  the offending key. (first task that edits `schema.test.ts`)
 - `science/eyebiomech/schema.py` reads the schema from the repository checkout;
   packaging `eyebiomech` outside the repo needs the schema bundled as package
   data. (M4, Task 4.6 CLI)
-- Add a type-drift guard: a test that the hand-written `types.ts` matches the
-  schema (for example, generate types with `json-schema-to-typescript` in a test
-  and diff). (M1, Task 1.9)
 - Python `re.fullmatch(..., re.ASCII)` and the TS regex agree, but the schema
   pattern's `$` tolerates a trailing newline in some regex engines. Cosmetic.
 
 ## Web workspace
 
-- `web/apps/viewer/tsconfig.json` applies `node` types to `src/` as well as
-  `vite.config.ts`; split the config so browser code cannot see Node globals.
-  (M1, Task 1.10)
-- `@types/node` versions differ between the viewer (26.x) and the packages'
-  test configs (22.x); align them. (M1, Task 1.10)
-- Vite dev server needs `server.fs.allow` for `schemas/` and `data/`, which live
-  outside `web/`. (M1, Task 1.11)
 - `web/package.json` engines is `>=22.12`; Vitest 5 excludes Node 25. Works in
   practice and the cloud VM runs Node 22. No action unless CI breaks.
 
@@ -64,8 +55,10 @@ in that commit.
   composite action if a third workflow appears.
 - `pages.yml` does not depend on the CI `web` job; `workflow_run` would enforce
   it. Main is protected by required checks, so a red commit cannot land anyway.
-- Remove the `hashFiles` guard on the Playwright steps once
-  `web/apps/viewer/e2e/` exists. (M1, Task 1.11, local follow-up PR)
+- Remove the `hashFiles` guard on the Playwright steps now that
+  `web/apps/viewer/e2e/` exists (M1 added it). Local follow-up PR.
+- The viewer bundle is ~1.3 MB minified (three.js); add a `manualChunks` split
+  for `three` if Pages load time matters. (M6)
 
 ## Docs
 

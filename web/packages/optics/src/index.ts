@@ -1,1 +1,13 @@
-export {};
+export type { Vec3 } from "./math/vec3";
+export { add, cross, distance, dot, norm, normalize, scale, sub } from "./math/vec3";
+export type { Medium, SequentialSurface, Surface } from "./surfaces/types";
+export { intersect, normalAt, sag } from "./surfaces/conic";
+export { surfacesFromSequential } from "./surfaces/sequential";
+export { objectVergenceForImageD, paraxialPower } from "./paraxial/abcd";
+export type { ParaxialResult } from "./paraxial/abcd";
+export type { Ray, TraceHit, TraceResult, VignetteReason } from "./trace/ray";
+export { refract } from "./trace/refract";
+export { traceRay } from "./trace/sequential";
+export { collimatedBundle, fieldDirection, pointSourceBundle, pupilGrid } from "./trace/bundle";
+export { InsufficientRaysError, retinalDefocusD, splitImageSurface } from "./metrics/defocus";
+export type { DefocusOptions, DefocusResult } from "./metrics/defocus";

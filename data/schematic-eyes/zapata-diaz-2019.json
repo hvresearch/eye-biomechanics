@@ -1,0 +1,11 @@
+{
+  "name": "zapata-diaz-2019",
+  "label": "Zapata-Díaz, Radhakrishnan, Charman & López-Gil 2019 accommodation- and age-dependent eye model",
+  "citation": "Zapata-Díaz JF, Radhakrishnan H, Charman WN, López-Gil N. Accommodation and age-dependent eye model based on in vivo measurements. J Optom 12(1):3-13, 2019.",
+  "doi": "10.1016/j.optom.2018.01.003",
+  "transcribed": false,
+  "verified": false,
+  "verifiedDate": null,
+  "transcriptionNote": "Not transcribed. The 2026-10-26 cloud session could not reach the full text (ScienceDirect, PMC6318498, DOI, and journal mirrors are denied by the session network policy) and CLAUDE.md forbids transcribing values from memory. Transcribe Table 1 (parameters as functions of age y and accommodation A) and the pupil regression from the open-access paper in a session with document access, then set transcribed:true and fill relaxed, retina, axialLengthMm, pupil, accommodation, and aging.",
+  "role": "intended default UI preset (spec §4.1); until transcribed, loadPreset throws PresetNotTranscribedError and the viewer falls back to navarro-1985"
+}
