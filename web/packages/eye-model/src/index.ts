@@ -28,3 +28,15 @@ export type { LagModel, LagTable } from "./accommodation/controller";
 export type { EyeState, SceneState } from "./state/types";
 export { SchemaVersionError, assertSupported, deriveEyeState, pupilDiameterMm } from "./state/derive";
 export { RETINA_SURFACE_NAME, buildSurfaces, lensParameterFor } from "./build/surfaces";
+export type { Vec3 } from "./math/vec";
+export {
+  EOM_TABLE,
+  GLOBE_RADIUS_MM,
+  MUSCLE_NAMES,
+  defaultMuscles,
+  insertionPoint,
+  musclesFromDocument,
+  obliqueOrigin,
+  toDocumentMuscles,
+} from "./eom/geometry";
+export type { EomMuscle, EomTable, MuscleName } from "./eom/geometry";

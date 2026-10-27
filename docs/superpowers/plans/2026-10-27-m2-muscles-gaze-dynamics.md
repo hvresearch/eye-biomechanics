@@ -159,7 +159,7 @@ The construction for the trochlea and the IO origin runs once in a test helper t
   - `musclesFromDocument(params: EyeParameters): EomMuscle[]`: uses `params.extraocularMuscles` when present (origin, pulley, and the insertion arc from `insertionDistFromLimbusMm` on the table's meridian for that name), otherwise `defaultMuscles()`. Throws when a document muscle name is unknown.
   - `toDocumentMuscles(muscles = defaultMuscles()): MuscleGeometry[]` for attaching to presets (schema shape).
 
-- [ ] **Step 1:** Failing tests in `eom-geometry.test.ts`:
+- [x] **Step 1:** Failing tests in `eom-geometry.test.ts`:
   - six muscles with names exactly `MUSCLE_NAMES`;
   - every insertion lies on the sphere of radius 12 within 1e-6;
   - the medial rectus insertion's polar angle equals `asin(5.75/12) + 5.5/12` rad;
@@ -168,9 +168,9 @@ The construction for the trochlea and the IO origin runs once in a test helper t
   - the stored trochlea and IO origin equal the construction within 1e-6;
   - `toDocumentMuscles()` passes `validateEyeParameters` when attached to the Navarro preset;
   - `musclesFromDocument` on a document without muscles equals `defaultMuscles()`.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Write the JSON, `vec.ts`, `geometry.ts`, and `data/eom/README.md` with the format and the status table.
-- [ ] **Step 4:** Run; PASS. Full gate. Add follow-up lines for the unverified EOM values (oblique insertions, trochlea and IO origin, SR/IR widths, tendon stiffness, rectus pulleys) to `docs/superpowers/plans/2026-10-27-m2-followups.md` (create), naming "M3 or any session with document access". Commit: `feat(eye-model): extraocular muscle geometry table`.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Write the JSON, `vec.ts`, `geometry.ts`, and `data/eom/README.md` with the format and the status table.
+- [x] **Step 4:** Run; PASS. Full gate. Add follow-up lines for the unverified EOM values (oblique insertions, trochlea and IO origin, SR/IR widths, tendon stiffness, rectus pulleys) to `docs/superpowers/plans/2026-10-27-m2-followups.md` (create), naming "M3 or any session with document access". Commit: `feat(eye-model): extraocular muscle geometry table`.
 
 ### Task 2.2: Listing's law gaze and binocular vergence
 

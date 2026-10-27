@@ -1,0 +1,189 @@
+{
+  "name": "eom-geometry-default",
+  "label": "Extraocular muscle geometry, right eye (v1: common rectus origin, no pulleys)",
+  "frame": "right eye, origin at the globe center (taken as the center of rotation, an approximation), x temporal, y superior, z posterior (toward the retina), mm",
+  "verified": false,
+  "citation": "Partial transcription from search-engine excerpts; the cloud session could not reach the full texts. See each entry's citation and verified flag, data/eom/README.md, and docs/superpowers/plans/2026-10-27-m2-muscles-gaze-dynamics.md (Deviation 1).",
+  "globe": {
+    "radiusMm": 12,
+    "limbusRadiusMm": 5.75,
+    "citation": "radiusMm: 12 mm globe radius as used by Trujillo Suárez, Scientia et Technica 23(4):606-612, 2018 (doi 10.22517/23447214.18331) and the master plan. limbusRadiusMm: half of an 11.5 mm corneal diameter, an assumption from the master plan.",
+    "verified": false
+  },
+  "insertionConvention": "Insertion center on the globe at polar angle theta = asin(limbusRadiusMm / radiusMm) + arcFromLimbusMm / radiusMm from the anterior pole, on meridian meridianDeg (0 temporal, 90 superior, as seen from the front of the right eye): p = R (sin theta cos phi, sin theta sin phi, -cos theta).",
+  "obliqueOriginConstruction": {
+    "description": "The superior oblique's functional origin (trochlea) and the inferior oblique's origin are placed by construction: the muscle leaves the globe tangentially at the point P of the great circle through the insertion whose tangent is the unit direction u, and the origin is P + lengthMm * u. u has a horizontal projection at horizontalDeg to the anterior line of sight, toward nasal, and an elevation elevationDeg above the horizontal plane (negative below).",
+    "horizontalDeg": 51,
+    "lengthMm": 18,
+    "citation": "horizontalDeg: the superior oblique tendon is reflected at the trochlea to about 51 deg from the visual axis (Filip, Stanev & Moustakas, An open-source OpenSim oculomotor model for kinematics and dynamics simulation, arXiv 1807.07332, 2018, excerpt). The same angle is assumed for the inferior oblique. elevationDeg and lengthMm are assumptions chosen to place the trochlea at the superonasal orbital rim and the inferior oblique origin on the anterior orbital floor.",
+    "verified": false
+  },
+  "muscles": [
+    {
+      "name": "lateralRectus",
+      "antagonist": "medialRectus",
+      "originMm": [-15, 0, 32],
+      "originCitation": "Common rectus origin at the annulus of Zinn, 15 mm nasal and 32 mm posterior to the right globe center (Trujillo Suárez 2018, excerpt; converted to this frame).",
+      "originVerified": false,
+      "pulleyMm": null,
+      "pulleyNote": "Fixed pulleys (Clark, Miller & Demer, IOVS 41:3787-3797, 2000) are not transcribed; null gives the classical shortest path from origin over the globe.",
+      "insertion": {
+        "meridianDeg": 0,
+        "arcFromLimbusMm": 6.9,
+        "alt": null,
+        "widthMm": 9.2,
+        "citation": "Arc from limbus: BCSC spiral of Tillaux (several excerpts agree). Cadaveric means (Fuchs 1884) are shorter but no excerpt gave the numbers, so alt is null. Width: Entokey, Surgical anatomy for strabismus surgery (excerpt). Meridian: assumption (insertion centered on the horizontal meridian).",
+        "verified": false
+      },
+      "tendon": {
+        "stiffnessNPerMm": 0,
+        "slackLengthMm": 7.5,
+        "citation": "slackLengthMm: midpoint of the 7-8 mm tendon length (Entokey, excerpt). stiffnessNPerMm: placeholder, unused until the M4 force export.",
+        "verified": false
+      },
+      "muscleLengthMm": 40.6,
+      "arcOfContactMm": [10, 12],
+      "lengthCitation": "Entokey, Surgical anatomy for strabismus surgery (excerpt)."
+    },
+    {
+      "name": "medialRectus",
+      "antagonist": "lateralRectus",
+      "originMm": [-15, 0, 32],
+      "originCitation": "Common rectus origin at the annulus of Zinn (Trujillo Suárez 2018, excerpt; converted to this frame). Volkmann's medial rectus origin is stored under alt.",
+      "originVerified": false,
+      "pulleyMm": null,
+      "pulleyNote": "Fixed pulleys (Clark, Miller & Demer 2000) are not transcribed.",
+      "insertion": {
+        "meridianDeg": 180,
+        "arcFromLimbusMm": 5.5,
+        "alt": null,
+        "widthMm": 10.3,
+        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: StatPearls, Anatomy, Head and Neck: Eye Medial Rectus Muscles (excerpt). Meridian: assumption.",
+        "verified": false
+      },
+      "tendon": {
+        "stiffnessNPerMm": 0,
+        "slackLengthMm": 3.7,
+        "citation": "slackLengthMm: mean tendon length 3.7 mm (StatPearls, excerpt). stiffnessNPerMm: placeholder, unused until M4.",
+        "verified": false
+      },
+      "muscleLengthMm": 40.8,
+      "arcOfContactMm": [6, 7],
+      "lengthCitation": "StatPearls, Anatomy, Head and Neck: Eye Medial Rectus Muscles (excerpt); arc of contact 6-7 mm also in Entokey."
+    },
+    {
+      "name": "superiorRectus",
+      "antagonist": "inferiorRectus",
+      "originMm": [-15, 0, 32],
+      "originCitation": "Common rectus origin at the annulus of Zinn (Trujillo Suárez 2018, excerpt; converted to this frame).",
+      "originVerified": false,
+      "pulleyMm": null,
+      "pulleyNote": "Fixed pulleys (Clark, Miller & Demer 2000) are not transcribed.",
+      "insertion": {
+        "meridianDeg": 90,
+        "arcFromLimbusMm": 7.7,
+        "alt": null,
+        "widthMm": 10,
+        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: assumption. Meridian: assumption.",
+        "verified": false
+      },
+      "tendon": {
+        "stiffnessNPerMm": 0,
+        "slackLengthMm": 6,
+        "citation": "assumption; stiffness placeholder unused until M4.",
+        "verified": false
+      },
+      "muscleLengthMm": null,
+      "arcOfContactMm": null,
+      "lengthCitation": null
+    },
+    {
+      "name": "inferiorRectus",
+      "antagonist": "superiorRectus",
+      "originMm": [-15, 0, 32],
+      "originCitation": "Common rectus origin at the annulus of Zinn (Trujillo Suárez 2018, excerpt; converted to this frame).",
+      "originVerified": false,
+      "pulleyMm": null,
+      "pulleyNote": "Fixed pulleys (Clark, Miller & Demer 2000) are not transcribed.",
+      "insertion": {
+        "meridianDeg": 270,
+        "arcFromLimbusMm": 6.5,
+        "alt": null,
+        "widthMm": 10,
+        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: assumption. Meridian: assumption.",
+        "verified": false
+      },
+      "tendon": {
+        "stiffnessNPerMm": 0,
+        "slackLengthMm": 6,
+        "citation": "assumption; stiffness placeholder unused until M4.",
+        "verified": false
+      },
+      "muscleLengthMm": null,
+      "arcOfContactMm": null,
+      "lengthCitation": null
+    },
+    {
+      "name": "superiorOblique",
+      "antagonist": "inferiorOblique",
+      "originMm": [-9.180103, 17.370341, -9.055217],
+      "originCitation": "Functional origin at the trochlea, placed by obliqueOriginConstruction with elevationDeg 20 (assumption).",
+      "originVerified": false,
+      "obliqueConstruction": { "elevationDeg": 20 },
+      "pulleyMm": null,
+      "pulleyNote": "The trochlea is the functional origin; no further pulley.",
+      "insertion": {
+        "meridianDeg": 60,
+        "arcFromLimbusMm": 16,
+        "alt": null,
+        "widthMm": 10.8,
+        "citation": "assumption: superotemporal, behind the equator (qualitative anatomy); width assumption.",
+        "verified": false
+      },
+      "tendon": {
+        "stiffnessNPerMm": 0,
+        "slackLengthMm": 20,
+        "citation": "assumption (reflected tendon); stiffness placeholder unused until M4.",
+        "verified": false
+      },
+      "muscleLengthMm": null,
+      "arcOfContactMm": null,
+      "lengthCitation": null
+    },
+    {
+      "name": "inferiorOblique",
+      "antagonist": "superiorOblique",
+      "originMm": [-7.688174, -16.828871, -11.210758],
+      "originCitation": "Origin on the anterior orbital floor, placed by obliqueOriginConstruction with elevationDeg -20 (assumption).",
+      "originVerified": false,
+      "obliqueConstruction": { "elevationDeg": -20 },
+      "pulleyMm": null,
+      "pulleyNote": "The inferior oblique pulley is not modeled in v1.",
+      "insertion": {
+        "meridianDeg": 330,
+        "arcFromLimbusMm": 17,
+        "alt": null,
+        "widthMm": 9.4,
+        "citation": "assumption: inferotemporal, behind the equator (qualitative anatomy); width assumption.",
+        "verified": false
+      },
+      "tendon": {
+        "stiffnessNPerMm": 0,
+        "slackLengthMm": 1,
+        "citation": "assumption (the inferior oblique has almost no tendon); stiffness placeholder unused until M4.",
+        "verified": false
+      },
+      "muscleLengthMm": null,
+      "arcOfContactMm": null,
+      "lengthCitation": null
+    }
+  ],
+  "alt": {
+    "volkmannMedialRectus": {
+      "originMm": [-17, -31.29, 0.6],
+      "insertionMm": [-9.65, 7.55, 0],
+      "frame": "Volkmann's frame: x lateral, y anterior, z superior, mm from the center of rotation",
+      "citation": "Volkmann 1869 as tabled by Eggers, Functional anatomy of the extraocular muscles, Duane's Foundations of Clinical Ophthalmology vol. 1 ch. 31, Table 2 (excerpt; the other rows were not reachable)."
+    }
+  }
+}
