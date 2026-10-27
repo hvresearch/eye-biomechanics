@@ -67,3 +67,14 @@ Read CLAUDE.md, docs/superpowers/specs/2026-10-26-eye-simulation-design.md, and 
 ```text
 Read CLAUDE.md, docs/superpowers/specs/2026-10-26-eye-simulation-design.md, and docs/superpowers/plans/2026-10-26-master-plan.md. Write an expanded task-level plan for Milestone 6 to docs/superpowers/plans/2026-MM-DD-m6-polish-scenarios-performance.md If the superpowers skills are available use writing-plans then subagent-driven-development or executing-plans; otherwise follow the Plan conventions in CLAUDE.md. Execute it task by task with tests, committing after each task, keeping `pnpm -r lint && pnpm -r test && pnpm --filter @eye/viewer build` (web/) and `uv run ruff check . && uv run pytest` (science/) green. Open a PR titled 'Milestone 6: Polish, scenarios, performance' when all tasks pass.
 ```
+
+## Fully automated mode
+
+A cloud routine named **eye-biomechanics driver** runs about hourly and on
+pull-request events. Each run performs one step of the state machine in
+`docs/automation/driver.md`: start the next milestone as a draft PR, resume an
+abandoned one, fix red CI, review a ready PR with an independent subagent, fix
+its findings, or squash-merge an approved PR. Manage or pause it at
+https://claude.ai/code/routines. The kickoff prompts below remain the source
+of each milestone's scope; the driver reads them.
+
