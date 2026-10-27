@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { InsufficientRaysError, retinalDefocusD } from "../src/metrics/defocus";
+import { paraxialPower } from "../src/paraxial/abcd";
 import { navarroSurfaces } from "./helpers/navarro";
 
 describe("retinalDefocusD", () => {
@@ -46,6 +47,33 @@ describe("retinalDefocusD", () => {
     // Focus is in front of the retina: negative (myopic) defocus of roughly 2.7 D.
     expect(r.defocusD).toBeLessThan(-2.2);
     expect(r.defocusD).toBeGreaterThan(-3.2);
+  });
+
+  it("tracks large defocus beyond a few millimetres of the retina (no search window)", () => {
+    // A relaxed eye viewing an object at 0.1 m has a paraxial residual of +10 D; with a
+    // 2 mm pupil the spherical aberration contributes only a few hundredths of a diopter.
+    const r = retinalDefocusD(navarroSurfaces(), 0.1, 1);
+    expect(r.bestFocusZMm - r.retinaZMm).toBeGreaterThan(3);
+    expect(Math.abs(r.defocusD - 10)).toBeLessThan(0.5);
+    // Same for a strongly myopic (lengthened by 5 mm) eye viewing infinity.
+    const surfaces = navarroSurfaces();
+    const retina = surfaces[surfaces.length - 1];
+    if (!retina) throw new Error("no retina");
+    const longer = [...surfaces.slice(0, -1), { ...retina, vertexZMm: retina.vertexZMm + 5 }];
+    const far = paraxialPower(longer).farPointD;
+    const m = retinalDefocusD(longer, Number.POSITIVE_INFINITY, 1);
+    expect(far).toBeLessThan(-10);
+    expect(Math.abs(m.defocusD - far)).toBeLessThan(0.3);
+  });
+
+  it("matches the paraxial far point exactly in the small-pupil limit, not to first order only", () => {
+    const surfaces = navarroSurfaces();
+    const retina = surfaces[surfaces.length - 1];
+    if (!retina) throw new Error("no retina");
+    const longer = [...surfaces.slice(0, -1), { ...retina, vertexZMm: retina.vertexZMm + 3 }];
+    const far = paraxialPower(longer).farPointD;
+    const m = retinalDefocusD(longer, Number.POSITIVE_INFINITY, 0.1);
+    expect(Math.abs(m.defocusD - far)).toBeLessThan(0.02);
   });
 
   it("throws when most rays are vignetted", () => {

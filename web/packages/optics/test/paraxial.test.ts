@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { paraxialPower } from "../src/paraxial/abcd";
+import { objectVergenceForImageD, paraxialPower } from "../src/paraxial/abcd";
 import { surfacesFromSequential } from "../src/surfaces/sequential";
 import { navarroSurfaces } from "./helpers/navarro";
 
@@ -24,6 +24,18 @@ describe("paraxialPower", () => {
     expect(p.powerD).toBeCloseTo(1000 * (n - 1) * (1 / 50 + 1 / 50), 9);
     expect(p.backFocalLengthMm).toBeCloseTo(50, 9);
     expect(Number.isNaN(p.farPointD)).toBe(true);
+  });
+
+  it("gives the object vergence conjugate to an image plane (thin lens: 1/v − 1/u = 1/f)", () => {
+    const n = 1.5;
+    const s = surfacesFromSequential([
+      { name: "front", radiusMm: 50, thicknessToNextMm: 0, mediumAfter: { name: "glass", index555: n }, apertureSemiDiamMm: 5 },
+      { name: "back", radiusMm: -50, thicknessToNextMm: 0, mediumAfter: { name: "air", index555: 1 }, apertureSemiDiamMm: 5 },
+    ]);
+    // f = 50 mm (20 D): an image at 100 mm needs an object vergence of 10 − 20 = −10 D.
+    expect(objectVergenceForImageD(s, 100)).toBeCloseTo(-10, 9);
+    expect(objectVergenceForImageD(s, 50)).toBeCloseTo(0, 9);
+    expect(objectVergenceForImageD(s, Number.POSITIVE_INFINITY)).toBeCloseTo(-20, 9);
   });
 
   it("reports a myopic far point when the eye is lengthened", () => {

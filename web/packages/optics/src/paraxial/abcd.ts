@@ -29,12 +29,21 @@ function mul(p: Mat, q: Mat): Mat {
   ];
 }
 
+interface SystemMatrix {
+  /** Reduced matrix from the first to the last refracting vertex. */
+  M: Mat;
+  nImage: number;
+  lastVertexZ: number;
+  /** Absolute z of the first non-refracting (image) surface, or NaN. */
+  imageSurfaceZ: number;
+}
+
 /**
- * Paraxial ABCD trace in reduced form: state (y, n·u) in mm and radians. A surface
- * whose `mediumAfter.index555` equals the incoming index is an image surface (the
- * retina) and is not refracted; the first such surface defines `farPointD`.
+ * Reduced ABCD matrix of the refracting surfaces: state (y, n·u) in mm and radians. A
+ * surface whose `mediumAfter.index555` equals the incoming index is an image surface
+ * (the retina) and ends the system.
  */
-export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1): ParaxialResult {
+function systemMatrix(surfaces: readonly Surface[], indexBefore: number): SystemMatrix {
   let M: Mat = [1, 0, 0, 1];
   let n = indexBefore;
   let lastVertexZ = Number.NaN;
@@ -64,21 +73,41 @@ export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1): Pa
     refractingCount++;
   }
   if (refractingCount === 0) throw new Error("paraxialPower needs at least one refracting surface");
+  return { M, nImage: n, lastVertexZ, imageSurfaceZ };
+}
 
-  const [a, , c] = M;
-  const nImage = n;
+function vergenceImagingTo(sys: SystemMatrix, imageZMm: number): number {
+  const [a, b, c, d] = sys.M;
+  // A plane at infinity is conjugate to the object vergence 1000·c/d (the limit below).
+  if (!Number.isFinite(imageZMm)) return d === 0 ? Number.NaN : (1000 * c) / d;
+  const t = imageZMm - sys.lastVertexZ;
+  const N = mul([1, t / sys.nImage, 0, 1], [a, b, c, d]);
+  // Object transfer T(L) = [1 L/n0; 0 1]; (N·T)[0][1] = a·L/n0 + b = 0 ⇒ L = −b·n0/a.
+  // Vergence (clinical sign) −1000·n0/L = 1000·a/b.
+  return N[1] === 0 ? Number.NaN : (1000 * N[0]) / N[1];
+}
+
+/**
+ * Object vergence in clinical sign (D), referred to the first vertex, whose paraxial image
+ * lies at absolute `imageZMm` (`±Infinity` allowed). The far point is this vergence for the
+ * retina; the difference between two such vergences is an exact defocus in diopters.
+ */
+export function objectVergenceForImageD(surfaces: readonly Surface[], imageZMm: number, indexBefore = 1): number {
+  return vergenceImagingTo(systemMatrix(surfaces, indexBefore), imageZMm);
+}
+
+/**
+ * Paraxial ABCD trace in reduced form: state (y, n·u) in mm and radians. A surface
+ * whose `mediumAfter.index555` equals the incoming index is an image surface (the
+ * retina) and is not refracted; the first such surface defines `farPointD`.
+ */
+export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1): ParaxialResult {
+  const sys = systemMatrix(surfaces, indexBefore);
+  const [a, , c] = sys.M;
+  const nImage = sys.nImage;
   const powerD = -c * 1000;
   const backFocalLengthMm = c === 0 ? Number.POSITIVE_INFINITY : (-a * nImage) / c;
-  const imageZMm = lastVertexZ + backFocalLengthMm;
-
-  let farPointD = Number.NaN;
-  if (!Number.isNaN(imageSurfaceZ)) {
-    const tRet = imageSurfaceZ - lastVertexZ;
-    const N = mul([1, tRet / nImage, 0, 1], M);
-    // Object transfer T(L) = [1 L/n0; 0 1]; (N·T)[0][1] = a·L/n0 + b = 0 ⇒ L = −b·n0/a.
-    // Vergence (clinical sign) −1000·n0/L = 1000·a/b.
-    farPointD = N[1] === 0 ? Number.NaN : (1000 * N[0]) / N[1];
-  }
-
-  return { powerD, backFocalLengthMm, imageZMm, farPointD, imageSurfaceZMm: imageSurfaceZ };
+  const imageZMm = sys.lastVertexZ + backFocalLengthMm;
+  const farPointD = Number.isNaN(sys.imageSurfaceZ) ? Number.NaN : vergenceImagingTo(sys, sys.imageSurfaceZ);
+  return { powerD, backFocalLengthMm, imageZMm, farPointD, imageSurfaceZMm: sys.imageSurfaceZ };
 }

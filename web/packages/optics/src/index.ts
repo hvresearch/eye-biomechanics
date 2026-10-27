@@ -3,7 +3,7 @@ export { add, cross, distance, dot, norm, normalize, scale, sub } from "./math/v
 export type { Medium, SequentialSurface, Surface } from "./surfaces/types";
 export { intersect, normalAt, sag } from "./surfaces/conic";
 export { surfacesFromSequential } from "./surfaces/sequential";
-export { paraxialPower } from "./paraxial/abcd";
+export { objectVergenceForImageD, paraxialPower } from "./paraxial/abcd";
 export type { ParaxialResult } from "./paraxial/abcd";
 export type { Ray, TraceHit, TraceResult, VignetteReason } from "./trace/ray";
 export { refract } from "./trace/refract";

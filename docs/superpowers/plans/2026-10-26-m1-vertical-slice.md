@@ -207,7 +207,7 @@ accommodationResponse(demandD: number, amplitudeD: number, lag: LagModel = defau
 
 **Files:** create `web/packages/optics/src/metrics/defocus.ts`, `test/defocus.test.ts`.
 
-**Interfaces:** `retinalDefocusD(surfaces: Surface[], objectDistanceM: number, pupilSemiDiamMm: number, opts?: { gridN?: number; searchHalfWidthMm?: number }): { defocusD; bestFocusZMm; retinaZMm; rmsSpotMm }`; throws `InsufficientRaysError` below 60% unvignetted rays.
+**Interfaces:** `retinalDefocusD(surfaces: Surface[], objectDistanceM: number, pupilSemiDiamMm: number, opts?: { gridN?: number }): { defocusD; bestFocusZMm; retinaZMm; rmsSpotMm }` (best focus in closed form, no search window; defocus as an exact object-vergence difference, review fix); throws `InsufficientRaysError` below 60% unvignetted rays.
 
 - [x] Step 1: Failing tests per the master plan; the A=2 case builds the accommodated Navarro surfaces by applying the Table 4 equations inside the test.
 - [x] Step 2: Golden-section search over z; PASS; commit `feat(optics): retinal defocus metric`.

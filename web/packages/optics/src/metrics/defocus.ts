@@ -1,5 +1,5 @@
 import type { Vec3 } from "../math/vec3";
-import { paraxialPower } from "../paraxial/abcd";
+import { objectVergenceForImageD } from "../paraxial/abcd";
 import type { Surface } from "../surfaces/types";
 import { collimatedBundle, pointSourceBundle } from "../trace/bundle";
 import { traceRay } from "../trace/sequential";
@@ -14,6 +14,7 @@ export class InsufficientRaysError extends Error {
 export interface DefocusResult {
   /** Retinal defocus, diopters; positive when best focus lies behind the retina. */
   defocusD: number;
+  /** Axial position of minimum RMS spot, mm; ±Infinity if the image-space rays are parallel. */
   bestFocusZMm: number;
   retinaZMm: number;
   /** RMS spot radius at the retina, mm. */
@@ -24,14 +25,12 @@ export interface DefocusResult {
 
 export interface DefocusOptions {
   gridN?: number;
-  searchHalfWidthMm?: number;
   /** Distance in front of the first vertex at which the bundle is launched, mm. */
   launchOffsetMm?: number;
 }
 
 /** Fraction of launched rays that must reach image space before a defocus is reported. */
 const MIN_VALID_FRACTION = 0.6;
-const GOLDEN = (Math.sqrt(5) - 1) / 2;
 
 interface ImageRay {
   p: Vec3;
@@ -57,6 +56,42 @@ function rmsRadiusAt(rays: readonly ImageRay[], z: number): number {
   return Math.sqrt(s / rays.length);
 }
 
+/**
+ * Axial position of minimum RMS spot radius. Each ray's transverse position is linear in
+ * z, so the centroid-relative mean squared radius is a quadratic in z and its minimum is
+ * closed-form: z* = −Σ(Δa·Δb)/Σ(Δb²) with x_i(z) = a_i + b_i·z (likewise y) and Δ the
+ * deviation from the bundle mean. No search window, so any defocus is found. Returns
+ * ±Infinity when the image-space rays are parallel (focus at infinity).
+ */
+function bestRmsFocusZ(rays: readonly ImageRay[]): number {
+  const n = rays.length;
+  const coef = rays.map((r) => {
+    const bx = r.d[0] / r.d[2];
+    const by = r.d[1] / r.d[2];
+    return { ax: r.p[0] - bx * r.p[2], ay: r.p[1] - by * r.p[2], bx, by };
+  });
+  let max = 0;
+  let may = 0;
+  let mbx = 0;
+  let mby = 0;
+  for (const c of coef) {
+    max += c.ax / n;
+    may += c.ay / n;
+    mbx += c.bx / n;
+    mby += c.by / n;
+  }
+  let num = 0;
+  let den = 0;
+  for (const c of coef) {
+    const dbx = c.bx - mbx;
+    const dby = c.by - mby;
+    num += (c.ax - max) * dbx + (c.ay - may) * dby;
+    den += dbx * dbx + dby * dby;
+  }
+  if (den === 0) return Number.POSITIVE_INFINITY;
+  return -num / den;
+}
+
 /** Split the surface list into refracting surfaces and the image (retina) surface. */
 export function splitImageSurface(surfaces: readonly Surface[], indexBefore = 1): { refracting: Surface[]; image: Surface } {
   let n = indexBefore;
@@ -72,10 +107,12 @@ export function splitImageSurface(surfaces: readonly Surface[], indexBefore = 1)
 /**
  * Retinal defocus for an on-axis object at `objectDistanceM` (`Infinity` for a distant
  * object) through a pupil of the given semi-diameter. A point-source bundle is traced to
- * image space, the axial position of minimum RMS spot radius is found by golden-section
- * search within ±searchHalfWidthMm of the retina vertex, and the axial gap is converted to
- * diopters with ΔD = n_image · Δz / f'² (f' the paraxial back focal length in the image
- * medium). Sign is positive when the focus is behind the retina.
+ * image space and the axial position of minimum RMS spot radius is found in closed form.
+ * The gap is converted to diopters exactly, not to first order: defocus is the difference
+ * between the object vergences (clinical sign, referred to the first vertex) whose
+ * paraxial images lie on the retina and at the best focus, so a paraxial bundle reproduces
+ * the paraxial far point at any magnitude. Sign is positive when the focus is behind the
+ * retina.
  */
 export function retinalDefocusD(
   surfaces: readonly Surface[],
@@ -85,7 +122,6 @@ export function retinalDefocusD(
 ): DefocusResult {
   if (!(objectDistanceM > 0)) throw new RangeError(`objectDistanceM must be > 0, got ${objectDistanceM}`);
   const gridN = opts.gridN ?? 16;
-  const halfWidth = opts.searchHalfWidthMm ?? 3;
   const launchOffset = opts.launchOffsetMm ?? 1;
   const { refracting, image } = splitImageSurface(surfaces);
   const first = refracting[0];
@@ -108,33 +144,9 @@ export function retinalDefocusD(
   }
 
   const retinaZ = image.vertexZMm;
-  let a = retinaZ - halfWidth;
-  let b = retinaZ + halfWidth;
-  let c = b - GOLDEN * (b - a);
-  let d = a + GOLDEN * (b - a);
-  let fc = rmsRadiusAt(imageRays, c);
-  let fd = rmsRadiusAt(imageRays, d);
-  for (let i = 0; i < 60 && b - a > 1e-6; i++) {
-    if (fc < fd) {
-      b = d;
-      d = c;
-      fd = fc;
-      c = b - GOLDEN * (b - a);
-      fc = rmsRadiusAt(imageRays, c);
-    } else {
-      a = c;
-      c = d;
-      fc = fd;
-      d = a + GOLDEN * (b - a);
-      fd = rmsRadiusAt(imageRays, d);
-    }
-  }
-  const bestZ = (a + b) / 2;
+  const bestZ = bestRmsFocusZ(imageRays);
 
-  const par = paraxialPower(surfaces);
-  const nImage = image.mediumAfter.index555;
-  const fPrimeMm = (1000 * nImage) / par.powerD;
-  const defocusD = (nImage * (bestZ - retinaZ) * 1000) / (fPrimeMm * fPrimeMm);
+  const defocusD = objectVergenceForImageD(surfaces, retinaZ) - objectVergenceForImageD(surfaces, bestZ);
 
   return {
     defocusD,
