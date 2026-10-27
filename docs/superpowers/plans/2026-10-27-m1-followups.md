@@ -20,9 +20,8 @@ touches the same file, and delete its line here in that commit.
   a trailing call. (M2)
 - Values hard-coded outside `data/`: `presets/load.ts` (`DEFAULT_IPD_MM = 63`),
   `store/scene.ts` (default age, luminance, IPD), `scene/profiles.ts`
-  (`pupilR = 2`, ignores `params.pupil`), `ui/Readout.tsx` ("4 mm pupil" in
-  the tooltip), `ui/Inspector.tsx` (age bounds 6/90 duplicate
-  `AMPLITUDE_TABLE.domain`). Read them from `data/`, `params`, or the table. (M2)
+  (`pupilR = 2`, ignores `params.pupil`), `ui/Inspector.tsx` (age bounds 6/90
+  duplicate `AMPLITUDE_TABLE.domain`). Read them from `data/`, `params`, or the table. (M2)
 
 ## Optics
 

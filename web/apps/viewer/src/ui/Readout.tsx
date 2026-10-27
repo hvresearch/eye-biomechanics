@@ -1,5 +1,5 @@
-import { LAG_TABLE } from "@eye/eye-model";
 import { useScene } from "../store/scene";
+import { readoutTooltips } from "./tooltips";
 
 function Stat({
   k,
@@ -39,6 +39,7 @@ export function Readout() {
   const optics = useScene((s) => s.optics);
   const pending = useScene((s) => s.pending);
   const focusOffsetMm = optics ? optics.bestFocusZMm - optics.retinaZMm : Number.NaN;
+  const tips = readoutTooltips(eye.pupilMm);
 
   return (
     <section className="readout" aria-label="Readout">
@@ -50,7 +51,7 @@ export function Readout() {
           big
           pending={pending}
           testId="defocus"
-          title="Approximation: position of minimum RMS spot found by exact ray tracing through a 4 mm pupil, expressed as the exact object-vergence difference to the retina; includes spherical aberration. Positive: focus behind the retina (hyperopic). Homogeneous lens index."
+          title={tips.defocus}
         />
         <Stat
           k="Best focus"
@@ -58,13 +59,14 @@ export function Readout() {
           u="mm from retina"
           pending={pending}
           testId="focus-offset"
+          title={tips.bestFocus}
         />
         <Stat
           k="Accommodation"
           v={eye.accommodationD.toFixed(2)}
           u="D"
           testId="accommodation"
-          title={`Approximation: response = demand − lag, clipped to amplitude; the Navarro lens parameter is solved so the paraxial far point moves by exactly this response. Lag model: ${LAG_TABLE.citation}`}
+          title={tips.accommodation}
         />
         <Stat k="Demand" v={eye.demandD.toFixed(2)} u="D" testId="demand" />
         <Stat
@@ -72,21 +74,21 @@ export function Readout() {
           v={eye.amplitudeD.toFixed(2)}
           u="D"
           testId="amplitude"
-          title="Anderson et al. 2008 sigmoid of objective amplitude versus age."
+          title={tips.amplitude}
         />
         <Stat
           k="Ciliary activation"
           v={eye.ciliaryActivation.toFixed(2)}
           testId="ciliary"
-          title="Approximation: response divided by amplitude."
+          title={tips.ciliaryActivation}
         />
-        <Stat k="Paraxial power" v={powerD.toFixed(2)} u="D" testId="power" />
+        <Stat k="Paraxial power" v={powerD.toFixed(2)} u="D" testId="power" title={tips.paraxialPower} />
         <Stat
           k="Pupil"
           v={eye.pupilMm.toFixed(1)}
           u="mm"
           testId="pupil"
-          title="Fixed pupil in this milestone; Watson & Yellott 2012 arrives in Milestone 3."
+          title={tips.pupil}
         />
       </div>
       {optics && (
