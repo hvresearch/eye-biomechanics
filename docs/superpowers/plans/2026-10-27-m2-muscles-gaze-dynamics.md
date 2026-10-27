@@ -227,19 +227,19 @@ The construction for the trochlea and the IO origin runs once in a test helper t
 **Files:**
 - Create: `data/eom/activation.json`, `web/packages/eye-model/src/eom/activation.ts`, `test/activation.test.ts`
 
-Data: `{ form: "length-proxy", equation: "a = clamp(baseline + gain * (restLength - length) / restLength, 0, 1)", baseline: 0.2, gain: 4.0, citation: "approximation (spec §4.4 v1): a monotone function of shortening from primary position with reciprocal innervation; baseline and gain chosen so a 50° rectus duction stays below saturation, not transcribed", verified: false }`.
+Data: `{ form: "length-proxy", equation: "s_i = (rest_i - length_i) / rest_i; a_i = clamp(baseline + gain * (s_i - s_antagonist(i)) / 2, 0, 1)", baseline: 0.2, gain: 3.0, citation: "approximation (spec §4.4 v1): a monotone function of shortening from primary position with reciprocal innervation; baseline and gain chosen so a 50° rectus duction stays below saturation, not transcribed", verified: false }`.
 
 **Interfaces:**
-- Produces: `ACTIVATION_TABLE`; `activations(lengthsMm: readonly number[], restLengthsMm: readonly number[], table = ACTIVATION_TABLE): number[]`. Reciprocal innervation follows from the formula: the lengthening antagonist falls below baseline and is floored at 0.
+- Produces: `ACTIVATION_TABLE`; `activations(lengthsMm: readonly number[], restLengthsMm: readonly number[], table = ACTIVATION_TABLE): number[]`. Reciprocal innervation is explicit: each muscle is compared with its antagonist, so one above baseline puts the other below (the per-muscle formula of the master plan does not guarantee this when both muscles of a pair shorten; changed at implementation).
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - primary gaze (lengths equal rest) gives every muscle `baseline`;
   - 20° adduction of the right eye raises the medial rectus above the lateral rectus;
   - for every gaze on a 10° grid within ±50°, all values are in [0, 1];
   - whenever a rectus is above baseline its antagonist is at or below baseline;
   - mismatched array lengths throw.
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
-- [ ] **Step 3:** Commit: `feat(eye-model): length-proxy muscle activation`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
+- [x] **Step 3:** Commit: `feat(eye-model): length-proxy muscle activation`.
 
 ### Task 2.5: Oculomotor and accommodative dynamics
 

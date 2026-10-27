@@ -1,0 +1,10 @@
+{
+  "name": "activation-length-proxy",
+  "form": "length-proxy",
+  "equation": "s_i = (restLength_i - length_i) / restLength_i; a_i = clamp(baseline + gain * (s_i - s_antagonist(i)) / 2, 0, 1)",
+  "baseline": 0.2,
+  "gain": 3.0,
+  "citation": "approximation (spec §4.4, activation v1): a monotone function of each muscle's shortening from primary position, with reciprocal innervation made explicit by comparing each muscle's shortening with its antagonist's, so the antagonist relaxes as the agonist shortens. baseline (primary-position tone) and gain are modeling choices that keep a 40 degree horizontal duction below saturation; they are not transcribed. Static equilibrium (Robinson 1975; Miller & Robinson's Orbit) replaces this in v2.",
+  "verified": false,
+  "note": "Label as an approximation in the UI tooltip of every activation readout."
+}

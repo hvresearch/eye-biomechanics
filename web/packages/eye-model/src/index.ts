@@ -55,3 +55,5 @@ export { eyeDirections, targetPoint } from "./gaze/vergence";
 export type { EyeDirections, SceneTarget } from "./gaze/vergence";
 export { musclePath } from "./eom/path";
 export type { MusclePath } from "./eom/path";
+export { ACTIVATION_TABLE, activations } from "./eom/activation";
+export type { ActivationTable } from "./eom/activation";
