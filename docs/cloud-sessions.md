@@ -28,6 +28,16 @@ A gh token lacking the `workflow` scope cannot push changes under `.github/workf
 - Each task is its own session and `claude/*` branch. Ask it to open a PR; choose "Auto-fix" in the PR menu so it responds to CI failures and review comments.
 - Pull a cloud session into your local terminal with `claude --teleport`.
 
+## Fully automated mode
+
+A cloud routine named **eye-biomechanics driver** runs about hourly and on
+pull-request events. Each run performs one step of the state machine in
+`docs/automation/driver.md`: start the next milestone as a draft PR, resume an
+abandoned one, fix red CI, review a ready PR with an independent subagent, fix
+its findings, or squash-merge an approved PR. Manage or pause it at
+https://claude.ai/code/routines. The kickoff prompts below remain the source
+of each milestone's scope; the driver reads them.
+
 ## Milestone kickoff prompts
 
 Paste one per session. Adjust the date in the plan filename to the day you start.
