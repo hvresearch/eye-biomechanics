@@ -1,7 +1,8 @@
 # Milestone 1 follow-ups
 
-Minor findings deferred from the Milestone 1 driver review of PR #3 (2026-10-27,
-head 5a5e34d; the Critical and Important findings were fixed on the PR). Each
+Minor findings deferred from the Milestone 1 driver reviews of PR #3 (2026-10-27,
+heads 5a5e34d and 903e329; the Critical and Important findings were fixed on
+the PR). Each
 line names the milestone that should absorb it. Resolve an item in the task that
 touches the same file, and delete its line here in that commit.
 
@@ -22,6 +23,29 @@ touches the same file, and delete its line here in that commit.
   `store/scene.ts` (default age, luminance, IPD), `scene/profiles.ts`
   (`pupilR = 2`, ignores `params.pupil`), `ui/Inspector.tsx` (age bounds 6/90
   duplicate `AMPLITUDE_TABLE.domain`). Read them from `data/`, `params`, or the table. (M2)
+
+- `web/apps/viewer/src/store/derive.ts`: `paraxialPower` and the lens-parameter
+  bisection (~60 ABCD evaluations, under 1 ms) run on the main thread, while
+  CLAUDE.md says all optics computation runs in a web worker. Move `derive`
+  into the worker or record an explicit exception in CLAUDE.md. (M2)
+- `web/apps/viewer/src/store/scene.ts`: the initial `derive` runs outside
+  try/catch, so a bad starting document blanks the app instead of showing the
+  banner; add a test that a `SchemaVersionError` reaches the banner. (M2, with
+  document loading)
+- `web/apps/viewer/src/store/scene.ts`: a successful worker response sets
+  `error: null`, which can silently clear a parameter-error banner raised
+  during an in-flight request; keep worker and parameter errors in separate
+  fields. (M2)
+- `web/apps/viewer/e2e/slice.spec.ts`: the e2e test fills the number box but
+  never moves `target-distance-slider`, so the log mapping in `Inspector.tsx`
+  is untested; drive the slider and assert the demand. (M2)
+- `web/apps/viewer/src/worker/handle.ts`: the fan aims at `firstVertexZ - 1`,
+  duplicating the `launchOffsetMm = 1` default in
+  `web/packages/optics/src/metrics/defocus.ts`; export one constant from
+  `optics` or pass it in the request. (M2)
+- `web/apps/viewer/test/worker.test.ts`: the test named "per-frame budget"
+  asserts under 100 ms while `handle` measures 1–6 ms; tighten to 16 ms or
+  rename. (M2)
 
 ## Optics
 
@@ -53,3 +77,13 @@ touches the same file, and delete its line here in that commit.
   2 mm too far forward (drawing only). (M2)
 - `data/schematic-eyes/README.md`: the status column still says "verification
   set by Task 1.6". (M2)
+- `data/schematic-eyes/navarro-1985.json`: `accommodation.description` still
+  says the vitreous is held fixed and axial length grows; since the review fix
+  the retina stays at `axialLengthMm` and the vitreous absorbs the change.
+  Correct the text. (M2)
+
+## Docs
+
+- `docs/superpowers/plans/2026-10-26-m1-vertical-slice.md`: Task 1.8 says
+  "golden-section search over z", but the implementation is the closed-form
+  best-RMS focus. Update the step. (M2)
