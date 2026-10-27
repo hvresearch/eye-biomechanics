@@ -252,7 +252,7 @@ Data (Deviation 2): `saccade: { form: "linear-main-sequence", interceptMs: 21, s
 **Interfaces:**
 - Produces:
   - `DYNAMICS_TABLE`.
-  - `interface DynamicTargets { version: GazeDeg; vergenceDeg: number; accommodationD: { left: number; right: number } }`. Version is the cyclopean gaze in the head frame (Hering).
+  - `interface DynamicTargets { version: GazeDeg; vergenceDeg: number; verticalVergenceDeg: number; accommodationD: { left: number; right: number } }`. Version is the cyclopean gaze in the head frame (Hering). The vertical vergence (left elevation minus right) was added at implementation so that dynamics reproduce the static fixation of an eccentric near target exactly; it follows the vergence latency and time constant. `dynamicTargetsFromDirections(dirs, accommodationD)` builds the targets from `eyeDirections`.
   - `interface DynamicState { timeS; version: GazeDeg; vergenceDeg; accommodationD: { left; right }; saccade: { from: GazeDeg; to: GazeDeg; startS; durationS } | null; vergenceQueue: Array<{ atS; value }>; accommodationQueue: Array<{ atS; value: { left; right } }>; lastTargets: DynamicTargets }`.
   - `initialDynamics(targets, timeS = 0): DynamicState`, which is at rest on the targets.
   - `stepDynamics(prev, targets, dtS, consts = DYNAMICS_TABLE): DynamicState`:
@@ -261,7 +261,7 @@ Data (Deviation 2): `saccade: { form: "linear-main-sequence", interceptMs: 21, s
     - `dt = 0` returns `prev` unchanged, and `dt < 0` throws.
   - `eyeGazes(state: DynamicState): { left: GazeDeg; right: GazeDeg }` splits version and vergence into per-eye local gazes, with each eye taking half the vergence nasally.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - a 10° saccade completes within 43 ms ± 2 (21 + 2.2·10) and lands on the target within 1e-9;
   - peak velocity occurs at mid-duration;
   - a 4° vergence step does not move before 0.16 s and reaches 95% within 0.16 + 3·0.4 s;
@@ -269,8 +269,8 @@ Data (Deviation 2): `saccade: { form: "linear-main-sequence", interceptMs: 21, s
   - `dt = 0` is a no-op, and `dt < 0` throws;
   - retargeting at mid-saccade starts the new saccade at the current position (no jump between consecutive frames larger than the peak velocity times dt);
   - `eyeGazes` of zero vergence equals the version for both eyes (mirrored).
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
-- [ ] **Step 3:** Commit: `feat(eye-model): saccade, vergence, and accommodation dynamics`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
+- [x] **Step 3:** Commit: `feat(eye-model): saccade, vergence, and accommodation dynamics`.
 
 ### Task 2.6: Derive gaze and muscles into EyeState; scene defaults
 

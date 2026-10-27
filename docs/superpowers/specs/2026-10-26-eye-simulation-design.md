@@ -185,8 +185,9 @@ Chain: ciliary activation c ∈ [0, 1] → accommodation A (diopters) → lens g
   hyperope's is increased). Response = min(demand − lag(demand), amplitude),
   with lag a configurable function defaulting to a published lag curve (roughly
   0.3–0.7 D at 3 D demand; cite at implementation). The controller is pure and
-  stateless; the viewer animates toward its output with a first-order response
-  (time constant ≈ 0.3 s, configurable).
+  stateless; the viewer animates toward its output with the latency and
+  first-order time constant of the §4.4 dynamics bullet (Kasthurirangan &
+  Glasser), tabled in `data/eom/dynamics.json`.
 
 ### 4.3 Pupil
 

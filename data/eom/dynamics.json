@@ -1,0 +1,27 @@
+{
+  "name": "oculomotor-dynamics-default",
+  "verified": false,
+  "citation": "Partial confirmation from search-engine excerpts; see each block. The cloud session could not reach the papers' tables (docs/superpowers/plans/2026-10-27-m2-muscles-gaze-dynamics.md, Deviation 2).",
+  "saccade": {
+    "form": "linear-main-sequence",
+    "equation": "durationMs = interceptMs + slopeMsPerDeg * amplitudeDeg; position follows a minimum-jerk profile 10 s^3 - 15 s^4 + 6 s^5 of normalized time s",
+    "interceptMs": 21,
+    "slopeMsPerDeg": 2.2,
+    "citation": "Carpenter RHS, Movements of the Eyes, 2nd ed., Pion, 1988 (D = 21 + 2.2 A, as quoted by Devillez et al. 2020, Visual Cognition; excerpt). The master plan attributed the line to Bahill, Clark & Stark 1975, who introduced the main sequence. The minimum-jerk profile is a modeling choice for the trajectory shape.",
+    "verified": false
+  },
+  "vergence": {
+    "form": "latency-first-order",
+    "latencyS": 0.16,
+    "timeConstantS": 0.4,
+    "citation": "latencyS: 160 ms, attributed to Westheimer & Mitchell 1956 by a later review (excerpt); a model-based study puts it at 80-120 ms. timeConstantS: master plan value for Rashbass & Westheimer, J Physiol 159:339-360, 1961 (doi 10.1113/jphysiol.1961.sp006812), not confirmed against the paper.",
+    "verified": false
+  },
+  "accommodation": {
+    "form": "latency-first-order",
+    "latencyS": 0.35,
+    "timeConstantS": 0.25,
+    "citation": "Master plan values for Kasthurirangan & Glasser, Age related changes in accommodative dynamics in humans, Vision Res 46:1507-1519, 2006 (doi 10.1016/j.visres.2005.11.012), not confirmed against the paper's tables. Excerpts confirm that accommodation latency does not change with age (14-45 y) while the accommodation time constant increases; blur-driven latency is about 300 ms (review excerpt). Age dependence is not modeled.",
+    "verified": false
+  }
+}

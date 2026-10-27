@@ -57,3 +57,11 @@ export { musclePath } from "./eom/path";
 export type { MusclePath } from "./eom/path";
 export { ACTIVATION_TABLE, activations } from "./eom/activation";
 export type { ActivationTable } from "./eom/activation";
+export {
+  DYNAMICS_TABLE,
+  dynamicTargetsFromDirections,
+  eyeGazes,
+  initialDynamics,
+  stepDynamics,
+} from "./gaze/dynamics";
+export type { DynamicState, DynamicTargets, DynamicsTable, PerEye } from "./gaze/dynamics";
