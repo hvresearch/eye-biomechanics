@@ -45,7 +45,7 @@ per-milestone kickoff prompts in `docs/cloud-sessions.md`.
    done by a **subagent** (Agent tool) that receives only the diff and the plan,
    not the implementation conversation. Fixes to review findings happen in the
    parent session after the subagent returns.
-5. Commit messages end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+5. Commit messages end with `Co-Authored-By: Claude <model name> <noreply@anthropic.com>`, naming the model running the session.
    One task per commit. Push after every commit so progress is visible and
    overlapping runs can see the head age.
 6. Use `gh` for GitHub. If a `gh pr ...` subcommand fails with a 403 on GraphQL,
@@ -140,7 +140,7 @@ gh api -X PUT repos/$REPO/pulls/<n>/merge \
   -f commit_title="<PR title> (#<n>)" \
   -f commit_message="<first paragraph of the PR body>
 
-Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
+Co-Authored-By: Claude <model name> <noreply@anthropic.com>"
 gh api -X DELETE repos/$REPO/git/refs/heads/<branch>
 ```
 

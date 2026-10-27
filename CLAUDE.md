@@ -45,13 +45,13 @@ cd science && uv sync --all-groups && uv run ruff check . && uv run pytest
 - All optics computation runs in a web worker; the main thread never blocks more than 16 ms per frame.
 - `EyeParameters.schemaVersion` is `"1.0.0"`; any reader rejects an unknown major version with a clear error.
 - Python 3.12 pinned in `science/.python-version`; deps pip-installable with no compiled extensions beyond NumPy/SciPy wheels.
-- No commit to `main` without green CI. Commit messages end with `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+- No commit to `main` without green CI. Commit messages end with a `Co-Authored-By: Claude <model name> <noreply@anthropic.com>` trailer naming the model that wrote them (squash merges lowercase the key; that is fine).
 - Approximations (length-proxy activation, fixed pulleys, homogeneous lens index) are labeled "approximation" in the UI tooltip of the affected readout.
 
 ## Workflow
 
 - Work on feature branches and merge to `main` through pull requests; CI (jobs `web` and `python`) must pass.
-- Commit often, one task per commit, with the trailer `Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>`.
+- Commit often, one task per commit, with the `Co-Authored-By` trailer described under Conventions.
 
 ## Plan conventions
 
