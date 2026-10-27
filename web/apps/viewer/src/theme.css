@@ -102,7 +102,7 @@ body {
 .hover-label {
   position: absolute;
   left: var(--space-5);
-  bottom: var(--space-4);
+  bottom: calc(var(--space-4) + 52px);
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--line);
   border-radius: 999px;
@@ -267,4 +267,134 @@ abbr[title] {
   .app {
     grid-template-columns: 1fr 300px;
   }
+}
+
+.readout h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Muscle table: two eyes, six rows each; the activation bar is the only use of --hot in the UI. */
+table.muscles {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+table.muscles th,
+table.muscles td {
+  padding: 3px 4px;
+  text-align: right;
+  font-weight: 400;
+}
+
+table.muscles thead th {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+table.muscles th[scope="row"],
+table.muscles thead th:first-child {
+  text-align: left;
+  color: var(--text-dim);
+}
+
+table.muscles td {
+  font-family: var(--font-mono);
+}
+
+table.muscles .eye-row th {
+  padding-top: var(--space-3);
+  text-align: left;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+table.muscles tr.hovered th[scope="row"],
+table.muscles tr.hovered td {
+  color: var(--text);
+  background: rgba(255, 106, 61, 0.06);
+}
+
+table.muscles td.activation {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+table.muscles .bar {
+  display: inline-block;
+  width: 44px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+table.muscles .bar > span {
+  display: block;
+  height: 100%;
+}
+
+.transport {
+  position: absolute;
+  left: var(--space-5);
+  right: var(--space-5);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+
+.transport button {
+  min-width: 64px;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  cursor: pointer;
+}
+
+.transport button[aria-pressed="true"] {
+  background: rgba(111, 195, 193, 0.14);
+}
+
+.transport .time {
+  min-width: 64px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  text-align: right;
+}
+
+.transport input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.transport .mode {
+  min-width: 64px;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: right;
 }

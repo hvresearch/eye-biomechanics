@@ -390,13 +390,13 @@ Closes the M1 follow-ups:
   - the Pupil tooltip names `params.pupil`.
 - `tooltips.ts` gains `muscleTooltip`, `vergenceTooltip`, and `demand`.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `readoutTooltips(...).amplitude` contains "70";
   - `demand` starts with "Approximation:";
   - `muscleTooltip` starts with "Approximation:";
   - `formatDelta(+0.04)` gives "+0.04" and `formatDelta(−0)` gives "0.00".
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
-- [ ] **Step 3:** Commit: `feat(viewer): muscle table, transport, binocular readouts`.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS. Full gate.
+- [x] **Step 3:** Commit: `feat(viewer): muscle table, transport, binocular readouts`.
 
 ### Task 2.10: End-to-end tests
 

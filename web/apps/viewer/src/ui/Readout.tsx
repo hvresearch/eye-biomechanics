@@ -1,5 +1,6 @@
 import { eyeOptics, useScene } from "../store/scene";
-import { readoutTooltips } from "./tooltips";
+import { formatSigned } from "./format";
+import { readoutTooltips, vergenceTooltip } from "./tooltips";
 
 function Stat({
   k,
@@ -31,23 +32,24 @@ function Stat({
   );
 }
 
-const signed = (x: number, digits: number) => `${x >= 0 ? "+" : "−"}${Math.abs(x).toFixed(digits)}`;
-
 export function Readout() {
   const eye = useScene((s) => s.binocular.right);
   const optics = useScene((s) => eyeOptics(s.optics, "right"));
   const elapsedMs = useScene((s) => s.optics?.elapsedMs ?? 0);
   const pending = useScene((s) => s.pending);
+  const vergenceDeg = useScene((s) => s.binocular.vergenceDeg);
+  const pupilModel = useScene((s) => s.eyes.right.pupil.model);
   const powerD = optics?.paraxialPowerD ?? Number.NaN;
   const focusOffsetMm = optics ? optics.bestFocusZMm - optics.retinaZMm : Number.NaN;
-  const tips = readoutTooltips(eye.pupilMm);
+  const tips = readoutTooltips(eye.pupilMm, pupilModel);
 
   return (
     <section className="readout" aria-label="Readout">
+      <h2>Right eye</h2>
       <div className="readout-grid">
         <Stat
           k="Retinal defocus"
-          v={optics ? signed(optics.defocusD, 2) : "…"}
+          v={optics ? formatSigned(optics.defocusD, 2) : "…"}
           u="D"
           big
           pending={pending}
@@ -56,7 +58,7 @@ export function Readout() {
         />
         <Stat
           k="Best focus"
-          v={optics ? signed(focusOffsetMm, 3) : "…"}
+          v={optics ? formatSigned(focusOffsetMm, 3) : "…"}
           u="mm from retina"
           pending={pending}
           testId="focus-offset"
@@ -69,7 +71,7 @@ export function Readout() {
           testId="accommodation"
           title={tips.accommodation}
         />
-        <Stat k="Demand" v={eye.demandD.toFixed(2)} u="D" testId="demand" />
+        <Stat k="Demand" v={eye.demandD.toFixed(2)} u="D" testId="demand" title={tips.demand} />
         <Stat
           k="Amplitude"
           v={eye.amplitudeD.toFixed(2)}
@@ -91,6 +93,8 @@ export function Readout() {
           testId="power"
           title={tips.paraxialPower}
         />
+        <Stat k="Vergence" v={vergenceDeg.toFixed(2)} u="°" testId="vergence" title={vergenceTooltip()} />
+        <Stat k="Gaze" v={`${formatSigned(eye.gazeDeg.xDeg, 1)}, ${formatSigned(eye.gazeDeg.yDeg, 1)}`} u="° (temporal, up)" testId="gaze" />
         <Stat
           k="Pupil"
           v={eye.pupilMm.toFixed(1)}

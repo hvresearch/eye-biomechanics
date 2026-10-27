@@ -6,6 +6,7 @@ import { muscleLabel, muscleTooltip } from "../ui/tooltips";
 import { Globe } from "./Globe";
 import { PALETTE } from "./palette";
 import { Target } from "./Target";
+import { Transport } from "../ui/Transport";
 
 /** Advances the oculomotor dynamics once per rendered frame while the transport plays. */
 function Animator() {
@@ -66,6 +67,7 @@ export function Stage() {
         <p>{preset}</p>
       </div>
       <HoverLabel />
+      <Transport />
     </div>
   );
 }
