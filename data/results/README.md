@@ -17,9 +17,9 @@ corners the antagonists relax to zero force.
 
 Mesh `n_face = 16`, `layers = 1` (55 314 degrees of freedom), two load steps for the IOP-only
 reference and two for the other loads from it; about 4.5 min on the cloud session's 4 cores.
-Refining from `n_face = 12` to 16 changes the anterior c(2,2) from −0.249 to −0.269 µm (8%) and
-ΔC from −0.036 to −0.037 D (3%); `n_face = 8` is not converged (ΔC −0.007 D). This refinement was
-repeated after the review fixes of edd021b (by the driver review of 8ac4f73); the lids-alone and
+Refining from `n_face = 12` to 16 changes the anterior c(2,2) from −0.289 to −0.313 µm (8%) and
+ΔC from −0.038 to −0.039 D (4%); `n_face = 8` is not converged (ΔC −0.007 D before the fixes
+below). This refinement was repeated after the driver review of b6f5a0d; the lids-alone and
 muscles-alone split below was not.
 
 Regenerated after the review of edd021b, which found that the cornea's diagonal fiber families
@@ -29,7 +29,20 @@ shift. Anterior height change (µm, normalized to 4 mm): c(2,−2) +0.025, c(2,0
 c(2,2) −0.269 (before the fixes −0.089, +0.074, −0.267). Traced against the IOP-only state:
 ΔM +0.11 D, ΔJ0 +0.018 D, ΔJ45 +0.003 D (ΔS +0.13, ΔC −0.04 × 4); before the fixes ΔJ0 was
 +0.05 D and ΔJ45 −0.04 D, so most of the earlier oblique astigmatism came from the misplaced
-fibers. The cornea and the lens move back 43.3 and 43.0 µm relative to the retina, a 43 µm
+fibers.
+
+Regenerated again after the driver review of b6f5a0d, which found that the "exact" lateral-shift
+term above was itself an artifact: the anterior segment pivots about the optic-nerve support, so
+the scleral-spur ring (and with it the lens) moves about 113 µm nasally with the cornea, but the
+exported lens stayed on the axis, so the cornea came out decentered against it (29.6 µm of
+Z(1,1)). The exporter now removes the spur ring's rigid lateral shift and tilt (a least-squares
+rigid fit, axial translation and torsion kept) before fitting the corneal maps and taking the
+axial shifts, so the document is expressed relative to the lens. Anterior height change (µm,
+normalized to 4 mm): Z(1,±1) −0.06/−0.04 (was +0.06/+29.6), c(2,−2) +0.022, c(2,0) +0.177,
+c(2,2) −0.313. Traced against the IOP-only state: ΔM +0.11 D, ΔJ0 +0.020 D, ΔJ45 +0.002 D
+(ΔS +0.13, ΔC −0.04 × 4), so the removed decentration had shifted J0 by about −0.001 D. The
+heat map (sidecar) still shows the raw displacement, pivot included. The cornea and the lens
+move back 42.5 and 42.9 µm relative to the retina, a 42 µm
 shorter eye: in this model the muscles' pull, taken by the orbit behind the globe, squeezes the
 globe axially. Before the fixes, the lids alone gave about +0.11 D of J0 and the muscles alone
 about −0.08 D (paraxial estimates from the anterior surface). Everything here is elastic,

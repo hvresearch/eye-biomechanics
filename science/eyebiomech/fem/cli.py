@@ -43,8 +43,9 @@ CITATION = (
     "geometry is taken as stress-free and the result is the change from the IOP-only state; "
     "fixed optic-nerve support; muscle forces from length-proxy activation x capacity, "
     "torque-balanced, with the net force taken by an orbital reaction on the posterior "
-    "hemisphere; dead loads in the reference configuration; lens follows the scleral spur and "
-    "the retina the posterior pole. Materials, thickness, eyelid, and force data are unverified "
+    "hemisphere; dead loads in the reference configuration; lens follows the scleral spur, "
+    "the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina "
+    "follows the posterior pole. Materials, thickness, eyelid, and force data are unverified "
     "(see data/materials, data/eyelid, data/eom). Tests the hypothesis that muscle and lid "
     "loading shape the cornea; not an established result."
 )

@@ -7,7 +7,10 @@ shifts change the vertex positions: the corneal thickness by the posterior minus
 shift, the anterior chamber by the lens minus the posterior shift (the lens follows the scleral
 spur), the vitreous chamber by the retina minus the lens shift (the retina follows the posterior
 pole of the inner surface), and the axial length by the retina minus the anterior shift
-(Deviation 9).
+(Deviation 9). The corneal maps are taken relative to the lens: the rigid lateral shift and tilt
+that the scleral-spur ring (and with it the lens) shares with the cornea are removed first, so
+the pivot of the globe about the optic-nerve support does not decenter the cornea against a lens
+that stays on the axis (driver review of b6f5a0d).
 """
 
 from __future__ import annotations
@@ -49,22 +52,69 @@ def _surface_nodes(shell: ShellMesh, which: str) -> NDArray:
     return np.abs(r - target) < 1e-9
 
 
+def _spur_band(shell: ShellMesh) -> NDArray:
+    """Outer-surface nodes on the scleral-spur circle, where the ciliary body holds the lens."""
+    from eyebiomech.fem.data import load_materials
+
+    theta = shell.geometry.polar(shell.mesh.doflocs)
+    spur = (
+        shell.limbus_polar_rad
+        + load_materials()["scleralSpur"]["arcFromLimbusMm"] / shell.sclera_radius_mm
+    )
+    # Nodes within half an element of the spur circle (numerical band).
+    return _surface_nodes(shell, "outer") & (np.abs(theta - spur) <= np.pi / (4 * shell.n_face))
+
+
 def axial_shifts(shell: ShellMesh, U_ref: NDArray, U_load: NDArray) -> dict[str, float]:
     """Axial (z) displacement differences, loaded minus reference, mm: the scleral-spur ring of
     the outer surface (lens) and the posterior pole of the inner surface (retina)."""
     X = shell.mesh.doflocs
     dz = (np.asarray(U_load) - np.asarray(U_ref))[2]
     theta = shell.geometry.polar(X)
-    R = shell.sclera_radius_mm
-    from eyebiomech.fem.data import load_materials
-
-    spur = shell.limbus_polar_rad + load_materials()["scleralSpur"]["arcFromLimbusMm"] / R
-    outer = _surface_nodes(shell, "outer")
-    # Nodes within half an element of the spur circle (numerical band).
-    band = outer & (np.abs(theta - spur) <= np.pi / (4 * shell.n_face))
     inner = _surface_nodes(shell, "inner")
     pole = int(np.argmax(np.where(inner, theta, -np.inf)))
-    return {"lensMm": float(dz[band].mean()), "retinaMm": float(dz[pole])}
+    return {"lensMm": float(dz[_spur_band(shell)].mean()), "retinaMm": float(dz[pole])}
+
+
+def _rotation(vector: NDArray) -> NDArray:
+    """Rotation matrix of a rotation vector (Rodrigues)."""
+    angle = float(np.linalg.norm(vector))
+    if angle == 0.0:
+        return np.eye(3)
+    k = vector / angle
+    K = np.array([[0.0, -k[2], k[1]], [k[2], 0.0, -k[0]], [-k[1], k[0], 0.0]])
+    return np.eye(3) + np.sin(angle) * K + (1.0 - np.cos(angle)) * K @ K
+
+
+def relative_to_lens(shell: ShellMesh, U_ref: NDArray, U_load: NDArray) -> NDArray:
+    """`U_load` with the spur ring's rigid motion relative to the reference state removed, except
+    its axial translation (the lens's axial shift, kept for the vertex positions) and its torsion
+    about the axis (which the rotationally symmetric lens does not see). The corneal maps and all
+    axial shifts of the exported document are taken from this field.
+
+    The ring's rigid motion is the least-squares (Kabsch) fit Q ≈ R P + t of the loaded to the
+    reference ring positions; the loaded positions are mapped back by Rᵀ(· − t) and moved by the
+    axial part of t again."""
+    X = shell.mesh.doflocs
+    band = _spur_band(shell)
+    P = (X + np.asarray(U_ref))[:, band]
+    Q = (X + np.asarray(U_load))[:, band]
+    if np.array_equal(P, Q):
+        return np.array(U_load, dtype=float)
+    p0, q0 = P.mean(axis=1), Q.mean(axis=1)
+    u, _, vt = np.linalg.svd((Q - q0[:, None]) @ (P - p0[:, None]).T)
+    d = np.sign(np.linalg.det(u @ vt))
+    R = u @ np.diag([1.0, 1.0, d]) @ vt
+    # Rotation vector of R; drop the torsion (z) component.
+    angle = np.arccos(np.clip((np.trace(R) - 1.0) / 2.0, -1.0, 1.0))
+    axis = np.array([R[2, 1] - R[1, 2], R[0, 2] - R[2, 0], R[1, 0] - R[0, 1]])
+    vec = axis * (angle / (2.0 * np.sin(angle))) if angle > 1e-12 else 0.5 * axis
+    vec[2] = 0.0
+    R = _rotation(vec)
+    t = q0 - R @ p0
+    back = R.T @ (X + np.asarray(U_load) - t[:, None])
+    back[2] += t[2]
+    return back - X
 
 
 def _zernike_surface(surface: dict, change, thickness: float) -> dict:
@@ -103,19 +153,20 @@ def build_result(
         raise ValueError("the corneal surfaces of the input must be conic")
     ra, rp = ANTERIOR_NORM_RADIUS_MM, POSTERIOR_NORM_RADIUS_MM
     m = SAMPLE_MARGIN_MM
+    U_rel = relative_to_lens(shell, U_ref, U_load)
     ant = surface_change(
         sample_surface(shell, U_ref, "outer", ra + m),
-        sample_surface(shell, U_load, "outer", ra + m),
+        sample_surface(shell, U_rel, "outer", ra + m),
         ra,
         MAX_ORDER,
     )
     post = surface_change(
         sample_surface(shell, U_ref, "inner", rp + m),
-        sample_surface(shell, U_load, "inner", rp + m),
+        sample_surface(shell, U_rel, "inner", rp + m),
         rp,
         MAX_ORDER,
     )
-    s = axial_shifts(shell, U_ref, U_load)
+    s = axial_shifts(shell, U_ref, U_rel)
     shifts = {
         "anteriorApexMm": ant.apex_shift_mm,
         "posteriorApexMm": post.apex_shift_mm,

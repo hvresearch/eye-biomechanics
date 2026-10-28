@@ -82,6 +82,35 @@ def test_axial_shifts_move_the_vertices(shell):
     assert shifts["anteriorApexMm"] == pytest.approx(-0.01, abs=1e-9)
 
 
+def _rotation_y(angle: float) -> np.ndarray:
+    c, s = np.cos(angle), np.sin(angle)
+    return np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
+
+
+@pytest.mark.parametrize(
+    "motion",
+    ["translate-x", "pivot-about-the-nerve"],
+)
+def test_rigid_motion_of_the_anterior_segment_leaves_the_cornea_unchanged(shell, motion):
+    """The lens rides on the scleral spur, so a lateral shift or tilt the whole anterior segment
+    shares (here a rigid motion of the globe) is no change of the cornea relative to the lens:
+    the maps stay empty and the thicknesses stay put (review of b6f5a0d)."""
+    X = shell.mesh.doflocs
+    U = np.zeros_like(X)
+    if motion == "translate-x":
+        T = U.copy()
+        T[0] = -0.113
+    else:
+        pole = np.array([0.0, 0.0, shell.sclera_radius_mm])[:, None]
+        T = _rotation_y(0.005) @ (X - pole) + pole - X
+    doc, shifts = build_result(FIXTURE, shell, U, T, PROV)
+    for i in (0, 1):
+        c = np.asarray(doc["surfaces"][i]["zernikeHeight"]["coeffsMicrons"])
+        assert np.max(np.abs(c)) < 1e-4
+    for a, b in zip(doc["surfaces"], FIXTURE["surfaces"], strict=True):
+        assert a["thicknessToNextMm"] == pytest.approx(b["thicknessToNextMm"], abs=1e-6)
+
+
 def test_written_files_validate_and_carry_provenance(shell, tmp_path):
     U = np.zeros_like(shell.mesh.doflocs)
     doc, _ = build_result(FIXTURE, shell, U, U, PROV)

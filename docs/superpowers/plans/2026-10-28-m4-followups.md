@@ -99,10 +99,11 @@ numbers. All move to M5.
   inner posterior-pole node lies in the clamped optic-nerve support, so axial changes are relative
   to the clamp. Measure the retina elsewhere or say so in Deviation 9, the tooltip, and
   `data/results/README.md`. (M5)
-- `science/eyebiomech/fem/export.py`: the anterior segment's bulk lateral shift (about 117 µm
-  nasal in the committed result) appears as a Z(1,1) term on the cornea while the lens only
-  follows axially, an artificial cornea-to-lens decentration that also dominates the heat map.
-  Remove the rigid motion (or carry it to the lens as decenter) and document it. (M5)
+- `science/eyebiomech/fem/export.py`: the exported document is now relative to the lens (the
+  spur ring's rigid lateral shift and tilt are removed; driver review of b6f5a0d), but the
+  sidecar's heat map still shows the raw displacement, which the globe's ~113 µm pivot about the
+  optic-nerve support dominates. Show the displacement relative to the spur ring there too, or
+  say so in the heat-map tooltip. (M5)
 - `science/eyebiomech/fem/cli.py`: the CLI ignores the input document's `extraocularMuscles` and
   globe size and always uses `data/eom/geometry-default.json` and the default force table; warn
   or reject until the force table is generated from the document. (M5)
