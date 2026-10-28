@@ -19,13 +19,16 @@ from numpy.typing import NDArray
 from scipy.optimize import least_squares
 from skfem import Basis, ElementHex2
 
-from eyebiomech.fem.mesh import FACES, ShellMesh, conic_sag, conic_slope
+from eyebiomech.fem.mesh import FACES, ShellMesh, conic_sag
 from eyebiomech.zernike import zernike_count, zernike_matrix
 
 # Index of the cube face −z (the anterior pole) in FACES.
 _ANTERIOR_FACE = next(i for i, (n, _, _) in enumerate(FACES) if n[2] == -1)
 # Samples per element edge on the surface (numerical).
 SAMPLES_PER_CELL = 10
+# Shortfall allowed between the reference samples' reach and the disk plus the largest lateral
+# motion in `surface_change`, mm: about one sample spacing at the default density (numerical).
+COVERAGE_SLACK_MM = 0.05
 
 
 @dataclass(frozen=True)
@@ -116,26 +119,39 @@ def surface_change(
     reference_xyz: NDArray, loaded_xyz: NDArray, norm_radius_mm: float, max_order: int = 8
 ) -> SurfaceChange:
     """Height change at fixed lateral position between two samplings of the same material
-    points (row i of both arrays is one point): Δz = w_z − ∇sag · w_xy with w the incremental
-    displacement and the slope of the reference surface's conic fit (first order in w). The
-    value at the vertex becomes the apex shift; the map is fitted with Zernike polynomials over
-    the reference points inside the disk and made zero at the vertex through its piston term."""
+    points (row i of both arrays is one point). A point at reference position ξ moves by w to
+    lateral position x = ξ + w_xy; the height change there is
+
+        Δz(x) = w_z − [sag(ξ + w_xy) − sag(ξ)],
+
+    with sag the reference surface's conic fit. This is exact for any lateral motion of a conic
+    (a rigid translation included), not only to first order in w; the conic difference stands
+    in for the reference surface's own, so the fit residual cancels. The map is sampled at the
+    loaded lateral positions within the disk, so the reference samples must extend beyond
+    `norm_radius_mm` by the largest lateral motion. The value at the vertex becomes the apex
+    shift; the map is fitted with Zernike polynomials and made zero at the vertex through its
+    piston term."""
     ref = np.asarray(reference_xyz, dtype=float)
     w = np.asarray(loaded_xyz, dtype=float) - ref
-    rho = np.hypot(ref[:, 0], ref[:, 1])
+    rho_ref = np.hypot(ref[:, 0], ref[:, 1])
+    x, y = ref[:, 0] + w[:, 0], ref[:, 1] + w[:, 1]
+    rho = np.hypot(x, y)
+    lateral = float(np.max(np.hypot(w[:, 0], w[:, 1]))) if len(w) else 0.0
+    if rho_ref.max() + COVERAGE_SLACK_MM < norm_radius_mm + lateral:
+        raise ValueError(
+            f"reference samples reach {rho_ref.max():.3f} mm; a lateral motion of "
+            f"{lateral * 1e3:.0f} µm needs them to reach {norm_radius_mm + lateral:.3f} mm"
+        )
     inside = rho <= norm_radius_mm
     n_terms = zernike_count(max_order)
     if np.count_nonzero(inside) < 3 * n_terms:
         raise ValueError(f"too few samples within {norm_radius_mm} mm for order {max_order}")
-    conic = fit_conic(ref[inside])
-    slope = conic_slope(conic.radius_mm, conic.conic, rho)
-    with np.errstate(invalid="ignore", divide="ignore"):
-        sx = np.where(rho > 0, slope * ref[:, 0] / np.where(rho > 0, rho, 1), 0.0)
-        sy = np.where(rho > 0, slope * ref[:, 1] / np.where(rho > 0, rho, 1), 0.0)
-    dz = (w[:, 2] - sx * w[:, 0] - sy * w[:, 1])[inside]
-    Z = zernike_matrix(
-        max_order, rho[inside] / norm_radius_mm, np.arctan2(ref[inside, 1], ref[inside, 0])
-    )
+    conic = fit_conic(ref[rho_ref <= norm_radius_mm])
+    R, k = conic.radius_mm, conic.conic
+    dz = (w[:, 2] - (conic_sag(R, k, rho) - conic_sag(R, k, rho_ref)))[inside]
+    if not np.all(np.isfinite(dz)):
+        raise ValueError("samples lie beyond the edge of the reference conic")
+    Z = zernike_matrix(max_order, rho[inside] / norm_radius_mm, np.arctan2(y[inside], x[inside]))
     coeffs, *_ = np.linalg.lstsq(Z, dz * 1e3, rcond=None)
     residual = float(np.sqrt(np.mean((Z @ coeffs - dz * 1e3) ** 2)))
     center = zernike_matrix(max_order, np.array([0.0]), np.array([0.0]))[0] @ coeffs

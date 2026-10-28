@@ -138,12 +138,38 @@ def test_surface_change_recovers_a_known_height_change():
 
 
 def test_surface_change_uses_the_eulerian_height_at_fixed_lateral_position():
-    """A lateral slide along a sphere changes no height: Δz = w_z − ∇sag · w_xy."""
+    """A lateral slide along a sphere changes no height at any lateral position."""
     R = 7.8
-    ref = _conic_points(R, 0.0, n=3000)
+    ref = _conic_points(R, 0.0, n=3000, radius=4.1)
     loaded = ref.copy()
-    dx = 1e-4  # mm, slide every point along x on the same sphere
+    dx = 0.05  # mm, slide every point along x on the same sphere
     loaded[:, 0] += dx
     loaded[:, 2] = conic_sag(R, 0.0, np.hypot(loaded[:, 0], loaded[:, 1]))
     change = surface_change(ref, loaded, 4.0)
-    assert np.max(np.abs(change.coeffs_um)) < 1e-4  # second order in the slide (≈ dx² / R)
+    assert abs(change.apex_shift_mm) < 1e-12
+    assert np.max(np.abs(change.coeffs_um)) < 1e-9
+
+
+@pytest.mark.parametrize("shift", [(-0.117, 0.0014, 0.043), (0.08, -0.15, -0.02)])
+def test_surface_change_of_a_rigidly_translated_conic_is_exact(shift):
+    """Moving a conic by (a, b, c) changes the height at x by c + sag(x − a) − sag(x), to all
+    orders in the translation (the review of edd021b found the first-order map dropped
+    0.06 µm of Z(2,0) and 0.04 µm of Z(2,2) for the committed result's 117 µm shift)."""
+    R, k, a = 7.8, -0.26, 4.0
+    ref = _conic_points(R, k, n=4000, radius=4.25)
+    loaded = ref + np.asarray(shift)
+    change = surface_change(ref, loaded, a)
+    x, y = _disk(500, a)
+    ax, ay, az = shift
+    want = 1e3 * (
+        az + conic_sag(R, k, np.hypot(x - ax, y - ay)) - conic_sag(R, k, np.hypot(x, y))
+    )
+    got = 1e3 * change.apex_shift_mm + change.height_um(x, y)
+    assert np.max(np.abs(got - want)) < 2e-3  # µm, order-8 truncation; first order misses ~0.06
+    assert change.coeffs_um[4] != pytest.approx(0.0, abs=1e-3)  # Z(2,0) is not dropped
+
+
+def test_surface_change_refuses_samples_that_do_not_cover_the_moved_disk():
+    ref = _conic_points(7.8, 0.0, n=3000, radius=4.0)
+    with pytest.raises(ValueError, match="lateral motion"):
+        surface_change(ref, ref + np.array([0.2, 0.0, 0.0]), 4.0)

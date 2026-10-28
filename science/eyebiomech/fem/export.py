@@ -30,6 +30,10 @@ MAX_MAP_RMS_UM = 500.0
 ANTERIOR_NORM_RADIUS_MM = 4.0
 POSTERIOR_NORM_RADIUS_MM = 3.5
 MAX_ORDER = 8
+# Sampling reaches this far beyond each fit radius so the disk stays covered at the loaded
+# lateral positions (numerical; up to 250 µm of lateral motion, inside the zone where the inner
+# surface follows the document's posterior cornea).
+SAMPLE_MARGIN_MM = 0.25
 SCHEMA_VERSION = "1.0.0"
 
 
@@ -98,15 +102,16 @@ def build_result(
     if any(s["type"] != "conic" for s in params["surfaces"][:2]):
         raise ValueError("the corneal surfaces of the input must be conic")
     ra, rp = ANTERIOR_NORM_RADIUS_MM, POSTERIOR_NORM_RADIUS_MM
+    m = SAMPLE_MARGIN_MM
     ant = surface_change(
-        sample_surface(shell, U_ref, "outer", ra),
-        sample_surface(shell, U_load, "outer", ra),
+        sample_surface(shell, U_ref, "outer", ra + m),
+        sample_surface(shell, U_load, "outer", ra + m),
         ra,
         MAX_ORDER,
     )
     post = surface_change(
-        sample_surface(shell, U_ref, "inner", rp),
-        sample_surface(shell, U_load, "inner", rp),
+        sample_surface(shell, U_ref, "inner", rp + m),
+        sample_surface(shell, U_load, "inner", rp + m),
         rp,
         MAX_ORDER,
     )
