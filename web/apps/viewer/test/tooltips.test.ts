@@ -83,9 +83,16 @@ describe("biomechanics tooltips", () => {
     expect(t.startsWith("Approximation:")).toBe(true);
     expect(t).toMatch(/elastic/);
     expect(t).toMatch(/stress-free/);
+    expect(t).toMatch(/fixed optic-nerve cap/);
+    expect(t).toMatch(/torque balancing changes the lateral and medial rectus forces/);
   });
   it("says what the heat map shows and how it is exaggerated", () => {
-    expect(heatMapTooltip(50)).toMatch(/×50/);
-    expect(heatMapTooltip(50)).toMatch(/IOP-only/);
+    const t = heatMapTooltip(50);
+    expect(t).toMatch(/^Approximation: /);
+    expect(t).toMatch(/fixed optic-nerve cap/);
+    expect(t).toMatch(/orbital reaction/);
+    expect(t).toMatch(/rigid motion/);
+    expect(t).toMatch(/×50/);
+    expect(t).toMatch(/IOP-only/);
   });
 });
