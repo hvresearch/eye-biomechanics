@@ -28,9 +28,13 @@ describe("worker budget", () => {
         wave: side === "right" ? WAVE_REQUEST : null,
       })),
     };
-    handle(req); // warm up
-    handle(req);
-    const times = Array.from({ length: 5 }, () => handle(req).elapsedMs).sort((x, y) => x - y);
+    // Each run sees a slightly different pupil, as during an interaction, so per-layout caches
+    // (fit factorization, diffraction-limited PSF) are shared only within a request, never across runs.
+    const run = (k: number) =>
+      handle({ ...req, eyes: req.eyes.map((e) => ({ ...e, pupilSemiDiamMm: e.pupilSemiDiamMm + 0.001 * (k + 1) })) }).elapsedMs;
+    run(-0.5); // warm up
+    run(-0.25);
+    const times = Array.from({ length: 5 }, (_, k) => run(k)).sort((x, y) => x - y);
     process.stdout.write(`worker times (ms): ${times.map((t) => t.toFixed(1)).join(", ")}\n`);
     expect(times[2]!).toBeLessThan(BUDGET_MS);
   });

@@ -80,12 +80,16 @@ function transpose(a: Float64Array, n: number): void {
 /**
  * In-place 2-D complex FFT of an n × n row-major array (n a power of two). The forward
  * transform uses e^(−2πi·kx/n); the inverse uses e^(+2πi·kx/n) and is scaled by 1/n².
- * Columns are transformed as rows of the transpose (contiguous memory).
+ * Columns are transformed as rows of the transpose (contiguous memory). `rows` declares that
+ * every row outside [from, to] is zero (a pupil smaller than the grid), which skips their pass.
  */
-export function fft2(re: Float64Array, im: Float64Array, n: number, inverse = false): void {
+export function fft2(re: Float64Array, im: Float64Array, n: number, inverse = false, rows?: { from: number; to: number }): void {
   if (re.length !== n * n || im.length !== n * n) throw new RangeError(`fft2 expects ${n}×${n} arrays`);
   const sign = inverse ? 1 : -1;
-  for (let r = 0; r < n; r++) fft1(re, im, n, r * n, sign);
+  // Rows outside `rows` are known to be zero, so their transforms are zero and are skipped.
+  const r0 = Math.max(0, rows?.from ?? 0);
+  const r1 = Math.min(n - 1, rows?.to ?? n - 1);
+  for (let r = r0; r <= r1; r++) fft1(re, im, n, r * n, sign);
   transpose(re, n);
   transpose(im, n);
   for (let r = 0; r < n; r++) fft1(re, im, n, r * n, sign);

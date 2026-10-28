@@ -18,8 +18,8 @@ export interface ZernikeFit {
   pupilRadiusMm: number;
 }
 
-/** Cholesky solve of the symmetric positive-definite system A x = b (A is overwritten). */
-function choleskySolve(A: Float64Array, b: Float64Array, n: number): Float64Array {
+/** In-place Cholesky factorization A = L·Lᵀ of a symmetric positive-definite n × n matrix (L in the lower triangle). */
+function choleskyFactor(A: Float64Array, n: number): Float64Array {
   for (let j = 0; j < n; j++) {
     let d = A[j * n + j]!;
     for (let k = 0; k < j; k++) d -= A[j * n + k]! ** 2;
@@ -32,19 +32,71 @@ function choleskySolve(A: Float64Array, b: Float64Array, n: number): Float64Arra
       A[i * n + j] = s / ljj;
     }
   }
+  return A;
+}
+
+/** Solve L·Lᵀ x = b with a factor from `choleskyFactor`. */
+function choleskySolve(L: Float64Array, b: Float64Array, n: number): Float64Array {
   const y = new Float64Array(n);
   for (let i = 0; i < n; i++) {
     let s = b[i]!;
-    for (let k = 0; k < i; k++) s -= A[i * n + k]! * y[k]!;
-    y[i] = s / A[i * n + i]!;
+    for (let k = 0; k < i; k++) s -= L[i * n + k]! * y[k]!;
+    y[i] = s / L[i * n + i]!;
   }
   const x = new Float64Array(n);
   for (let i = n - 1; i >= 0; i--) {
     let s = y[i]!;
-    for (let k = i + 1; k < n; k++) s -= A[k * n + i]! * x[k]!;
-    x[i] = s / A[i * n + i]!;
+    for (let k = i + 1; k < n; k++) s -= L[k * n + i]! * x[k]!;
+    x[i] = s / L[i * n + i]!;
   }
   return x;
+}
+
+/** The basis matrix of a sample layout and the Cholesky factor of its normal equations. */
+interface Design {
+  basis: Float64Array;
+  factor: Float64Array;
+}
+
+/**
+ * Designs by sample layout (pupil grid, radius, order, and which samples are valid). Maps that
+ * share a layout, such as the eye with and without spectacles in one request, fit with one
+ * factorization.
+ */
+const designs = new Map<string, Design>();
+const DESIGN_CACHE_SIZE = 8;
+
+function layoutKey(map: OpdMap, maxOrder: number): string {
+  let sig = 0;
+  for (let i = 0; i < map.valid.length; i++) if (map.valid[i]) sig = (sig * 31 + i + 1) % 2147483647;
+  return `${maxOrder}|${map.gridN}|${map.pupilRadiusMm}|${map.valid.length}|${sig}|${map.xs[0]}|${map.ys[0]}`;
+}
+
+function design(map: OpdMap, maxOrder: number, nValid: number): Design {
+  const key = layoutKey(map, maxOrder);
+  let d = designs.get(key);
+  if (d !== undefined) return d;
+  const J = zernikeCount(maxOrder);
+  const ata = new Float64Array(J * J);
+  const z = new Float64Array(J);
+  const basis = new Float64Array(nValid * J);
+  const R = map.pupilRadiusMm;
+  let row = 0;
+  for (let i = 0; i < map.valid.length; i++) {
+    if (!map.valid[i]) continue;
+    zernikeBasisXY(maxOrder, map.xs[i]! / R, map.ys[i]! / R, z);
+    basis.set(z, row * J);
+    row++;
+    for (let a = 0; a < J; a++) {
+      const za = z[a]!;
+      const base = a * J;
+      for (let b = 0; b <= a; b++) ata[base + b]! += za * z[b]!;
+    }
+  }
+  d = { basis, factor: choleskyFactor(ata, J) };
+  if (designs.size >= DESIGN_CACHE_SIZE) designs.clear();
+  designs.set(key, d);
+  return d;
 }
 
 /**
@@ -58,29 +110,18 @@ export function fitZernike(map: OpdMap, maxRadialOrder = 8): ZernikeFit {
   for (let i = 0; i < total; i++) nValid += map.valid[i]!;
   if (nValid < MIN_VALID_FRACTION * total || nValid === 0) throw new InsufficientRaysError(nValid, total);
   const J = zernikeCount(maxRadialOrder);
-  const ata = new Float64Array(J * J);
-  const atb = new Float64Array(J);
-  const z = new Float64Array(J);
-  const basis = new Float64Array(nValid * J); // kept for the residual pass
+  const { basis, factor } = design(map, maxRadialOrder, nValid);
   const R = map.pupilRadiusMm;
+  const atb = new Float64Array(J);
   let row = 0;
   for (let i = 0; i < total; i++) {
     if (!map.valid[i]) continue;
-    const x = map.xs[i]!;
-    const y = map.ys[i]!;
-    zernikeBasisXY(maxRadialOrder, x / R, y / R, z);
-    basis.set(z, row * J);
-    row++;
     const w = map.opdMicrons[i]!;
-    for (let a = 0; a < J; a++) {
-      const za = z[a]!;
-      atb[a]! += za * w;
-      const base = a * J;
-      for (let b = 0; b <= a; b++) ata[base + b]! += za * z[b]!;
-    }
+    const off = row * J;
+    for (let a = 0; a < J; a++) atb[a]! += basis[off + a]! * w;
+    row++;
   }
-  for (let a = 0; a < J; a++) for (let b = a + 1; b < J; b++) ata[a * J + b] = ata[b * J + a]!;
-  const c = choleskySolve(ata, atb, J);
+  const c = choleskySolve(factor, atb, J);
 
   let res = 0;
   row = 0;

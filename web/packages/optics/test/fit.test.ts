@@ -60,6 +60,22 @@ describe("fitZernike", () => {
     expect(zernikeWavefront(fit.coeffsMicrons, 0.5, -0.3, 2)).toBeCloseTo(zernikeWavefront(coeffs, 0.5, -0.3, 2), 9);
   });
 
+  it("reuses one factorization for maps on the same samples and still fits each exactly", () => {
+    const a = new Array(15).fill(0);
+    a[4] = 0.4;
+    const b = new Array(15).fill(0);
+    b[7] = -0.25;
+    b[12] = 0.1;
+    const fa = fitZernike(syntheticMap(a));
+    const fb = fitZernike(syntheticMap(b));
+    fa.coeffsMicrons.forEach((c, j) => expect(Math.abs(c - (a[j] ?? 0))).toBeLessThan(1e-9));
+    fb.coeffsMicrons.forEach((c, j) => expect(Math.abs(c - (b[j] ?? 0))).toBeLessThan(1e-9));
+    // A different validity mask is a different layout.
+    const m = syntheticMap(b);
+    m.valid[0] = 0;
+    fitZernike(m).coeffsMicrons.forEach((c, j) => expect(Math.abs(c - (b[j] ?? 0))).toBeLessThan(1e-9));
+  });
+
   it("throws InsufficientRaysError when fewer than 60% of the samples are valid", () => {
     const map = syntheticMap([0, 0, 0, 0, 1]);
     for (let i = 0; i < map.valid.length; i += 2) map.valid[i] = 0;

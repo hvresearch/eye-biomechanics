@@ -35,7 +35,7 @@ export interface Psf {
 export interface PsfOptions {
   /** Grid size (power of two); 256 by default. */
   gridN?: number;
-  /** Angular pixel, arcmin; default λ_min / (2D), Nyquist for the shortest wavelength. */
+  /** Angular pixel, arcmin; default `defaultPixelArcmin` (at most λ_min / (2D), Nyquist for the shortest wavelength). */
   pixelArcmin?: number;
 }
 
@@ -70,6 +70,9 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   const k = (2 * Math.PI) / (input.wavelengthNm * 1e-3); // per µm of OPD
   let count = 0;
   const h = n / 2;
+  // Rows that can hold pupil samples (the rest stay zero and their FFT pass is skipped).
+  const rowSpan = Math.ceil(R / dx) + 1;
+  const rows = { from: h - rowSpan, to: h + rowSpan };
   for (let i = 0; i < n; i++) {
     const y = (i - h) * dx;
     if (Math.abs(y) > R) continue;
@@ -88,7 +91,7 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
     }
   }
   if (count === 0) throw new RangeError("The pupil is smaller than one sample of the PSF grid");
-  fft2(reA, imA, n);
+  fft2(reA, imA, n, false, rows);
   const aberrated = new Float64Array(n * n);
   const norm = 1 / (n * n * count); // Parseval: Σ|F|² = n²·Σ|P|² = n²·count
   for (let i = 0; i < n * n; i++) aberrated[i] = (reA[i]! * reA[i]! + imA[i]! * imA[i]!) * norm;
@@ -96,7 +99,7 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   let ideal = cachedIdeal;
   if (ideal === undefined && reI) {
     const imI = new Float64Array(n * n);
-    fft2(reI, imI, n);
+    fft2(reI, imI, n, false, rows);
     ideal = new Float64Array(n * n);
     for (let i = 0; i < n * n; i++) ideal[i] = (reI[i]! * reI[i]! + imI[i]! * imI[i]!) * norm;
     fftShift(ideal, n);
@@ -109,12 +112,25 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   return { aberrated, ideal, blurRad: (maxPowerD * 2 * R) / 1000 };
 }
 
+/** Steps per octave of the default pixel ladder (numerical): finer than this barely changes the image. */
+const PIXEL_STEPS_PER_OCTAVE = 8;
+
+/**
+ * Default PSF pixel, arcmin: the largest step of a ladder 2^(k/8) arcmin that does not exceed
+ * λ/(2D) (Nyquist). Quantizing keeps the pixel, and so the target bitmap and its cached
+ * spectrum, unchanged while the pupil varies a little.
+ */
+export function defaultPixelArcmin(wavelengthNm: number, pupilRadiusMm: number): number {
+  const nyquist = ((wavelengthNm * 1e-6) / (4 * pupilRadiusMm)) * RAD_TO_ARCMIN;
+  return 2 ** (Math.floor(PIXEL_STEPS_PER_OCTAVE * Math.log2(nyquist) + 1e-9) / PIXEL_STEPS_PER_OCTAVE);
+}
+
 function combine(inputs: readonly WavefrontInput[], opts: PsfOptions): Psf {
   if (inputs.length === 0) throw new RangeError("No wavefronts to image");
   const n = opts.gridN ?? 256;
   const R = inputs[0]!.pupilRadiusMm;
   const lambdaMin = Math.min(...inputs.map((w) => w.wavelengthNm));
-  const pixelRad = opts.pixelArcmin !== undefined ? opts.pixelArcmin / RAD_TO_ARCMIN : (lambdaMin * 1e-6) / (2 * 2 * R);
+  const pixelRad = opts.pixelArcmin !== undefined ? opts.pixelArcmin / RAD_TO_ARCMIN : defaultPixelArcmin(lambdaMin, R) / RAD_TO_ARCMIN;
   const wsum = inputs.reduce((s, w) => s + (w.weight ?? 1), 0);
   const weights = inputs.map((w) => (w.weight ?? 1) / wsum);
   const sumA = new Float64Array(n * n);

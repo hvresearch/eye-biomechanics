@@ -6,12 +6,23 @@ function curvature(radiusMm: number): number {
   return Number.isFinite(radiusMm) ? 1 / radiusMm : 0;
 }
 
+/** cos and sin of each toric's axis, computed once per surface object (the hot path calls them per Newton step). */
+const axisTrig = new WeakMap<ToricSurface, { deg: number; cos: number; sin: number }>();
+
+function trig(s: ToricSurface): { cos: number; sin: number } {
+  let t = axisTrig.get(s);
+  if (t === undefined || t.deg !== s.axisDeg) {
+    t = { deg: s.axisDeg, cos: Math.cos(s.axisDeg * DEG), sin: Math.sin(s.axisDeg * DEG) };
+    axisTrig.set(s, t);
+  }
+  return t;
+}
+
 /** Decentered coordinates rotated into the toric's principal sections (u along axisDeg). */
 function local(s: ToricSurface, x: number, y: number): { u: number; v: number; cos: number; sin: number } {
   const dx = x - s.decenter.xMm;
   const dy = y - s.decenter.yMm;
-  const cos = Math.cos(s.axisDeg * DEG);
-  const sin = Math.sin(s.axisDeg * DEG);
+  const { cos, sin } = trig(s);
   return { u: dx * cos + dy * sin, v: -dx * sin + dy * cos, cos, sin };
 }
 

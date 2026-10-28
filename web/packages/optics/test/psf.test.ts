@@ -36,9 +36,13 @@ describe("psf", () => {
     expect(p.aliased).toBe(false);
   });
 
-  it("samples at λ/(2D) by default and reports its field", () => {
+  it("samples at most at λ/(2D), within one 2^(1/8) ladder step, and reports its field", () => {
     const p = psf({ coeffsMicrons: zeros(), pupilRadiusMm: 2, wavelengthNm: 555 });
-    expect(p.pixelArcmin).toBeCloseTo(((555e-6 / 8) * RAD_TO_ARCMIN), 12);
+    const nyquist = (555e-6 / 8) * RAD_TO_ARCMIN;
+    expect(p.pixelArcmin).toBeLessThanOrEqual(nyquist);
+    expect(p.pixelArcmin).toBeGreaterThan(nyquist / 2 ** (1 / 8));
+    // A slightly different pupil keeps the same pixel.
+    expect(psf({ coeffsMicrons: zeros(), pupilRadiusMm: 2.001, wavelengthNm: 555 }).pixelArcmin).toBe(p.pixelArcmin);
     expect(p.fieldArcmin).toBeCloseTo(p.n * p.pixelArcmin, 12);
     expect(p.n).toBe(256);
   });
@@ -52,7 +56,8 @@ describe("psf", () => {
     const p = polychromaticPsf(inputs);
     expect(Math.abs(p.strehl - 1)).toBeLessThan(1e-3);
     expect(p.weights.reduce((a, b) => a + b, 0)).toBeCloseTo(1, 12);
-    expect(p.pixelArcmin).toBeCloseTo(((450e-6 / 8) * RAD_TO_ARCMIN), 12);
+    expect(p.pixelArcmin).toBeLessThanOrEqual((450e-6 / 8) * RAD_TO_ARCMIN);
+    expect(p.pixelArcmin).toBeGreaterThan((450e-6 / 8) * RAD_TO_ARCMIN / 2 ** (1 / 8));
     expect(() => polychromaticPsf([inputs[0]!, { ...inputs[1]!, pupilRadiusMm: 1 }])).toThrow();
   });
 });
