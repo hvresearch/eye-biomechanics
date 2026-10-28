@@ -1,0 +1,9 @@
+{
+  "name": "optotype-geometry",
+  "citation": "ISO 8596:2017 Ophthalmic optics — Visual acuity testing — Standard and clinical optotypes and their presentation (Landolt ring reference; Sloan/Snellen letters drawn on a 5 × 5 stroke grid). The 20/20 (decimal 1.0, logMAR 0) letter has a 1 arcmin stroke and a 5 arcmin height at the eye.",
+  "verified": false,
+  "note": "A definition, not a measurement; not checked against the standard's text in this session (no document access).",
+  "letterHeightStrokes": 5,
+  "strokeArcminAt20_20": 1,
+  "letterArcminAt20_20": 5
+}

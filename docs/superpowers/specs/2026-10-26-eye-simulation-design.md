@@ -185,8 +185,9 @@ Chain: ciliary activation c ∈ [0, 1] → accommodation A (diopters) → lens g
   hyperope's is increased). Response = min(demand − lag(demand), amplitude),
   with lag a configurable function defaulting to a published lag curve (roughly
   0.3–0.7 D at 3 D demand; cite at implementation). The controller is pure and
-  stateless; the viewer animates toward its output with a first-order response
-  (time constant ≈ 0.3 s, configurable).
+  stateless; the viewer animates toward its output with the latency and
+  first-order time constant of the §4.4 dynamics bullet (Kasthurirangan &
+  Glasser), tabled in `data/eom/dynamics.json`.
 
 ### 4.3 Pupil
 
@@ -288,12 +289,14 @@ from a paraxial seed. Result is displayed beside any manual prescription.
 
 ### 5.6 Validation suite (acceptance tests)
 
-- Relaxed Navarro eye paraxial power matches the published value (≈60.4 D) to
-  0.1 D; far point at infinity. Value unverified. A paraxial matrix trace of the
-  hand fixture data/fixtures/emmetrope-right.eye.json gives 60.60 D with back
-  focal distance 16.341 mm vs 16.40 mm vitreous (≈0.3 D). Task 1.1 reconciles
-  both against Navarro 1985 (including the wavelength the indices refer to)
-  before Task 1.6 writes the test.
+- Relaxed Navarro eye paraxial power matches the published value (60.42 D at
+  the sodium d line, 589.3 nm) to 0.05 D; far point at infinity (image of
+  infinity within 0.05 mm of the retina vertex). Reconciled 2026-10-26: the
+  hand fixture had the corneal index mistranscribed as 1.367; with the paper's
+  1.376 the ABCD trace gives 60.416 D and a back focal distance of 16.404 mm
+  against the 16.40 mm vitreous. The table indices are d-line values stored in
+  the schema's `index555` field; the ≈0.1 D wavelength difference is accepted
+  for the regression fixture.
 - Diffraction-limited circular pupil yields an Airy pattern with the correct first
   dark ring radius (1.22 λ/D).
 - A pure defocus wavefront fits to a single C(2,0) coefficient with others below
@@ -411,7 +414,7 @@ recomputed in a worker with results arriving within 100 ms for a 64×64 pupil gr
   with uncertainty, and the predicted onset of needing correction, reported by
   two thresholds: refraction (cylinder >= 0.75 D or |sphere| > 0.5 D) and acuity
   (the Watson & Ahumada 2008 metric computed from the wavefront is worse than
-  logMAR 0.3, i.e. 20/40).
+  logMAR 0.3, i.e. 20/40; default, configurable).
 - The viewer shows this as a scrubbable timeline; the eye and optics update as
   the age cursor moves.
 

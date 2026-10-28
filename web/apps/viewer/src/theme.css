@@ -1,0 +1,652 @@
+/* Eye Biomechanics design tokens: clinical, restrained; one hot color reserved for
+   muscle activation (Milestone 2). Charts and the 3D stage share these. */
+:root {
+  --font-ui: "Inter", "SF Pro Text", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+
+  --bg: #0f1419;
+  --bg-elev: #161c23;
+  --bg-panel: rgba(22, 28, 35, 0.92);
+  --line: #273039;
+  --text: #e6ebef;
+  --text-dim: #9aa6b2;
+  --text-faint: #5f6b77;
+
+  --accent: #6fc3c1; /* rays, controls */
+  --accent-strong: #8fe0dd;
+  --warn: #e0b35a;
+  --hot: #ff6a3d; /* reserved: muscle activation */
+  --ok: #7cc98b;
+
+  --cornea: #a9d6ea;
+  --aqueous: #cfe8f2;
+  --iris: #4d6b8a;
+  --lens: #f1d9a3;
+  --ciliary: #c88a8a;
+  --vitreous: #d9e6ea;
+  --retina: #d77a5a;
+  --sclera: #ece7df;
+
+  --radius: 10px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+
+  --fs-xs: 11px;
+  --fs-sm: 12.5px;
+  --fs-md: 14px;
+  --fs-lg: 18px;
+  --fs-xl: 26px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: minmax(0, 1fr) auto;
+  height: 100%;
+}
+
+.stage {
+  grid-column: 1;
+  grid-row: 1;
+  position: relative;
+  min-width: 0;
+}
+
+.stage canvas {
+  display: block;
+}
+
+.stage-title {
+  position: absolute;
+  top: var(--space-4);
+  left: var(--space-5);
+  pointer-events: none;
+}
+
+.stage-title h1 {
+  margin: 0;
+  font-size: var(--fs-lg);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.stage-title p {
+  margin: 2px 0 0;
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+
+.hover-label {
+  position: absolute;
+  left: var(--space-5);
+  bottom: calc(var(--space-4) + 52px);
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  pointer-events: none;
+}
+
+.hover-label.muscle {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-width: 420px;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+
+.hover-label.muscle strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.hover-label.muscle small {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+.side {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--line);
+}
+
+.inspector {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4) var(--space-4) var(--space-5);
+  background: var(--bg-elev);
+}
+
+.readout {
+  flex: none;
+  max-height: 50%;
+  overflow: auto;
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+  padding: var(--space-3) var(--space-4) var(--space-4);
+}
+
+.panel + .panel {
+  margin-top: var(--space-5);
+}
+
+.panel h2 {
+  margin: 0 0 var(--space-3);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.field label {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+}
+
+.field input[type="range"] {
+  grid-column: 1 / span 2;
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.field input[type="number"],
+.field select {
+  width: 96px;
+  padding: 4px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: right;
+}
+
+.field select {
+  width: 100%;
+  grid-column: 1 / span 2;
+  text-align: left;
+  font-family: var(--font-ui);
+}
+
+.note {
+  margin: var(--space-2) 0 0;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+.banner {
+  margin: 0 0 var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--warn);
+  border-radius: var(--radius);
+  background: rgba(224, 179, 90, 0.08);
+  color: var(--warn);
+  font-size: var(--fs-sm);
+}
+
+.readout-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2) var(--space-4);
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stat .k {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stat .v {
+  font-family: var(--font-mono);
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout .stat .v {
+  font-size: var(--fs-md);
+}
+
+.stat .v.big {
+  font-size: var(--fs-xl);
+  color: var(--accent-strong);
+}
+
+.stat .u {
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
+  margin-left: 4px;
+}
+
+.stat.pending .v {
+  opacity: 0.5;
+}
+
+abbr[title] {
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+  cursor: help;
+}
+
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr 300px;
+  }
+}
+
+.readout h2 {
+  margin: 0 0 var(--space-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* Muscle table: two eyes, six rows each; the activation bar is the only use of --hot in the UI. */
+table.muscles {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+table.muscles th,
+table.muscles td {
+  padding: 3px 4px;
+  text-align: right;
+  font-weight: 400;
+}
+
+table.muscles thead th {
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--line);
+}
+
+table.muscles th[scope="row"],
+table.muscles thead th:first-child {
+  text-align: left;
+  color: var(--text-dim);
+}
+
+table.muscles td {
+  font-family: var(--font-mono);
+}
+
+table.muscles .eye-row th {
+  padding-top: var(--space-3);
+  text-align: left;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+table.muscles tr.hovered th[scope="row"],
+table.muscles tr.hovered td {
+  color: var(--text);
+  background: rgba(255, 106, 61, 0.06);
+}
+
+table.muscles td.activation {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+table.muscles .bar {
+  display: inline-block;
+  width: 44px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+table.muscles .bar > span {
+  display: block;
+  height: 100%;
+}
+
+.transport {
+  position: absolute;
+  left: var(--space-5);
+  right: var(--space-5);
+  bottom: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  font-size: var(--fs-sm);
+  color: var(--text-dim);
+}
+
+.transport button {
+  min-width: 64px;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  cursor: pointer;
+}
+
+.transport button[aria-pressed="true"] {
+  background: rgba(111, 195, 193, 0.14);
+}
+
+.transport .time {
+  min-width: 64px;
+  font-family: var(--font-mono);
+  color: var(--text);
+  text-align: right;
+}
+
+.transport input[type="range"] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.transport .mode {
+  min-width: 64px;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-align: right;
+}
+
+/* Optics strip (spec §6.4): one row of figures under the stage; charts share one ink system. */
+.optics-strip {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+  padding: var(--space-2) var(--space-4) var(--space-3);
+}
+
+.optics-strip.pending .optics-panels {
+  opacity: 0.85;
+}
+
+.optics-strip header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-2);
+}
+
+.optics-strip h2 {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.optics-strip .legend,
+.optics-strip .toggles {
+  display: flex;
+  gap: var(--space-4);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+.optics-strip .toggles {
+  margin-left: auto;
+}
+
+.optics-strip .toggles label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.optics-strip .toggles input {
+  accent-color: var(--accent);
+}
+
+.optics-strip i,
+table.figures i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.optics-strip i.dashed {
+  background: repeating-linear-gradient(90deg, #898781 0 4px, transparent 4px 7px);
+}
+
+.optics-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  align-items: flex-start;
+}
+
+.optics-panel {
+  margin: 0;
+  position: relative;
+  flex: none;
+}
+
+.optics-panel figcaption {
+  margin-bottom: var(--space-1);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.optics-panel .pair {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.optics-panel .pair-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optics-panel .pair-label {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+.optics-image {
+  display: block;
+  border-radius: 4px;
+  background: var(--bg);
+  image-rendering: pixelated;
+}
+
+.optics-panel .scale {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+.chart {
+  position: relative;
+}
+
+.chart .tooltip {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 2;
+  max-width: 320px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+table.figures {
+  width: 100%;
+  margin-top: var(--space-3);
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+table.figures th,
+table.figures td {
+  padding: 2px 6px;
+  text-align: right;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+table.figures th[scope="row"] {
+  text-align: left;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+table.figures thead th {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+table.figures td {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+
+table.figures td.rx {
+  white-space: normal;
+}
+
+.note.warn {
+  color: var(--warn);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.button-row button {
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.button-row button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.auto-rx {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.field input[type="checkbox"] {
+  justify-self: end;
+  accent-color: var(--accent);
+}
+
+.decomposition h3 {
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.decomposition table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.decomposition th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.decomposition td {
+  text-align: right;
+  font-family: var(--font-mono);
+}

@@ -1,0 +1,13 @@
+{
+  "name": "lag-default",
+  "form": "piecewise-linear",
+  "equation": "lagD = max(0, slope * (demandD - onsetD))",
+  "coefficients": {
+    "slope": 0.15,
+    "onsetD": 1.0
+  },
+  "minTargetDistanceM": 0.05,
+  "citation": "assumption pending transcription of adult stimulus-response data (a published lag of roughly 0.3-0.7 D at 3 D demand; see spec §4.2). minTargetDistanceM is a numerical guard against a zero-distance target, not a physiological value.",
+  "verified": false,
+  "note": "Approximation. Label as such in the UI tooltip of the accommodation readout. Replace this file with a published adult stimulus-response curve when one can be transcribed (for example with the Zapata-Díaz 2019 model)."
+}

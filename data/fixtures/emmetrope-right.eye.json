@@ -4,17 +4,17 @@
   "label": "Navarro 1985 relaxed emmetrope, right eye (fixture)",
   "provenance": {
     "source": "fixture",
-    "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985 (values transcribed from memory; verify); paraxial power computes to 60.60 D, see spec §5.6",
+    "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985, Table 1 (d-line indices); mirrors data/schematic-eyes/navarro-1985.json; paraxial power 60.42 D, see spec §5.6",
     "generatedBy": "hand",
     "gitHash": "",
     "date": "2026-10-26",
-    "verified": false
+    "verified": true
   },
   "surfaces": [
     {
       "name": "cornea.anterior", "type": "conic", "radiusMm": 7.72, "conic": -0.26,
       "tilt": { "xDeg": 0, "yDeg": 0 }, "decenter": { "xMm": 0, "yMm": 0 },
-      "thicknessToNextMm": 0.55, "mediumAfter": { "name": "cornea", "index555": 1.367 },
+      "thicknessToNextMm": 0.55, "mediumAfter": { "name": "cornea", "index555": 1.376 },
       "apertureSemiDiamMm": 6.0
     },
     {

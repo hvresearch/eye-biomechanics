@@ -6,18 +6,18 @@ One entry per source. Every transcribed number lands in a `data/**/*.json` file 
 
 Zapata-Díaz JF, Radhakrishnan H, Charman WN, López-Gil N. *J Optom* 12(1):3-13, 2019.
 DOI: 10.1016/j.optom.2018.01.003 (open access)
-Used for: the default eye model (age and accommodation dependence).
+Used for: the default eye model (age and accommodation dependence). Not yet transcribed: `data/schematic-eyes/zapata-diaz-2019.json` is a stub because the full text (open access, PMC6318498) was unreachable from the cloud session; transcribe in a session with document access.
 
 ## Navarro 2014
 
 Navarro R. Adaptive model of the aging emmetropic eye and its changes with accommodation. *J Vis* 14(13):21, 2014.
-DOI: to be added
+DOI: 10.1167/14.13.21
 Used for: alternative preset, aging eye with GRIN lens via homogeneous-equivalent index.
 
 ## Polans et al. 2015
 
-Polans J, Jaeken B, McNabb RP, Artal P, Izatt JA. *Optica* 2(2):124-134, 2015.
-DOI: to be added
+Polans J, Jaeken B, McNabb RP, Artal P, Izatt JA. Wide-field optical model of the human eye with asymmetrically tilted and decentered lens that reproduces measured ocular aberrations. *Optica* 2(2):124-134, 2015.
+DOI: 10.1364/OPTICA.2.000124
 Used for: wide-field model, angle alpha and lens tilt and decentration defaults.
 
 ## Rozema et al. 2016 (SyntEyes)
@@ -28,32 +28,38 @@ Used for: population biometry variability, synthetic subjects for the prediction
 
 ## Anderson et al. 2008
 
-Anderson HA, Hentz G, Glasser A, Stuebing KK, Manny RE. *Invest Ophthalmol Vis Sci* 49:2919, 2008.
-DOI: to be added
-Used for: accommodative amplitude versus age (sigmoid fit), replacing Hofstetter.
+Anderson HA, Hentz G, Glasser A, Stuebing KK, Manny RE. Minus-lens-stimulated accommodative amplitude decreases sigmoidally with age: a study of objectively measured accommodative amplitudes from age 3. *Invest Ophthalmol Vis Sci* 49(7):2919-2926, 2008.
+DOI: 10.1167/iovs.07-1492 (PMC2730890)
+Used for: accommodative amplitude versus age (sigmoid fit), replacing Hofstetter. Transcribed in `data/accommodation/anderson-2008-amplitude.json`: A = 7.083 / (1 + exp(0.2031 (age − 36.2) − 0.6109)) D, fitted to the study's 3–40 year objective amplitudes pooled with earlier objective adult data to age 70.
 
 ## Escudero-Sanz & Navarro 1999
 
-Escudero-Sanz I, Navarro R. *J Opt Soc Am A* 16(8):1881-1891, 1999.
-DOI: to be added
-Used for: wavelength-dependent refractive indices (dispersion model) for polychromatic mode.
+Escudero-Sanz I, Navarro R. Off-axis aberrations of a wide-angle schematic eye model. *J Opt Soc Am A* 16(8):1881-1891, 1999.
+DOI: 10.1364/JOSAA.16.001881
+Used for: wavelength-dependent refractive indices (dispersion model) for polychromatic mode. Table 2 (458, 543, 589.3, 632.8 nm) transcribed in `data/dispersion/escudero-sanz-1999.json` from two agreeing search excerpts (M3, 2026-10-28; `verified: false` until compared with the paper).
 
 ## Watson & Yellott 2012
 
-Watson AB, Yellott JI. *J Vis* 12(10):12, 2012.
-DOI: to be added
-Used for: pupil diameter (unified formula), unchanged from the original spec.
+Watson AB, Yellott JI. A unified formula for light-adapted pupil size. *J Vis* 12(10):12, 2012.
+DOI: 10.1167/12.10.12
+Used for: pupil diameter (unified formula), unchanged from the original spec. Transcribed in `data/pupil/watson-yellott-2012.json` (M3): the Stanley & Davies base, the 28.58-year reference age, and the 20–83 year domain from excerpts; the age-slope constants and monocular factor from luxpy 1.12.5's implementation (secondary). `verified: false`.
 
 ## Feil, Moser & Abegg 2017
 
-Feil M, Moser B, Abegg M. *Graefe's Arch Clin Exp Ophthalmol*, 2017.
+Feil M, Moser B, Abegg M. The interaction of pupil response with the vergence system. *Graefe's Arch Clin Exp Ophthalmol* 255:2247-2253, 2017.
+DOI: to be added (an excerpt gave a garbled DOI; confirm from the journal page)
+Used for: near pupil response; convergence is the main trigger, so miosis is coupled to vergence, not accommodation. No coefficient could be transcribed (M3); see Gislén et al. 2008 below.
+
+## Gislén, Gustafsson & Kröger 2008
+
+Gislén A, Gustafsson J, Kröger RHH, 2008 (pupil near response in children and adults), as quoted by a review excerpt.
 DOI: to be added
-Used for: near pupil response; convergence is the main trigger, so miosis is coupled to vergence, not accommodation.
+Used for: the magnitude of near miosis in `data/pupil/near-response.json` (1.83 mm for a 6 D near demand in adults → 0.305 mm per meter angle). `verified: false`.
 
 ## Watson & Ahumada 2008
 
-Watson AB, Ahumada AJ. *J Vis* 8(4):17, 2008.
-DOI: to be added
+Watson AB, Ahumada AJ. Predicting visual acuity from wavefront aberrations. *J Vis* 8(4):17, 2008.
+DOI: 10.1167/8.4.17
 Used for: acuity from wavefront, the onset acuity threshold.
 
 ## Atchison & Thibos 2016
@@ -64,15 +70,15 @@ Used for: review of eye models, literature notes.
 
 ## Rectus insertions (BCSC)
 
-Basic and Clinical Science Course (BCSC), spiral of Tillaux: 5.5, 6.5, 6.9, 7.7 mm; cadaveric means are about 0.5 mm smaller.
-DOI: to be added
+American Academy of Ophthalmology, Basic and Clinical Science Course, Section 6: Pediatric Ophthalmology and Strabismus (anatomy chapter), spiral of Tillaux: 5.5, 6.5, 6.9, 7.7 mm; cadaveric means are about 0.5 mm smaller.
+DOI: none (book; cite the BCSC section and edition year at transcription)
 Used for: rectus muscle insertion distances from the limbus, tabled with both values.
 
 ## Navarro, Santamaría & Bescós 1985
 
-Navarro R, Santamaría J, Bescós J. *J Opt Soc Am A* 2:1273, 1985.
-DOI: to be added
-Used for: regression fixture only, paraxial-power test; not a UI preset.
+Navarro R, Santamaría J, Bescós J. Accommodation-dependent model of the human eye with aspherics. *J Opt Soc Am A* 2(8):1273-1281, 1985.
+DOI: 10.1364/JOSAA.2.001273
+Used for: regression fixture only, paraxial-power test; not a UI preset. Transcribed in `data/schematic-eyes/navarro-1985.json` (Table 1 relaxed surfaces and d-line indices, Table 4 accommodation equations; the two conic-constant coefficients of Table 4 remain unconfirmed, see the file).
 
 ## Corneal and scleral material
 

@@ -1,0 +1,20 @@
+{
+  "name": "anderson-2008-amplitude",
+  "citation": "Anderson HA, Hentz G, Glasser A, Stuebing KK, Manny RE. Minus-lens-stimulated accommodative amplitude decreases sigmoidally with age: a study of objectively measured accommodative amplitudes from age 3. Invest Ophthalmol Vis Sci 49(7):2919-2926, 2008.",
+  "doi": "10.1167/iovs.07-1492",
+  "verified": false,
+  "verifiedDate": null,
+  "verificationNote": "Equation and coefficients transcribed from the paper's abstract as indexed by the publisher (the sigmoid is fitted to the study's objective amplitudes for ages 3-40 pooled with earlier objective adult data up to age 70). For a non-schematic table, verified means compared with the paper's group means, which this session could not reach; the tests check the equation against hand evaluations only.",
+  "equation": "amplitudeD = maxD / (1 + exp(slopePerYear * (ageYears - centerAgeYears) - offset))",
+  "coefficients": {
+    "maxD": 7.083,
+    "slopePerYear": 0.2031,
+    "centerAgeYears": 36.2,
+    "offset": 0.6109
+  },
+  "domain": {
+    "minAgeYears": 6,
+    "maxAgeYears": 90,
+    "note": "Spec §4.1 age range. Below minAgeYears the age-6 value is used; above maxAgeYears the amplitude is 0 (presbyopia; the fit is already below 0.01 D there). The study measured ages 3-40 and pooled adult data to 70, so 70-90 is an extrapolation of the fit."
+  }
+}

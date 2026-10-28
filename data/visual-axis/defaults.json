@@ -1,0 +1,11 @@
+{
+  "name": "visual-axis-defaults",
+  "verified": false,
+  "citation": "Intended source: Polans J, Jaeken B, McNabb RP, Artal P, Izatt JA. Wide-field optical model of the human eye with asymmetrically tilted and decentered lens that reproduces measured ocular aberrations. Optica 2(2):124-134, 2015 (doi 10.1364/OPTICA.2.000124), not reachable from the cloud session (2026-10-28). Values here are the typical magnitude quoted by search excerpts (angle alpha about 5°, visual axis nasal of the optical axis in object space; teaching summaries give 3–5°).",
+  "alphaDeg": 5,
+  "alphaNote": "Horizontal only, positive nasal: the fixation target lies nasal of the optical axis and the fovea temporal. Same value in the right- and left-eye documents (local frames have x temporal).",
+  "kappaDeg": 5,
+  "kappaNote": "Required by the schema; taken equal to alpha (an assumption). Nothing in M3 reads it.",
+  "pupilDecenterMm": { "x": 0, "y": 0 },
+  "pupilDecenterNote": "Assumption: a centered pupil until Polans 2015 (or another source) is transcribed."
+}
