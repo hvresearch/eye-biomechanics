@@ -22,8 +22,13 @@ def _groups(materials):
         for key, group in region.items():
             if isinstance(group, dict):
                 yield f"{name}.{key}", group
-    for key in ("ageStiffening", "opticNerve", "scleralSpur", "ciliaryTensionNPerMmPerD",
-                "inflationReference"):
+    for key in (
+        "ageStiffening",
+        "opticNerve",
+        "scleralSpur",
+        "ciliaryTensionNPerMmPerD",
+        "inflationReference",
+    ):
         yield key, materials[key]
 
 
@@ -73,11 +78,20 @@ def test_unit_conversions():
 
 
 def test_eyelid_table():
-    for key in ("upperPressureMmHg", "lowerPressureMmHg", "upperContactHeightMm",
-                "lowerContactHeightMm", "palpebralApertureMm"):
+    for key in (
+        "upperPressureMmHg",
+        "lowerPressureMmHg",
+        "upperContactHeightMm",
+        "lowerContactHeightMm",
+        "palpebralApertureMm",
+    ):
         assert EYELID[key] > 0, key
-    for key in ("upperPressureCitation", "upperContactCitation", "lowerCitation",
-                "apertureCitation"):
+    for key in (
+        "upperPressureCitation",
+        "upperContactCitation",
+        "lowerCitation",
+        "apertureCitation",
+    ):
         assert EYELID[key], key
     assert EYELID["verified"] is False
 

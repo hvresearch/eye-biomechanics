@@ -101,7 +101,20 @@
     "iopToMmHg": 15.5,
     "specimenAgeYears": 73.1,
     "apexRiseUm": 6.584,
-    "citation": "Search excerpt only; the excerpt's summary itself warned that the units of the 6.84 intercept looked inconsistent, and the authors were not named in it. apexRiseUm is the fit at the mean age. Used by the slow inflation test of Task 4.4.",
+    "citation": "Search excerpt only; the excerpt's summary itself warned that the units of the 6.84 intercept looked inconsistent, and the authors were not named in it. apexRiseUm is the fit at the mean age.",
+    "usedAsAcceptance": false,
+    "note": "Not an acceptance target (M4 plan, Deviation 1 outcome): the whole-globe model gives 0.6-1.0 um for this increment, about 7-11 times less, while its ocular rigidity is within a factor of 2.2 of the in-vivo mean below; the two references cannot both hold for a whole globe, and this one is the doubtful one. Re-check in a session with document access.",
+    "verified": false
+  },
+  "ocularRigidityReference": {
+    "source": "Pallikaris et al., Ocular rigidity in living human eyes, Invest Ophthalmol Vis Sci 2005 (PubMed 15671262)",
+    "coefficientPerUl": 0.0126,
+    "ci95PerUl": [0.0112, 0.0149],
+    "definition": "Friedenwald form K = ln(P2 / P1) / dV (dV in uL)",
+    "iopRangeMmHg": [10, 35],
+    "citation": "79 eyes during cataract surgery, saline injected into the anterior chamber with IOP monitored; data between 10 and 35 mmHg; K correlated positively with age; Friedenwald's enucleated-eye average was 0.021 (excerpt). The excerpt printed the unit as 'mm Hg/uL'; only the per-uL (logarithmic) reading is physical (a linear 0.0126 mmHg/uL would need about 800 uL, 12% of the globe's volume, for a 10 mmHg rise), so the Friedenwald definition is assumed.",
+    "plausibilityFactor": 3.0,
+    "plausibilityCitation": "assumption: the model's coefficient must lie within a factor of 3 of the in-vivo mean (a plausibility band for unverified, uncalibrated material constants; tissue stiffness is calibrated in Milestone 5).",
     "verified": false
   }
 }

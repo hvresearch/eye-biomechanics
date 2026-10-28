@@ -91,6 +91,12 @@ González-Cabrero J, Gómez C, Paredes M, Cavas F. Addressing parameter variabil
 Scleral thickness in human eyes. *PLoS One* 2012 (PMC3253100; Vurgese et al.).
 Used for: FEM constitutive defaults, regional thickness, and age stiffening in `data/materials/cornea-sclera.json` (M4). Transcribed from search excerpts, partly secondary; `verified: false`. The DOIs of Pandolfi & Holzapfel and Whitford et al. come from search excerpts.
 
+## Ocular rigidity
+
+Pallikaris et al. Ocular rigidity in living human eyes. *Invest Ophthalmol Vis Sci* 2005 (PubMed 15671262).
+DOI: to be added
+Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Friedenwald coefficient 0.0126 /µL (95% CI 0.0112–0.0149) in 79 living eyes, stored in `data/materials/cornea-sclera.json` (`ocularRigidityReference`). `verified: false`.
+
 ## Remodeling framework
 
 Rodriguez EK, Hoger A, McCulloch AD, 1994; Grytz R, Meschke G, 2010; Grytz R, Siegwart JT, 2015.

@@ -45,9 +45,7 @@ class ForceTable:
 
     def at(self, x_deg: float, y_deg: float) -> int:
         """Index of the gaze exactly at (x_deg, y_deg); KeyError when it is not on the lattice."""
-        hits = np.flatnonzero(
-            (self.gazes_deg[:, 0] == x_deg) & (self.gazes_deg[:, 1] == y_deg)
-        )
+        hits = np.flatnonzero((self.gazes_deg[:, 0] == x_deg) & (self.gazes_deg[:, 1] == y_deg))
         if hits.size == 0:
             raise KeyError(f"gaze ({x_deg}, {y_deg}) is not in the force table")
         return int(hits[0])
