@@ -146,3 +146,19 @@ numbers. All move to M5.
   which a zero cylinder passes; also assert `|ΔC| > 1e-3`. (M6)
 - Spec §7 "start axisymmetric for verification" was replaced by the 3D Lamé sphere test without a
   deviation entry; add one line to the M4 plan's deviations or accept the gap. (owner, M5)
+
+## From the driver review of b6f5a0d (2026-10-28, Minor findings not fixed in M4)
+
+- `science/eyebiomech/schema.py`: `referencing` is imported directly but only arrives through
+  `jsonschema`; declare it in `pyproject.toml` or use `jsonschema`'s re-exports. (M5)
+- `web/apps/viewer/src/ui/Biomechanics.tsx`: with a document loaded without a sidecar, ΔSphere
+  and ΔCylinder show "…" indefinitely while the row below says "no reference"; show "—" or "no
+  reference" in all three. (M6)
+- `web/apps/viewer/src/ui/tooltips.ts`: tilted or decentered EyeParameters files can be loaded,
+  but the paraxial-power, demand, and far-point readouts (`paraxial/abcd.ts`) ignore tilt and
+  decenter; say so in their tooltips ("Approximation:"). (M6)
+- `science/eyebiomech/fem/export.py`: the posterior map is normalized to 3.5 mm while the surface
+  aperture is 6 mm, so large-pupil exact traces evaluate the order-8 polynomial beyond ρ = 1;
+  clamp, widen the fit, or document it. (M5)
+- `science/eyebiomech/fem/loads.py`: the dead-load cache is keyed by `id(ctx)`, which can be
+  reused after garbage collection; store the cache on the context. (M5)
