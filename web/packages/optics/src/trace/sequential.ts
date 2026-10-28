@@ -1,7 +1,8 @@
 import { indexAt } from "../color/dispersion";
 import { distance, type Vec3 } from "../math/vec3";
 import { intersect, normalAt } from "../surfaces/geometry";
-import type { ConicSurface, Surface } from "../surfaces/types";
+import { trig } from "../surfaces/toric";
+import type { ConicSurface, Surface, ToricSurface } from "../surfaces/types";
 import type { Ray, TraceHit, TraceResult } from "./ray";
 import { refract } from "./refract";
 
@@ -119,10 +120,59 @@ function conicT(s: ConicSurface, ox: number, oy: number, oz: number, dx: number,
   return best;
 }
 
+/** Newton limits of the scalar toric step (numerical, as in surfaces/geometry). */
+const NEWTON_TOL_MM = 1e-9;
+const NEWTON_MAX_ITER = 20;
+
+/** Scratch output of `toricT`: the hit's slopes (∂z/∂x, ∂z/∂y). */
+const slopeOut = new Float64Array(2);
+
+/**
+ * Forward intersection of a ray with an untilted toric as a ray parameter t, in scalars: Newton on
+ * z(t) − sag(x(t), y(t)) from the vertex plane (the same surface and limits as `intersect`), with
+ * the slopes at the hit left in `slopeOut`. NaN on a miss or outside the aperture.
+ */
+function toricT(s: ToricSurface, ox: number, oy: number, oz: number, dx: number, dy: number, dz: number): number {
+  const { cos, sin } = trig(s);
+  const cx = Number.isFinite(s.rxMm) ? 1 / s.rxMm : 0;
+  const cy = Number.isFinite(s.ryMm) ? 1 / s.ryMm : 0;
+  const ax = (1 + s.conicX) * cx * cx;
+  const ay = (1 + s.conicY) * cy * cy;
+  if (dz === 0) return Number.NaN;
+  let t = (s.vertexZMm - oz) / dz;
+  for (let i = 0; i <= NEWTON_MAX_ITER; i++) {
+    const ex = ox + t * dx - s.decenter.xMm;
+    const ey = oy + t * dy - s.decenter.yMm;
+    const u = ex * cos + ey * sin;
+    const v = -ex * sin + ey * cos;
+    const arg = 1 - ax * u * u - ay * v * v;
+    if (!(arg > 0)) return Number.NaN;
+    const sq = Math.sqrt(arg);
+    const D = 1 + sq;
+    const N = cx * u * u + cy * v * v;
+    const zs = N / D;
+    const dzdu = (2 * cx * u * D + (N * ax * u) / sq) / (D * D);
+    const dzdv = (2 * cy * v * D + (N * ay * v) / sq) / (D * D);
+    const sx = dzdu * cos - dzdv * sin;
+    const sy = dzdu * sin + dzdv * cos;
+    const f = oz + t * dz - s.vertexZMm - zs;
+    if (Math.abs(f) < NEWTON_TOL_MM) {
+      if (!(t > T_EPS) || ex * ex + ey * ey > s.apertureSemiDiamMm * s.apertureSemiDiamMm) return Number.NaN;
+      slopeOut[0] = sx;
+      slopeOut[1] = sy;
+      return t;
+    }
+    const fp = dz - sx * dx - sy * dy;
+    if (!(Math.abs(fp) > 0)) return Number.NaN;
+    t -= f / fp;
+  }
+  return Number.NaN;
+}
+
 /**
  * `traceRay` without the per-surface record: the last hit, direction, optical path, and index,
  * or null when the ray is vignetted anywhere. The hot path of OPD maps and ray aiming: untilted
- * conic surfaces take a scalar, allocation-free step; others use `intersect`.
+ * conic and toric surfaces take scalar, allocation-free steps; others use `intersect`.
  */
 export function traceToEnd(ray: Ray, surfaces: readonly Surface[], indexBefore = 1): TraceEnd | null {
   let [ox, oy, oz] = ray.origin;
@@ -159,6 +209,17 @@ export function traceToEnd(ray: Ray, surfaces: readonly Surface[], indexBefore =
         ny *= sgn;
         nz *= sgn;
       }
+    } else if (s.kind === "toric" && s.tilt.xDeg === 0 && s.tilt.yDeg === 0) {
+      const t = toricT(s, ox, oy, oz, dx, dy, dz);
+      if (Number.isNaN(t)) return null;
+      hx = ox + t * dx;
+      hy = oy + t * dy;
+      hz = oz + t * dz;
+      opl += n * t;
+      const len = Math.sqrt(slopeOut[0]! * slopeOut[0]! + slopeOut[1]! * slopeOut[1]! + 1);
+      nx = slopeOut[0]! / len;
+      ny = slopeOut[1]! / len;
+      nz = -1 / len;
     } else {
       const hit = intersect(s, [ox, oy, oz], [dx, dy, dz]);
       if (hit === null || hit === "miss") return null;

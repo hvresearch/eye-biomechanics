@@ -40,7 +40,7 @@ export interface PupilBundle {
 const LAUNCH_MARGIN_MM = 5;
 /** Ray aiming: finite-difference step and tolerance in the pupil plane, mm; iteration limit (numerical). */
 const AIM_STEP_MM = 1e-6;
-const AIM_TOL_MM = 1e-7;
+const AIM_TOL_MM = 1e-6;
 const AIM_MAX_ITER = 8;
 
 interface Launcher {

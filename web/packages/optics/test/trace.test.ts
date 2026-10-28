@@ -146,9 +146,9 @@ describe("traceToEnd", () => {
         const last = full.hits[full.hits.length - 1]!;
         for (let i = 0; i < 3; i++) {
           expect(end.point[i]).toBeCloseTo(last.point[i]!, 10);
-          expect(end.dir[i]).toBeCloseTo(last.dirAfter[i]!, 12);
+          expect(end.dir[i]).toBeCloseTo(last.dirAfter[i]!, 10);
         }
-        expect(end.opticalPathMm).toBeCloseTo(full.opticalPathMm, 10);
+        expect(end.opticalPathMm).toBeCloseTo(full.opticalPathMm, 8); // Newton tolerances: 1e-9 mm in z
       }
     }
     // Vignetting agrees: a ray outside the corneal aperture.

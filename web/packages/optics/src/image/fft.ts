@@ -1,15 +1,21 @@
-/** Twiddle factors and bit-reversal table per transform length (cached). */
+/**
+ * Per transform length: twiddles stored stage by stage (for butterfly size `size`, the `size/2`
+ * factors e^(−2πik/size) start at offset `size/2 − 1`), and the bit-reversal permutation.
+ */
 const plans = new Map<number, { cos: Float64Array; sin: Float64Array; rev: Uint32Array }>();
 
 function plan(n: number) {
   let p = plans.get(n);
   if (p === undefined) {
     if (!(Number.isInteger(n) && n >= 1 && (n & (n - 1)) === 0)) throw new RangeError(`FFT length must be a power of two, got ${n}`);
-    const cos = new Float64Array(n / 2);
-    const sin = new Float64Array(n / 2);
-    for (let k = 0; k < n / 2; k++) {
-      cos[k] = Math.cos((2 * Math.PI * k) / n);
-      sin[k] = Math.sin((2 * Math.PI * k) / n);
+    const cos = new Float64Array(Math.max(1, n - 1));
+    const sin = new Float64Array(Math.max(1, n - 1));
+    for (let size = 2; size <= n; size <<= 1) {
+      const half = size >> 1;
+      for (let k = 0; k < half; k++) {
+        cos[half - 1 + k] = Math.cos((2 * Math.PI * k) / size);
+        sin[half - 1 + k] = Math.sin((2 * Math.PI * k) / size);
+      }
     }
     const bits = Math.log2(n);
     const rev = new Uint32Array(n);
@@ -40,13 +46,26 @@ function fft1(re: Float64Array, im: Float64Array, n: number, offset: number, sig
       im[b] = ti;
     }
   }
-  for (let size = 2; size <= n; size <<= 1) {
+  // Size-2 butterflies need no multiplication.
+  const end = offset + n;
+  for (let a = offset; a < end; a += 2) {
+    const b = a + 1;
+    const ar = re[a]!;
+    const ai = im[a]!;
+    const br = re[b]!;
+    const bi = im[b]!;
+    re[a] = ar + br;
+    im[a] = ai + bi;
+    re[b] = ar - br;
+    im[b] = ai - bi;
+  }
+  for (let size = 4; size <= n; size <<= 1) {
     const half = size >> 1;
-    const step = n / size;
-    for (let start = offset; start < offset + n; start += size) {
+    const tw = half - 1;
+    for (let start = offset; start < end; start += size) {
       for (let k = 0; k < half; k++) {
-        const wr = cos[k * step]!;
-        const wi = sign * sin[k * step]!;
+        const wr = cos[tw + k]!;
+        const wi = sign * sin[tw + k]!;
         const a = start + k;
         const b = a + half;
         const br = re[b]!;

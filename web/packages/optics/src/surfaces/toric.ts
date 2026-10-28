@@ -9,7 +9,7 @@ function curvature(radiusMm: number): number {
 /** cos and sin of each toric's axis, computed once per surface object (the hot path calls them per Newton step). */
 const axisTrig = new WeakMap<ToricSurface, { deg: number; cos: number; sin: number }>();
 
-function trig(s: ToricSurface): { cos: number; sin: number } {
+export function trig(s: ToricSurface): { cos: number; sin: number } {
   let t = axisTrig.get(s);
   if (t === undefined || t.deg !== s.axisDeg) {
     t = { deg: s.axisDeg, cos: Math.cos(s.axisDeg * DEG), sin: Math.sin(s.axisDeg * DEG) };
