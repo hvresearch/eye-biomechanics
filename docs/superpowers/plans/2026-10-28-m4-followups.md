@@ -122,9 +122,11 @@ numbers. All move to M5.
   EyeParameters document. (M6)
 - `data/results/forces/default.json`: add a drift test against a fresh `buildForceTable` run, as
   the oracle has. (M5)
-- Spec §7 / master plan Task 4.2: the corneal inflation check within 15% is replaced by the
-  ocular-rigidity plausibility check (Deviation 1); the owner should accept this gap explicitly
-  or keep it open for M5 calibration. (owner, M5)
+- Spec §7 / master plan Task 4.2: reproduce a published corneal inflation curve (apex rise
+  against IOP, Elsheikh 2007 or another transcribed source in `data/materials/`) within 15% with
+  the calibrated stiffness. The owner accepted the ocular-rigidity plausibility check in its
+  place for M4 and deferred this check to the M5 calibration (#14, 2026-10-28); keep the
+  ocular-rigidity test in CI. (M5)
 
 ## From the driver review of 8ac4f73 (2026-10-28, Minor findings not fixed in M4)
 
