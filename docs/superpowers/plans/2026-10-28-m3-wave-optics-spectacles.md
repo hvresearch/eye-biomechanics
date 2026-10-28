@@ -252,10 +252,10 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
   - `interface Mtf { freqCpd: Float32Array; radial: Float32Array; diffraction: Float32Array }`; `mtf(p: Psf): Mtf` (radially averaged |OTF| normalized at 0, frequency step `1/(n·pixelDeg)` cpd); `diffractionMtf(pupilRadiusMm, wavelengthNm, freqCpd): number` (analytic).
   - `interface Bitmap { width: number; height: number; data: Float32Array /* 0 dark … 1 bright */; pixelArcmin: number }`; `snellenE(n, pixelArcmin, letterArcmin, orientation: "right" | "left" | "up" | "down" = "right"): Bitmap` (dark letter on a bright field); `grating(n, pixelArcmin, cpd, orientationDeg): Bitmap`.
   - `retinalImage(target: Bitmap, p: Psf): Bitmap` (FFT convolution with the PSF normalized to unit sum; requires matching size and pixel).
-- [ ] **Step 1:** Failing tests: `fft2` of a delta is flat; forward then inverse round trip error < 1e-10 on random 64×64; Parseval within 1e-9; agreement with a naive DFT on 8×8; the diffraction-limited PSF's first dark ring lies at `1.22 λ/D` within 5% (λ = 555 nm, D = 4 mm); Strehl of a zero wavefront is 1 ± 1e-3; 0.5 D of defocus (`c(2,0)` from Thibos) at a 4 mm pupil, 555 nm, gives Strehl below 0.2; MTF at 0 cpd is 1; the zero-aberration MTF matches `diffractionMtf` within 0.02 up to 80% of cutoff; a 3 D defocus at an 8 mm pupil reports `aliased: true`; the polychromatic PSF of a zero wavefront has Strehl 1 ± 1e-3; retinal image of a delta PSF equals the target within 1e-6; a uniform target stays uniform; total energy is conserved within 1e-6; a 20/20 E is 5 arcmin tall in pixels.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): FFT, PSF, MTF, retinal image simulation`.
+- [x] **Step 1:** Failing tests: `fft2` of a delta is flat; forward then inverse round trip error < 1e-10 on random 64×64; Parseval within 1e-9; agreement with a naive DFT on 8×8; the diffraction-limited PSF's first dark ring lies at `1.22 λ/D` within 5% (λ = 555 nm, D = 4 mm); Strehl of a zero wavefront is 1 ± 1e-3; 0.5 D of defocus (`c(2,0)` from Thibos) at a 4 mm pupil, 555 nm, gives Strehl below 0.2; MTF at 0 cpd is 1; the zero-aberration MTF matches `diffractionMtf` within 0.02 up to 80% of cutoff; a 3 D defocus at an 8 mm pupil reports `aliased: true`; the polychromatic PSF of a zero wavefront has Strehl 1 ± 1e-3; retinal image of a delta PSF equals the target within 1e-6; a uniform target stays uniform; total energy is conserved within 1e-6; a 20/20 E is 5 arcmin tall in pixels.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): FFT, PSF, MTF, retinal image simulation`.
 
 ### Task 3.6: Spectacle lens surfaces and auto-prescribe
 

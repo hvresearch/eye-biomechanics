@@ -42,3 +42,11 @@ export { powerVectors, refractionFromZernike, sphereCylFromPowerVectors, wrapAxi
 export type { Refraction } from "./wavefront/refraction";
 export { analyzeWavefront } from "./wavefront/analyze";
 export type { WavefrontAnalysis, WavefrontOptions } from "./wavefront/analyze";
+export { fft2, fftShift } from "./image/fft";
+export { polychromaticPsf, psf } from "./image/psf";
+export type { Psf, PsfOptions, WavefrontInput } from "./image/psf";
+export { diffractionMtf, mtf, otf } from "./image/mtf";
+export type { Mtf, Otf } from "./image/mtf";
+export { grating, snellenE } from "./image/targets";
+export type { Bitmap, EOrientation } from "./image/targets";
+export { retinalImage } from "./image/retinal";

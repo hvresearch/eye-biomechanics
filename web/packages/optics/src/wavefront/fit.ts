@@ -61,30 +61,35 @@ export function fitZernike(map: OpdMap, maxRadialOrder = 8): ZernikeFit {
   const ata = new Float64Array(J * J);
   const atb = new Float64Array(J);
   const z = new Float64Array(J);
+  const basis = new Float64Array(nValid * J); // kept for the residual pass
   const R = map.pupilRadiusMm;
+  let row = 0;
   for (let i = 0; i < total; i++) {
     if (!map.valid[i]) continue;
     const x = map.xs[i]!;
     const y = map.ys[i]!;
-    zernikeBasis(maxRadialOrder, Math.hypot(x, y) / R, Math.atan2(y, x), z);
+    zernikeBasis(maxRadialOrder, Math.sqrt(x * x + y * y) / R, Math.atan2(y, x), z);
+    basis.set(z, row * J);
+    row++;
     const w = map.opdMicrons[i]!;
     for (let a = 0; a < J; a++) {
       const za = z[a]!;
       atb[a]! += za * w;
-      for (let b = 0; b <= a; b++) ata[a * J + b]! += za * z[b]!;
+      const base = a * J;
+      for (let b = 0; b <= a; b++) ata[base + b]! += za * z[b]!;
     }
   }
   for (let a = 0; a < J; a++) for (let b = a + 1; b < J; b++) ata[a * J + b] = ata[b * J + a]!;
   const c = choleskySolve(ata, atb, J);
 
   let res = 0;
+  row = 0;
   for (let i = 0; i < total; i++) {
     if (!map.valid[i]) continue;
-    const x = map.xs[i]!;
-    const y = map.ys[i]!;
-    zernikeBasis(maxRadialOrder, Math.hypot(x, y) / R, Math.atan2(y, x), z);
     let f = 0;
-    for (let a = 0; a < J; a++) f += c[a]! * z[a]!;
+    const off = row * J;
+    for (let a = 0; a < J; a++) f += c[a]! * basis[off + a]!;
+    row++;
     res += (map.opdMicrons[i]! - f) ** 2;
   }
   const coeffs = Array.from(c);
