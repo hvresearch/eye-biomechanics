@@ -334,10 +334,10 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
 
 **Interfaces:**
 - Produces (Python): `trace(surfaces: list[dict], origin, direction, wavelength_nm=555) -> dict` (hit points per surface, vignetting) in an independently written NumPy tracer (conic closed form, toric and Zernike by Newton, vector Snell); `make_cases(seed=20261028) -> dict` (20 conic, 10 toric, 10 Zernike systems with five rays each, written to `cases.json`); `python -m eyebiomech.oracle.generate` writes `expected.json` (final image-plane hits).
-- [ ] **Step 1:** Failing tests: Python — reference tracer and Optiland agree within 1e-6 mm on every conic case; the committed `expected.json` equals a fresh reference run within 1e-9 (so drift is caught); TS — `traceRay` agrees with `expected.json` within 1e-6 mm for all 40 cases.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement; generate and commit the two JSON files; README explains regeneration. Evaluate the M0 follow-up "Optiland as an optional extra": record the measured `uv sync` time and keep it in the dev group unless install time is a problem.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `test(optics): cross-check against Optiland and a Python reference tracer`.
+- [x] **Step 1:** Failing tests: Python — reference tracer and Optiland agree within 1e-6 mm on every conic case; the committed `expected.json` equals a fresh reference run within 1e-9 (so drift is caught); TS — `traceRay` agrees with `expected.json` within 1e-6 mm for all 40 cases.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement; generate and commit the two JSON files; README explains regeneration. Evaluate the M0 follow-up "Optiland as an optional extra": record the measured `uv sync` time and keep it in the dev group unless install time is a problem.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `test(optics): cross-check against Optiland and a Python reference tracer`.
 
 ### Task 3.10: Worker wave pipeline, spectacles, backpressure
 
