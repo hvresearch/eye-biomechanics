@@ -110,7 +110,8 @@ export function objectVergenceForImageD(
  * Paraxial ABCD trace in reduced form: state (y, n·u) in mm and radians, in one meridian
  * (toric and Zernike surfaces contribute the vertex curvature of that section). The first
  * surface flagged `image` (the retina) ends the system and defines `farPointD`; without one,
- * `farPointD` is NaN.
+ * `farPointD` is NaN. Surface tilt and decenter are ignored (approximation: paraxial optics
+ * about the common axis; the exact trace honors both).
  */
 export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1, opts: ParaxialOptions = {}): ParaxialResult {
   const sys = systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG, opts.wavelengthNm);

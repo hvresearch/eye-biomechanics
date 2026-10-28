@@ -150,8 +150,10 @@ describe("intersect", () => {
     expect(intersect(conic(5), [0, -20, -1], [0, 1, 0])).toBe("miss");
   });
 
-  it("rejects tilted surfaces loudly", () => {
-    expect(() => intersect({ ...toric(7, 7, 0), tilt: { xDeg: 2, yDeg: 0 } }, [0, 0, -1], [0, 0, 1])).toThrow(/tilt/);
+  it("intersects tilted torics in their own frame: the axial ray meets the tilted vertex", () => {
+    const hit = intersect({ ...toric(7, 7, 0), tilt: { xDeg: 2, yDeg: 0 } }, [0, 0, -1], [0, 0, 1]);
+    if (hit === null || hit === "miss") throw new Error("expected a hit");
+    expect(Math.abs(hit.point[2])).toBeLessThan(1e-9);
   });
 });
 

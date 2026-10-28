@@ -125,13 +125,13 @@ Closes the M3 follow-ups "surface tilt still throws (`assertNoTilt`); spec §5.1
 - Produces (optics): `tilt.ts`: `interface SurfaceFrame { pivot: Vec3; rot: Mat3 /* local→global */ }`; `surfaceFrame(s: SurfaceBase): SurfaceFrame | null` (null when both tilts are zero); `toLocal(f, p: Vec3): Vec3`, `dirToLocal(f, d: Vec3): Vec3`, `toGlobal(f, p)`, `dirToGlobal(f, d)`. The pivot is the vertex `(decenter.xMm, decenter.yMm, vertexZMm)`; the rotation is `R = Ry(yDeg)·Rx(xDeg)` (first about x, then about y, both right-handed, Zemax "tilt about X then Y" order), applied to the surface about the pivot. `intersect(s, origin, dir)` and `normalAt` work in the local frame and return global quantities; the aperture is measured in the local x–y plane. Zero tilt takes the existing code path unchanged.
 - Produces (oracle): each case's expected record gains `opticalPathMm: number | null` (OPL from the launch point to the final hit, index × length summed) and `status: "ok" | "miss" | "aperture"` with `surfaceIndex` of the first failure.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `tilt.test.ts`: `toGlobal(toLocal(p)) = p` within 1e-12 for random points and tilts; a plane tilted by `xDeg = 10` reflects the geometry (the intersection of a z-parallel ray at height y lies at `z = vertexZ + y·tan(10°)` with the sign of the right-hand rotation about +x); a sphere tilted about its vertex equals the same sphere decentered to its rotated center of curvature, for 20 random rays (1e-9 mm); a ray through a tilted conic's local aperture edge is clipped by the local, not global, radius; the zero-tilt Navarro trace is identical to the pre-change result (bit for bit on 10 rays).
   - `oracle.test.ts`: the TypeScript tracer matches the Python reference on every case in the extended `expected.json`, comparing hit points (1e-6 mm), `opticalPathMm` (1e-6 mm), and `status`/`surfaceIndex` exactly.
   - `test_oracle.py`: the reference tracer agrees with Optiland on the conic cases including the new decentered ones (Optiland supports decenter; tilted cases are compared only TS vs Python); the generator writes the new fields; at least 4 decentered, 4 tilted, 2 miss, and 2 aperture cases exist.
-- [ ] **Step 2:** Run `cd web && pnpm --filter @eye/optics test` and `cd science && uv run pytest tests/test_oracle.py`; expect FAIL.
-- [ ] **Step 3:** Implement `tilt.ts`, the local-frame dispatch in `geometry.ts` and `trace/sequential.ts` (tilted surfaces skip the untilted scalar fast paths), the Python tracer's tilt/decenter/OPL/status, the new cases, and regenerate `expected.json` with `uv run python -m eyebiomech.oracle.generate`.
-- [ ] **Step 4:** Run; PASS. Full gate (the worker bench must stay under 100 ms). Commit: `feat(optics): tilted surfaces; oracle with OPL, decenter, tilt, and failure reasons`.
+- [x] **Step 2:** Run `cd web && pnpm --filter @eye/optics test` and `cd science && uv run pytest tests/test_oracle.py`; expect FAIL.
+- [x] **Step 3:** Implement `tilt.ts`, the local-frame dispatch in `geometry.ts` and `trace/sequential.ts` (tilted surfaces skip the untilted scalar fast paths), the Python tracer's tilt/decenter/OPL/status, the new cases, and regenerate `expected.json` with `uv run python -m eyebiomech.oracle.generate`.
+- [x] **Step 4:** Run; PASS. Full gate (the worker bench must stay under 100 ms). Commit: `feat(optics): tilted surfaces; oracle with OPL, decenter, tilt, and failure reasons`.
 
 ### Task 4.2: Materials and eyelid tables
 

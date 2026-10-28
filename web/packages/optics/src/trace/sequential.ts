@@ -29,7 +29,7 @@ export function traceRay(ray: Ray, surfaces: readonly Surface[], indexBefore = 1
     }
     opl += n * distance(origin, hit.point);
     const n2 = indexAt(s.mediumAfter, ray.wavelengthNm);
-    const normal = normalAt(s, hit.point[0], hit.point[1]);
+    const normal = normalAt(s, hit.point[0], hit.point[1], hit.point[2]);
     const out = refract(dir, normal, n, n2);
     if (out === null) {
       hits.push({ surface: s.name, point: hit.point, dirAfter: dir, indexAfter: n });
@@ -172,7 +172,8 @@ function toricT(s: ToricSurface, ox: number, oy: number, oz: number, dx: number,
 /**
  * `traceRay` without the per-surface record: the last hit, direction, optical path, and index,
  * or null when the ray is vignetted anywhere. The hot path of OPD maps and ray aiming: untilted
- * conic and toric surfaces take scalar, allocation-free steps; others use `intersect`.
+ * conic and toric surfaces take scalar, allocation-free steps; others (Zernike, and every tilted
+ * surface) use `intersect`, which handles the tilt in the surface's own frame.
  */
 export function traceToEnd(ray: Ray, surfaces: readonly Surface[], indexBefore = 1): TraceEnd | null {
   let [ox, oy, oz] = ray.origin;
@@ -225,7 +226,7 @@ export function traceToEnd(ray: Ray, surfaces: readonly Surface[], indexBefore =
       if (hit === null || hit === "miss") return null;
       opl += n * distance([ox, oy, oz], hit.point);
       [hx, hy, hz] = hit.point;
-      [nx, ny, nz] = normalAt(s, hx, hy);
+      [nx, ny, nz] = normalAt(s, hx, hy, hz);
     }
     const n2 = indexAt(s.mediumAfter, ray.wavelengthNm);
     if (n2 !== n) {

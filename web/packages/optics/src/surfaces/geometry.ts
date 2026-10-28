@@ -1,6 +1,7 @@
 import { normalize, type Vec3 } from "../math/vec3";
-import { T_EPS, assertNoTilt, conicIntersect, conicNormal, conicRoots, conicSag, type Intersection } from "./conic";
+import { T_EPS, conicIntersect, conicNormal, conicRoots, conicSag, type Intersection } from "./conic";
 import { toricMeridianCurvature, toricSag, toricSlope } from "./toric";
+import { dirToGlobal, dirToLocal, surfaceFrame, toGlobal, toLocal } from "./tilt";
 import type { Surface } from "./types";
 import { zernikeMeridianCurvature, zernikeSurfaceSag, zernikeSurfaceSlope } from "./zernikeSag";
 
@@ -10,7 +11,10 @@ export type { Intersection } from "./conic";
 const NEWTON_TOL_MM = 1e-9;
 const NEWTON_MAX_ITER = 20;
 
-/** Surface height relative to the vertex plane at lateral position (x, y), mm (NaN beyond the edge). */
+/**
+ * Surface height relative to the vertex plane at lateral position (x, y), mm (NaN beyond the
+ * edge). For a tilted surface this is the sag in the surface's own (untilted) frame.
+ */
 export function sag(s: Surface, x: number, y: number): number {
   switch (s.kind) {
     case "conic":
@@ -26,8 +30,22 @@ function slope(s: Exclude<Surface, { kind: "conic" }>, x: number, y: number): [n
   return s.kind === "toric" ? toricSlope(s, x, y) : zernikeSurfaceSlope(s, x, y);
 }
 
-/** Unit normal at lateral position (x, y), oriented toward −z (facing the incoming ray). */
-export function normalAt(s: Surface, x: number, y: number): Vec3 {
+/** The surface in its own frame: vertex at the origin, no decenter or tilt. */
+function localSurface(s: Surface): Surface {
+  return { ...s, vertexZMm: 0, decenter: { xMm: 0, yMm: 0 }, tilt: { xDeg: 0, yDeg: 0 } };
+}
+
+/**
+ * Unit normal at the surface point (x, y, z), oriented toward −z of the surface's frame (facing
+ * the incoming ray). An untilted surface needs only (x, y); a tilted one needs the full point.
+ */
+export function normalAt(s: Surface, x: number, y: number, z?: number): Vec3 {
+  const frame = surfaceFrame(s);
+  if (frame) {
+    if (z === undefined) throw new Error(`normalAt on the tilted surface "${s.name}" needs the point's z`);
+    const p = toLocal(frame, [x, y, z]);
+    return dirToGlobal(frame, normalAt(localSurface(s), p[0], p[1]));
+  }
   if (s.kind === "conic") return conicNormal(s, x, y);
   const [sx, sy] = slope(s, x, y);
   return normalize([sx, sy, -1]);
@@ -68,11 +86,18 @@ function seed(s: Exclude<Surface, { kind: "conic" }>, origin: Vec3, dir: Vec3): 
  * Intersect a ray with the surface: the first forward hit, `null` when it lies outside the
  * aperture, `"miss"` when there is no forward hit (no root, Newton does not converge, or the
  * ray passes beyond the surface's edge). Toric and Zernike surfaces use Newton iteration on
- * z(t) − sag(x(t), y(t)) = 0 seeded by the closed-form conic root.
+ * z(t) − sag(x(t), y(t)) = 0 seeded by the closed-form conic root. A tilted surface is
+ * intersected in its own frame (surfaces/tilt), where its aperture is measured; the rotation
+ * preserves the ray parameter t.
  */
 export function intersect(s: Surface, origin: Vec3, dir: Vec3): Intersection {
+  const frame = surfaceFrame(s);
+  if (frame) {
+    const hit = intersect(localSurface(s), toLocal(frame, origin), dirToLocal(frame, dir));
+    if (hit === null || hit === "miss") return hit;
+    return { point: toGlobal(frame, hit.point), t: hit.t };
+  }
   if (s.kind === "conic") return conicIntersect(s, origin, dir);
-  assertNoTilt(s);
   const t0 = seed(s, origin, dir);
   if (t0 === null) return "miss";
   let t = t0;

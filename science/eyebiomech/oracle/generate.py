@@ -41,17 +41,31 @@ def decode(value):
 
 
 def expected_for(cases: dict) -> dict:
+    """Per ray: the image hit and optical path (None when vignetted), the status ("ok", "miss",
+    "aperture", "tir"), and the index of the failing surface (None when ok)."""
     out = []
     for case in cases["cases"]:
-        hits = []
+        hits, opl, status, index = [], [], [], []
         for ray in case["rays"]:
             r = trace(case["surfaces"], ray["origin"], ray["direction"])
-            if r["vignetted"]:
+            if r["vignetted"] and case["kind"] not in ("miss", "aperture"):
                 raise RuntimeError(f"case {case['id']}: a ray vignetted in the reference tracer")
-            hits.append(r["hits"][-1])
-        out.append({"id": case["id"], "imageHitsMm": hits})
+            hits.append(None if r["vignetted"] else r["hits"][-1])
+            opl.append(None if r["vignetted"] else r["opticalPathMm"])
+            status.append(r["status"])
+            index.append(r["surfaceIndex"])
+        out.append(
+            {
+                "id": case["id"],
+                "imageHitsMm": hits,
+                "opticalPathMm": opl,
+                "status": status,
+                "surfaceIndex": index,
+            }
+        )
     return {
-        "description": "Image-plane hits from eyebiomech.oracle.reference_tracer.",
+        "description": "Image-plane hits, optical paths, and failure reasons from "
+        "eyebiomech.oracle.reference_tracer.",
         "cases": out,
     }
 
