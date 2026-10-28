@@ -1,4 +1,6 @@
 export { validateEyeParameters } from "./schema/validate";
+export { validateDeformation } from "./schema/deformation";
+export type { DeformationDocument, DeformationValidation } from "./schema/deformation";
 export type { EyeParameters, MuscleGeometry, Medium, Provenance, Surface } from "./schema/types";
 export {
   PRESET_NAMES,
