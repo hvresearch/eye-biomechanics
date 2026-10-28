@@ -26,7 +26,11 @@ export {
 } from "./accommodation/controller";
 export type { LagModel, LagTable } from "./accommodation/controller";
 export type { BinocularState, EyeState, SceneState } from "./state/types";
-export { SchemaVersionError, assertSupported, deriveBinocular, deriveEyeState, pupilDiameterMm } from "./state/derive";
+export { SchemaVersionError, assertSupported, deriveBinocular, deriveEyeState } from "./state/derive";
+export { DEFAULT_PUPIL, pupilBaseMm, pupilDiameterMm } from "./pupil/model";
+export type { PupilInputs } from "./pupil/model";
+export { WATSON_YELLOTT, stanleyDaviesMm, watsonYellottMm } from "./pupil/watsonYellott";
+export { NEAR_RESPONSE, nearMiosisMm, vergenceDemandMA } from "./pupil/nearResponse";
 export type { BinocularOptions, EyeStateOverrides } from "./state/derive";
 export { SCENE_DEFAULTS, defaultScene } from "./scene/defaults";
 export type { SceneDefaults } from "./scene/defaults";

@@ -11,6 +11,7 @@ const relaxed: EyeState = {
   demandD: 0,
   amplitudeD: 6,
   pupilMm: 4,
+  pupilBaseMm: 4,
   gaze: [0, 0, 0, 1],
   gazeDeg: { xDeg: 0, yDeg: 0 },
   targetDistanceM: Number.POSITIVE_INFINITY,

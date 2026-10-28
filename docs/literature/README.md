@@ -36,19 +36,25 @@ Used for: accommodative amplitude versus age (sigmoid fit), replacing Hofstetter
 
 Escudero-Sanz I, Navarro R. Off-axis aberrations of a wide-angle schematic eye model. *J Opt Soc Am A* 16(8):1881-1891, 1999.
 DOI: 10.1364/JOSAA.16.001881
-Used for: wavelength-dependent refractive indices (dispersion model) for polychromatic mode.
+Used for: wavelength-dependent refractive indices (dispersion model) for polychromatic mode. Table 2 (458, 543, 589.3, 632.8 nm) transcribed in `data/dispersion/escudero-sanz-1999.json` from two agreeing search excerpts (M3, 2026-10-28; `verified: false` until compared with the paper).
 
 ## Watson & Yellott 2012
 
 Watson AB, Yellott JI. A unified formula for light-adapted pupil size. *J Vis* 12(10):12, 2012.
 DOI: 10.1167/12.10.12
-Used for: pupil diameter (unified formula), unchanged from the original spec.
+Used for: pupil diameter (unified formula), unchanged from the original spec. Transcribed in `data/pupil/watson-yellott-2012.json` (M3): the Stanley & Davies base, the 28.58-year reference age, and the 20–83 year domain from excerpts; the age-slope constants and monocular factor from luxpy 1.12.5's implementation (secondary). `verified: false`.
 
 ## Feil, Moser & Abegg 2017
 
-Feil M, Moser B, Abegg M. *Graefe's Arch Clin Exp Ophthalmol*, 2017.
+Feil M, Moser B, Abegg M. The interaction of pupil response with the vergence system. *Graefe's Arch Clin Exp Ophthalmol* 255:2247-2253, 2017.
+DOI: to be added (an excerpt gave a garbled DOI; confirm from the journal page)
+Used for: near pupil response; convergence is the main trigger, so miosis is coupled to vergence, not accommodation. No coefficient could be transcribed (M3); see Gislén et al. 2008 below.
+
+## Gislén, Gustafsson & Kröger 2008
+
+Gislén A, Gustafsson J, Kröger RHH, 2008 (pupil near response in children and adults), as quoted by a review excerpt.
 DOI: to be added
-Used for: near pupil response; convergence is the main trigger, so miosis is coupled to vergence, not accommodation.
+Used for: the magnitude of near miosis in `data/pupil/near-response.json` (1.83 mm for a 6 D near demand in adults → 0.305 mm per meter angle). `verified: false`.
 
 ## Watson & Ahumada 2008
 

@@ -15,7 +15,7 @@ One JSON file per published schematic eye. `web/packages/eye-model/src/presets/l
   relaxed: Surface[]         schema Surface objects, object space to the last refracting surface
   retina: { radiusMm, conic }
   axialLengthMm
-  pupil: { model, params }
+  pupil?: { model, params }  absent → the project default (data/pupil, Watson & Yellott 2012)
   accommodation: { form, coefficients, unverified?: string[] }
   aging?: { form, coefficients }
 }

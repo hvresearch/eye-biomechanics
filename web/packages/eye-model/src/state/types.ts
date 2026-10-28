@@ -21,7 +21,10 @@ export interface EyeState {
   accommodationD: number;
   demandD: number;
   amplitudeD: number;
+  /** Pupil diameter after near miosis, mm. */
   pupilMm: number;
+  /** Light-adapted pupil diameter before near miosis, mm. */
+  pupilBaseMm: number;
   /** Orientation (Listing's law) in the eye's local frame, [x, y, z, w]. */
   gaze: Quat;
   /** Line of sight in the eye's local frame (x temporal, y superior), degrees. */

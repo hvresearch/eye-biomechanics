@@ -68,12 +68,7 @@
     "conic": 0
   },
   "axialLengthMm": 24.0,
-  "pupil": {
-    "model": "fixed",
-    "params": {
-      "diameterMm": 4.0
-    }
-  },
+  "pupilNote": "The 1985 paper specifies no pupil. loadPreset gives the preset the project default (Watson & Yellott 2012 with data/pupil defaults); the earlier fixed 4.0 mm was a modeling choice.",
   "accommodation": {
     "form": "navarro1985",
     "description": "Lens and anterior chamber as functions of accommodation A (diopters), Table 4. L = ln(1 + A). anteriorRadius = R_a0 + anteriorRadiusPerLn * L; posteriorRadius = R_p0 + posteriorRadiusPerLn * L; thickness = t0 + thicknessPerLn * L; anteriorChamberDepth = ACD0 + chamberDepthPerLn * L; index = n0 + indexCoeff * (10 A + A^2); anteriorConic = Q_a0 + anteriorConicPerLn * L; posteriorConic = Q_p0 + posteriorConicPerLn * L. The retina stays at axialLengthMm and the vitreous absorbs the change in anterior chamber depth and lens thickness (buildSurfaces).",

@@ -30,7 +30,10 @@ export function readoutTooltips(pupilMm: number, pupilModel: string, unverifiedL
     ciliaryActivation: "Approximation: response divided by amplitude.",
     paraxialPower:
       "Approximation: paraxial (ABCD) power of the accommodated schematic eye with a homogeneous lens index (Navarro 1985); the real lens has a gradient index.",
-    pupil: `Approximation: pupil from the document's "${pupilModel}" pupil model; the luminance-dependent pupil (Watson & Yellott 2012) arrives in Milestone 3.`,
+    pupil:
+      pupilModel === "watsonYellott2012"
+        ? "Approximation: Watson & Yellott 2012 unified formula at the scene's luminance and the subject's age (clamped to 20–83 y), minus a near miosis proportional to vergence demand (Feil 2017 coupling; magnitude from Gislén 2008), floored at 2 mm. Coefficients partly from a secondary implementation (luxpy), unverified against the paper."
+        : `Approximation: pupil from the document's "${pupilModel}" pupil model.`,
   };
 }
 

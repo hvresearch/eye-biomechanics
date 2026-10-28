@@ -1,0 +1,9 @@
+{
+  "name": "near-miosis-default",
+  "verified": false,
+  "miosisMmPerMA": 0.305,
+  "floorMm": 2,
+  "citation": "Coupling to vergence: Feil M, Moser B, Abegg M. The interaction of pupil response with the vergence system. Graefes Arch Clin Exp Ophthalmol 255:2247-2253, 2017 (convergence, not accommodation alone, drives the near miosis; excerpt). Magnitude: Gislén A, Gustafsson J, Kröger RHH 2008 as quoted by a review excerpt: adults constrict 1.83 mm for a 6 D near demand. Floor: spec §4.3.",
+  "derivation": "1.83 mm / 6 D = 0.305 mm per diopter of near demand, converted to meter angles with the normal 1 MA per diopter accommodative-convergence relation (1 MA of convergence accompanies 1 D of accommodation at any fixation distance). Linear in vergence demand; an approximation.",
+  "note": "Neither paper was reachable (2026-10-28); replace with a fitted per-MA coefficient from Feil 2017 or a near-triad study when one can be transcribed."
+}
