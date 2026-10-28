@@ -76,3 +76,13 @@ export { DISPERSION_TABLE, MEDIA_DISPERSION, PHOTOPIC, withDispersion } from "./
 export type { MediumName } from "./optics/dispersion";
 export { clinicalAxisDeg, localAxisDeg, toClinicalRefraction } from "./optics/clinical";
 export type { ClinicalPrescription, Side } from "./optics/clinical";
+export { PUPIL_PLANE_OFFSET_MM, VISUAL_AXIS_DEFAULTS, eyeView, onAxisView } from "./optics/view";
+export {
+  REFRACTIVE_PRESETS,
+  REFRACTIVE_PRESET_NAMES,
+  applyRefraction,
+  applyRefractivePreset,
+  decomposeRefraction,
+  mirrorEye,
+} from "./presets/refractive";
+export type { Decomposition, FarPointFn, Mechanism, RefractionSpec, RefractivePreset, RefractivePresetName } from "./presets/refractive";

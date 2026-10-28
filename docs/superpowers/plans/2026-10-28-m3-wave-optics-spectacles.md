@@ -318,14 +318,14 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
   - `REFRACTIVE_PRESETS`; `type RefractivePresetName`; `applyRefractivePreset(base: EyeParameters, name: RefractivePresetName, farPointOf: FarPointFn): EyeParameters`: axial → bisection on `axialLengthMm`; corneal sphere → anterior corneal radius; corneal or lenticular cylinder → that surface becomes toric with one principal meridian solved (the other keeps the base radius), the axis converted from TABO to local for the right eye; `presbyope-55` sets `age: 55`. The result validates.
   - `decomposeRefraction(params, base: EyeParameters, farPointOf: FarPointFn): { totalD; cornealD; lenticularD; axialD; residualD; cylinderTotalD; cylinderCornealD; cylinderLenticularD }`: spherical equivalents from the principal-meridian paraxial far points; each component is the change from the base eye when only that part (cornea surfaces, lens surfaces, axial length) is taken from `params`; `residualD` is what remains.
   - `mirrorEye(params: EyeParameters, side: "left" | "right"): EyeParameters` (Deviation 2: new id and label, numbers unchanged).
-- [ ] **Step 1:** Failing tests (`refractive.test.ts` uses optics' `paraxialPower` and `analyzeWavefront`, which eye-model tests may import):
+- [x] **Step 1:** Failing tests (`refractive.test.ts` uses optics' `paraxialPower` and `analyzeWavefront`, which eye-model tests may import):
   - each preset's traced refraction (`analyzeWavefront`, paraxial method, 3 mm pupil, on axis) minus the emmetrope's matches its nominal within 0.15 D in sphere and cylinder and 3° in TABO axis;
   - decomposition components sum to the total within 0.05 D for every preset; the axial myope's refraction is all axial, the corneal astigmat's cylinder all corneal;
   - `mirrorEye` of the corneal astigmat gives TABO axes for the two eyes that sum to 180 (with an oblique-axis variant at local 30°), and both views put the object nasal (the fovea temporal);
   - `eyeView` of the default preset has field x = 5° and the chief ray reaches the retina temporal of the optical axis.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement; write `data/presets/README.md` and the visual-axis note.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(eye-model): visual axis and refractive-error presets with decomposition`.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement; write `data/presets/README.md` and the visual-axis note.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(eye-model): visual axis and refractive-error presets with decomposition`.
 
 ### Task 3.9: Python oracle cross-check
 

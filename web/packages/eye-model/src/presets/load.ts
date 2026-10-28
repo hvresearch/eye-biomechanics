@@ -5,6 +5,7 @@ import { validateEyeParameters } from "../schema/validate";
 import { toDocumentMuscles } from "../eom/geometry";
 import { SCENE_DEFAULTS } from "../scene/defaults";
 import { DEFAULT_PUPIL } from "../pupil/model";
+import visualAxis from "../../../../../data/visual-axis/defaults.json";
 
 export const PRESET_NAMES = ["navarro-1985", "zapata-diaz-2019"] as const;
 export type PresetName = (typeof PRESET_NAMES)[number];
@@ -88,6 +89,9 @@ export function loadPreset(name: PresetName): EyeParameters {
     age: table.referenceAgeYears,
     interpupillaryDistanceMm: SCENE_DEFAULTS.ipdMm,
     extraocularMuscles: toDocumentMuscles(),
+    // Angle alpha and pupil decentration defaults (data/visual-axis; unverified, see its note).
+    visualAxis: { alphaDeg: visualAxis.alphaDeg, kappaDeg: visualAxis.kappaDeg },
+    pupilDecenterMm: { ...visualAxis.pupilDecenterMm },
   };
   if (table.accommodation !== undefined) {
     doc.lensAccommodationModel = clone(table.accommodation);
