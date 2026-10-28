@@ -1,7 +1,9 @@
 import {
   PHOTOPIC,
+  accommodationResponse,
   buildSurfacesAt,
   clinicalAxisDeg,
+  demandFromDistance,
   eyeView,
   lensParameterFor,
   localAxisDeg,
@@ -139,28 +141,45 @@ function result(st: Stage, transfer: Otf, retinal: Float32Array, w: WaveRequest,
 }
 
 /**
- * Wave optics of the eye alone and, with spectacles, of eye plus lens. The two configurations
- * share one FFT for their OTFs and one for their retinal images (paired real transforms).
+ * Wave optics of the eye alone and, with spectacles, of eye plus lens (`lensEye`: the eye as
+ * accommodated behind the lens). The two configurations share one FFT for their OTFs and one
+ * for their retinal images (paired real transforms).
  */
-function waveResults(eye: Surface[], lens: Surface[], view: ViewSpec, w: WaveRequest, side: "left" | "right"): [WaveResult, WaveResult | null] {
+function waveResults(eye: Surface[], lens: Surface[], lensEye: Surface[], view: ViewSpec, w: WaveRequest, side: "left" | "right"): [WaveResult, WaveResult | null] {
   const u = stage(eye, view, w);
   const t = target(u.psf.n, u.psf.pixelArcmin, w.letterArcmin);
   if (lens.length === 0) {
     const k = otf(u.psf);
     return [result(u, k, retinalImage(t, u.psf, k).data, w, side), null];
   }
-  const c = stage([...lens, ...eye], view, w);
+  const c = stage([...lens, ...lensEye], view, w);
   const [ku, kc] = otfPair(u.psf, c.psf);
   const [iu, ic] = retinalImagePair(t, u.psf, c.psf, ku, kc);
   return [result(u, ku, iu.data, w, side), result(c, kc, ic.data, w, side)];
 }
 
-function eyeWave(req: EyeOpticsRequest, eye: Surface[], lens: Surface[], w: WaveRequest): EyeWave {
+/**
+ * Accommodation of the configuration that is not worn: the active configuration's response
+ * moved by the change in the static response between the two far points, so the dynamics'
+ * transient carries over. Without an amplitude, the active accommodation.
+ */
+function otherAccommodationD(req: EyeOpticsRequest, lens: Surface[], worn: boolean): number {
+  if (req.amplitudeD === undefined || lens.length === 0) return req.accommodationD;
+  const amplitudeD = req.amplitudeD;
+  const response = (fp: number) => accommodationResponse(demandFromDistance(req.objectDistanceM, fp), amplitudeD);
+  const eyeFp = relaxedFarPointD(req.params);
+  const lensFp = relaxedFarPointD(req.params, lens);
+  const [activeFp, otherFp] = worn ? [lensFp, eyeFp] : [eyeFp, lensFp];
+  return Math.min(Math.max(req.accommodationD + response(otherFp) - response(activeFp), 0), Math.max(amplitudeD, 0));
+}
+
+function eyeWave(req: EyeOpticsRequest, active: Surface[], lens: Surface[], worn: boolean, w: WaveRequest): EyeWave {
   const view = eyeView(req.params, req.objectDistanceM, 2 * req.pupilSemiDiamMm);
   let autoRx: EyeWave["autoRx"] = null;
   if (w.autoPrescribe) {
     const design = req.spectacles ?? { ...SPECTACLE_DEFAULTS, sphereD: 0, cylinderD: 0, axisDeg: 180 };
-    const r = autoPrescribe(eye, view, {
+    // Refraction is done with accommodation relaxed; otherwise an accommodating hyperope reads plano.
+    const r = autoPrescribe(buildSurfacesAt(req.params, 0), view, {
       vertexMm: design.vertexMm,
       baseCurveD: design.baseCurveD,
       index: design.index,
@@ -178,7 +197,11 @@ function eyeWave(req: EyeOpticsRequest, eye: Surface[], lens: Surface[], w: Wave
       residualRmsMicrons: r.residualRmsMicrons,
     };
   }
-  const [uncorrected, corrected] = waveResults(eye, lens, view, w, req.side);
+  // Each configuration is analyzed at the accommodation it would use: the active one at the
+  // requested response, the other at its own far point.
+  const other = lens.length === 0 ? active : buildSurfacesAt(req.params, lensParameterFor(req.params, otherAccommodationD(req, lens, worn), farPointOf));
+  const [eye, lensEye] = worn ? [other, active] : [active, other];
+  const [uncorrected, corrected] = waveResults(eye, lens, lensEye, view, w, req.side);
   return { uncorrected, corrected, autoRx };
 }
 const relaxedCache = new Map<string, number>();
@@ -234,7 +257,7 @@ function eyeOptics(req: EyeOpticsRequest): EyeOptics {
     rmsSpotMm: d.rmsSpotMm,
     fan,
     vignettedRays,
-    wave: req.wave ? eyeWave(req, surfaces, lens, req.wave) : null,
+    wave: req.wave ? eyeWave(req, surfaces, lens, worn, req.wave) : null,
   };
 }
 

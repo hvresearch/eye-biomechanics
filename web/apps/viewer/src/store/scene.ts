@@ -223,6 +223,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           side,
           params: eyes[side],
           accommodationD: b[side].accommodationD,
+          amplitudeD: b[side].amplitudeD,
           objectDistanceM: b[side].targetDistanceM,
           pupilSemiDiamMm: b[side].pupilMm / 2,
           fanRays: side === "right" ? FAN_RAYS : 0,

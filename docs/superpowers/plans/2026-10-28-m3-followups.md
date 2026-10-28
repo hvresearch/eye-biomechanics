@@ -37,8 +37,9 @@ numbers, so they move to M4 unchanged.
 
 - `web/apps/viewer/src/store/scene.ts` / `worker/handle.ts`: accommodation demand uses
   the paraxial far point of the worn configuration, while auto-prescribe minimizes the
-  RMS wavefront error; wearing the auto lens therefore adds about 0.2 D of accommodation
-  and some defocus. Drive demand (or the far point it uses) by the same refraction
+  RMS wavefront error; wearing the auto lens therefore adds about 0.2-0.36 D of accommodation
+  and some defocus (it caps the `astigmat-1.5-atr-corneal` e2e RMS reduction at about 74%,
+  below the master plan's 80%; restore the 80% check, `toBeLessThan(0.2)`, when this lands). Drive demand (or the far point it uses) by the same refraction
   measure as the prescription, or prescribe with the controller in the loop. (M4 or M6)
 - `data/visual-axis/defaults.json`: angle alpha 5° on the centered Navarro eye gives the
   emmetrope about −0.18 D of oblique astigmatism at the fovea; Polans 2015's tilted and

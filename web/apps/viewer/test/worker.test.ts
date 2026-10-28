@@ -8,10 +8,10 @@ import {
   type EyeParameters,
   type SceneState,
 } from "@eye/eye-model";
-import { DEFAULT_LAUNCH_OFFSET_MM, SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
+import { DEFAULT_LAUNCH_OFFSET_MM, SPECTACLE_DEFAULTS, lensSurfaces, paraxialPower, type Surface } from "@eye/optics";
 import { describe, expect, it } from "vitest";
 import { OpticsClient, StaleRequestError } from "../src/worker/client";
-import { handle, relaxedFarPointD } from "../src/worker/handle";
+import { handle, lensPrescription, relaxedFarPointD } from "../src/worker/handle";
 import { WAVE_REQUEST } from "../src/store/scene";
 import { transferables, type ClinicalLens, type OpticsRequest, type OpticsWorkerMessage } from "../src/worker/messages";
 
@@ -158,6 +158,42 @@ describe("handle", () => {
     expect(auto.vertexMm).toBe(12);
     expect(auto.axisDeg).toBeGreaterThan(0);
     expect(auto.axisDeg).toBeLessThanOrEqual(180);
+  });
+
+  // A young hyperope at 6 m accommodates about 2 D uncorrected; refraction must relax that away.
+  const hyperope = applyRefractivePreset(eye, "hyperope+2-axial", farPointOf);
+  const far6: SceneState = { ...scene, targetDistanceM: 6, ageYears: 30 };
+  const hyperopeRequest = (over: Partial<OpticsRequest["eyes"][number]>): OpticsRequest => {
+    const fp = relaxedFarPointD(hyperope);
+    const b = deriveBinocular(far6, { left: hyperope, right: hyperope }, { farPointD: { left: fp, right: fp } });
+    const r = b.right;
+    return {
+      id: 4,
+      eyes: [{ side: "right", params: hyperope, accommodationD: r.accommodationD, amplitudeD: r.amplitudeD, objectDistanceM: r.targetDistanceM, pupilSemiDiamMm: r.pupilMm / 2, fanRays: 0, wave: WAVE_REQUEST, ...over }],
+    };
+  };
+
+  it("auto-prescribes the relaxed eye: a young +2 D hyperope gets about +2 D", () => {
+    const req = hyperopeRequest({ wave: { ...WAVE_REQUEST, autoPrescribe: true } });
+    expect(req.eyes[0]!.accommodationD).toBeGreaterThan(1.5);
+    const auto = handle(req).eyes[0]!.wave!.autoRx!;
+    expect(auto.sphereD + auto.cylinderD / 2).toBeGreaterThan(1.7);
+    expect(auto.sphereD + auto.cylinderD / 2).toBeLessThan(2.3);
+  });
+
+  it("analyzes each configuration at its own accommodation: a +2 D lens not worn still corrects the hyperope", () => {
+    const w = handle(hyperopeRequest({ spectacles: lens(2), corrected: false })).eyes[0]!.wave!;
+    const accEmm = deriveBinocular(far6, { left: eye, right: eye }).right.accommodationD;
+    const emm = handle({ id: 5, eyes: [{ ...hyperopeRequest({}).eyes[0]!, params: eye, accommodationD: accEmm }] }).eyes[0]!.wave!.uncorrected;
+    // Uncorrected, the hyperope accommodates onto the target; with the lens it relaxes and stays in focus.
+    expect(Math.abs(w.uncorrected.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
+    expect(Math.abs(w.corrected!.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
+    // Worn, the uncorrected comparison row accommodates as the bare eye would.
+    const fpWorn = relaxedFarPointD(hyperope, lensSurfaces(lensPrescription(lens(2), "right")));
+    const accWorn = deriveBinocular(far6, { left: hyperope, right: hyperope }, { farPointD: { left: fpWorn, right: fpWorn } }).right.accommodationD;
+    const worn = handle(hyperopeRequest({ spectacles: lens(2), corrected: true, accommodationD: accWorn })).eyes[0]!.wave!;
+    expect(Math.abs(worn.uncorrected.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
+    expect(Math.abs(worn.corrected!.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
   });
 
   it("stays inside the per-frame budget for two eyes (median of 5)", () => {

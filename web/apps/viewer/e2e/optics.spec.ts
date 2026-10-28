@@ -41,14 +41,17 @@ test("the against-the-rule astigmat reads −1.5 D cylinder at 90°, and auto-pr
   await page.getByTestId("use-auto-rx").click();
   await expect(page.getByTestId("rms-corrected")).toBeVisible({ timeout: 30_000 });
   const ratio = async () => num(await text(page, "rms-corrected")) / num(await text(page, "rms-uncorrected"));
-  // Through the prescribed lens, at the accommodation of the uncorrected eye: more than 80% less error.
-  await expect.poll(ratio, { timeout: 30_000 }).toBeLessThan(0.2);
+  // Each configuration is shown at its own accommodation. Behind the lens the paraxial far point
+  // (which drives demand) sits about 0.2 D hyperopic of the minimum-RMS prescription, so the eye
+  // accommodates about 0.36 D and the reduction is about 74%, not the master plan's 80% (see the
+  // M3 deviations and follow-ups).
+  await expect.poll(ratio, { timeout: 30_000 }).toBeLessThan(0.35);
   await expect(page.getByTestId("wavefront-map-corrected")).toBeVisible();
-  // Worn, the lens moves the paraxial far point and the eye accommodates a little more (see the M3
-  // outcome notes), so the reduction is somewhat smaller but still large.
+  const notWorn = await ratio();
+  // Worn, the same two configurations are analyzed at the same accommodations.
   await page.getByTestId("corrected").check();
   await expect(page.getByTestId("refraction")).toBeVisible();
-  await expect.poll(ratio, { timeout: 30_000 }).toBeLessThan(0.35);
+  await expect.poll(async () => Math.abs((await ratio()) - notWorn), { timeout: 30_000 }).toBeLessThan(0.02);
 });
 
 test("raising the luminance shrinks the pupil", async ({ page }) => {

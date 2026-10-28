@@ -29,6 +29,12 @@ export interface EyeOpticsRequest {
   params: EyeParameters;
   /** Accommodation response (static controller or dynamics), diopters. */
   accommodationD: number;
+  /**
+   * Amplitude of accommodation, diopters. With it the wave optics analyze the configuration not
+   * worn (eye alone, or eye plus lens) at the accommodation it would use; without it both
+   * configurations share `accommodationD`.
+   */
+  amplitudeD?: number;
   /** This eye's distance to the target, meters (Infinity for a distant target). */
   objectDistanceM: number;
   pupilSemiDiamMm: number;
