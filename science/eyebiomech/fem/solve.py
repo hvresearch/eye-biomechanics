@@ -23,6 +23,9 @@ from eyebiomech.fem.mesh import REGIONS, ShellMesh
 # Quadrature orders for the 27-node element (numerical): 4 on volumes and facets.
 INTORDER = 4
 FACET_INTORDER = 4
+# Facet quadrature for the dead surface loads (numerical): their bands have edges that cut
+# through facets, so a finer rule (6 × 6 points) integrates the indicators more closely.
+LOAD_INTORDER = 10
 # SuperLU settings (numerical): a minimum-degree ordering of the structurally symmetric
 # pattern and a small diagonal pivot threshold. The stiffness is symmetric positive definite
 # except for the small follower-pressure term; SuperLU's default (COLAMD, partial pivoting)
@@ -47,6 +50,7 @@ class Context:
     sb: Basis
     fb_inner: FacetBasis
     fb_outer: FacetBasis
+    fb_outer_loads: FacetBasis
     n: int
     vector_dofs: NDArray  # (3, nscalar): vector dof of component c at scalar dof k
     x_quad: NDArray  # (3, nel, nqp) quadrature points
@@ -58,6 +62,7 @@ def make_context(shell: ShellMesh) -> Context:
     sb = Basis(shell.mesh, ElementHex2(), intorder=INTORDER)
     fb_inner = FacetBasis(shell.mesh, e, facets=shell.inner_facets, intorder=FACET_INTORDER)
     fb_outer = FacetBasis(shell.mesh, e, facets=shell.outer_facets, intorder=FACET_INTORDER)
+    fb_outer_loads = FacetBasis(shell.mesh, e, facets=shell.outer_facets, intorder=LOAD_INTORDER)
     vector_dofs = np.empty((3, sb.N), dtype=np.int64)
     for kind in ("nodal_dofs", "edge_dofs", "facet_dofs", "interior_dofs"):
         scalar = getattr(sb, kind)[0]
@@ -68,6 +73,7 @@ def make_context(shell: ShellMesh) -> Context:
         sb=sb,
         fb_inner=fb_inner,
         fb_outer=fb_outer,
+        fb_outer_loads=fb_outer_loads,
         n=vb.N,
         vector_dofs=vector_dofs,
         x_quad=np.asarray(vb.global_coordinates()),

@@ -221,22 +221,22 @@ Implementation notes: element assembly is vectorized in `fem/assembly.py` (batch
 **Interfaces:**
 - Produces: `class Loads` with builder methods returning `self`:
   - `.iop(pressure_mmhg: float)` (follower pressure on the inner surface);
-  - `.insertion(muscle: str, force_n: float, pull_dir: ArrayLike, center_mm: ArrayLike, footprint_width_mm: float, tendon: dict, footprint_length_mm: float | None = None)`: a dead-load traction uniform over the footprint on the outer surface (a band of `footprint_width_mm` across the pull direction and `footprint_length_mm` along it, centered at the insertion; the length defaults to the table's `insertionFootprintLengthMm`), scaled so its integral equals `force_n · pull_dir` exactly on the discrete surface; `tendon` is validated (positive stiffness) and recorded (Deviation 5);
-  - `.ciliary(tension_n_per_mm: float, accommodation_d: float)`: a line load around the scleral-spur circle (arc from the limbus from the table), tangent to the outer surface along the meridian, pointing posterior, magnitude `tension_n_per_mm × accommodation_d` per mm of circumference (Deviation 12);
+  - `.insertion(muscle: str, force_n: float, pull_dir: ArrayLike, center_mm: ArrayLike, footprint_width_mm: float, tendon: dict, footprint_length_mm: float | None = None, insertion_dir: ArrayLike | None = None, tangent_point_mm: ArrayLike | None = None)` (the last two per Deviation 14: the footprint load acts along `insertion_dir`, and a wrapping muscle adds the contact pressure `F/(R w)` between the insertion and the tangent point, normalized to the exact band resultant; the net load is `F · pull_dir` within 1%): a dead-load traction uniform over the footprint on the outer surface (a band of `footprint_width_mm` across the pull direction and `footprint_length_mm` along it, centered at the insertion; the length defaults to the table's `insertionFootprintLengthMm`), scaled so its integral equals `force_n · pull_dir` exactly on the discrete surface; `tendon` is validated (positive stiffness) and recorded (Deviation 5);
+  - `.ciliary(tension_n_per_mm: float, accommodation_d: float)`: a line load around the scleral-spur circle (arc from the limbus from the table) on the outer surface, spread over a 1 mm band and normalized to the line, tangent along the meridian, pointing posterior, magnitude `tension_n_per_mm × accommodation_d` per mm of circumference (Deviation 12);
   - `.eyelid(upper_kpa: float, lower_kpa: float, aperture_mm: float, upper_height_mm: float, lower_height_mm: float)`: normal pressure on the outer surface over the anterior hemisphere (`z < 0`) in the bands `aperture/2 ≤ y ≤ aperture/2 + upper_height` and `−aperture/2 − lower_height ≤ y ≤ −aperture/2`;
-  - `.from_force_table(table: ForceTable, gaze_index: int, eom: dict)`: one `.insertion` per muscle;
+  - `.from_force_table(table: ForceTable, gaze_index: int, eom: dict)`: one `.insertion` per muscle, with the table's vectors rotated back to the globe's frame by the inverse of the gaze orientation (the export gains each gaze's `quaternion`; `ForceTable.body_frame(g)`);
   - `.summary() -> dict` (JSON-serializable list of loads with magnitudes, for provenance);
-  - `.assemble(basis, facet_basis_outer, facet_basis_inner, u) -> (residual_contribution, tangent_contribution)` used by `solve`.
-- Constants (numerical): facet quadrature order for band indicators 6.
+  - `.assemble(ctx, u, scale) -> (f_ext, K_ext | None)` used by `solve` (dead loads cached per context).
+- Constants (numerical): facet quadrature order 10 (6 × 6 points) for the dead surface loads; ciliary band half-width 0.5 mm.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - total applied insertion force equals the input force vector within 1e-6 N for each muscle of the default force table at primary gaze;
   - on `make_sphere_shell(11.5, 12)` (sphere geometry, so the band area is analytic), the lid band's total normal force equals `p · π · R · h` per band within 2% (quadrature of a band edge cut through elements, at `n_face = 12`);
   - the ciliary ring's total force is axial with magnitude `tension × A × 2π r_spur × cos(slope)` within 2%, and zero at 0 D;
   - a symmetric load set (IOP plus equal upper and lower lid bands, on the fixture eye, `n_face = 6`) produces a displacement field mirror-symmetric under `x → −x` to 1e-6 relative to its maximum (mirror nodes found with a KD-tree);
   - `summary()` is JSON-serializable and lists each load once.
-- [ ] **Step 2:** Run; FAIL. Implement; run; PASS.
-- [ ] **Step 3:** Full gate. Commit: `feat(fem): IOP, insertion, ciliary, and eyelid loads`.
+- [x] **Step 2:** Run; FAIL. Implement; run; PASS.
+- [x] **Step 3:** Full gate. Commit: `feat(fem): IOP, insertion, ciliary, and eyelid loads`.
 
 ### Task 4.6: Deformed-surface sampling and Zernike fit
 

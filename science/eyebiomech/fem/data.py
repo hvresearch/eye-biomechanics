@@ -25,6 +25,10 @@ def load_eom_table(path: Path | str | None = None) -> dict:
     return _load(path, DATA_DIR / "eom" / "geometry-default.json")
 
 
+def load_eom_forces(path: Path | str | None = None) -> dict:
+    return _load(path, DATA_DIR / "eom" / "forces.json")
+
+
 def lame_lambda(mu: float, poisson_ratio: float) -> float:
     """First Lamé constant from the shear modulus and Poisson ratio, λ = 2μν / (1 − 2ν)."""
     if not -1 < poisson_ratio < 0.5:

@@ -41,6 +41,7 @@ class ForceTable:
     force_n: NDArray  # (G, 6)
     width_mm: NDArray  # (G, 6)
     tendon_elongation_mm: NDArray  # (G, 6)
+    quaternions: NDArray  # (G, 4) [x, y, z, w], globe orientation of each gaze
     provenance: dict
 
     def at(self, x_deg: float, y_deg: float) -> int:
@@ -49,6 +50,27 @@ class ForceTable:
         if hits.size == 0:
             raise KeyError(f"gaze ({x_deg}, {y_deg}) is not in the force table")
         return int(hits[0])
+
+    def body_frame(self, g: int) -> dict[str, NDArray]:
+        """Gaze g's vectors (insertion, insertion direction, pull direction, tangent point) taken
+        back to the globe's own frame by the inverse of the gaze orientation, each (6, 3)."""
+        R = rotation_matrix(self.quaternions[g])
+        return {
+            name: getattr(self, name)[g] @ R  # rows v ↦ Rᵀ v
+            for name in ("insertion_mm", "insertion_dir", "pull_dir", "tangent_mm")
+        }
+
+
+def rotation_matrix(q: NDArray) -> NDArray:
+    """Rotation matrix of the unit quaternion [x, y, z, w] (v' = q v q*)."""
+    x, y, z, w = np.asarray(q, dtype=float) / np.linalg.norm(q)
+    return np.array(
+        [
+            [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+            [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+            [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)],
+        ]
+    )
 
 
 def load_force_table(path: Path | str) -> ForceTable:
@@ -71,7 +93,7 @@ def load_force_table(path: Path | str) -> ForceTable:
         "tendon_elongation_mm": "tendonElongationMm",
     }
     columns: dict[str, list] = {k: [] for k in fields}
-    gazes = []
+    gazes, quats = [], []
     for g, gaze in enumerate(doc["gazes"]):
         names = tuple(e.get("name") for e in gaze["entries"])
         if names != MUSCLE_NAMES:
@@ -81,12 +103,16 @@ def load_force_table(path: Path | str) -> ForceTable:
                 + (f" (unknown: {unknown})" if unknown else "")
             )
         gazes.append((gaze["xDeg"], gaze["yDeg"]))
+        if "quaternion" not in gaze:
+            raise ValueError(f"gaze {g}: no quaternion (regenerate the table)")
+        quats.append(gaze["quaternion"])
         for k, key in fields.items():
             columns[k].append([e[key] for e in gaze["entries"]])
     arrays = {k: np.asarray(v, dtype=float) for k, v in columns.items()}
     return ForceTable(
         muscles=MUSCLE_NAMES,
         gazes_deg=np.asarray(gazes, dtype=float),
+        quaternions=np.asarray(quats, dtype=float),
         provenance=doc.get("provenance", {}),
         **arrays,
     )

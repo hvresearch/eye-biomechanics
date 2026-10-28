@@ -5,6 +5,7 @@ import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { buildForceTable } from "../scripts/export-forces";
 import { EOM_TABLE, MUSCLE_NAMES } from "../src/eom/geometry";
+import { quatRotate } from "../src/math/quat";
 
 describe("force table export", () => {
   it("covers a grid × grid lattice of gazes with six muscles each, primary in the center", () => {
@@ -17,6 +18,21 @@ describe("force table export", () => {
     expect(table.gazes[12]).toMatchObject({ xDeg: 0, yDeg: 0 });
     expect(table.gazes[0]).toMatchObject({ xDeg: -30, yDeg: -30 });
     expect(JSON.parse(JSON.stringify(table))).toEqual(table);
+  });
+
+  it("carries each gaze's orientation so the loads can be taken back to the globe's frame", () => {
+    const table = buildForceTable({ grid: 3, rangeDeg: 20 });
+    expect(table.gazes[4]!.quaternion).toEqual([0, 0, 0, 1]);
+    for (const g of table.gazes) {
+      const q = g.quaternion;
+      expect(Math.hypot(...q)).toBeCloseTo(1, 12);
+      // Rotating the primary-position insertion by the gaze gives the exported insertion.
+      g.entries.forEach((e, i) => {
+        const back = quatRotate([-q[0], -q[1], -q[2], q[3]], e.insertionMm);
+        const primary = table.gazes[4]!.entries[i]!.insertionMm;
+        for (let k = 0; k < 3; k++) expect(back[k]).toBeCloseTo(primary[k]!, 10);
+      });
+    }
   });
 
   it("rejects a grid without a center or a non-positive range", () => {

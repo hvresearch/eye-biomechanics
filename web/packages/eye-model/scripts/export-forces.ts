@@ -5,10 +5,16 @@ import { FORCE_TABLE, muscleForces, type MuscleForce } from "../src/eom/forces";
 import { EOM_TABLE, MUSCLE_NAMES } from "../src/eom/geometry";
 import { gazeQuaternion } from "../src/gaze/listing";
 
-/** One gaze of the table: Fick angles in the eye's local frame (x temporal, y up), degrees. */
+/**
+ * One gaze of the table: Fick angles in the eye's local frame (x temporal, y up), degrees, and
+ * the Listing's-law orientation [x, y, z, w] that carries the globe from primary position to
+ * this gaze. Entries are in the orbit frame; rotating them by the inverse orientation gives
+ * them in the globe's own (body) frame, the frame of the FEM.
+ */
 export interface ForceTableGaze {
   xDeg: number;
   yDeg: number;
+  quaternion: [number, number, number, number];
   entries: MuscleForce[];
 }
 
@@ -37,7 +43,9 @@ export function buildForceTable(opts: { grid: number; rangeDeg: number }, genera
       // Rounded so the center is exactly 0 and the JSON is stable (numerical).
       const xDeg = Math.round((-rangeDeg + ix * step) * 1e9) / 1e9;
       const yDeg = Math.round((-rangeDeg + iy * step) * 1e9) / 1e9;
-      gazes.push({ xDeg, yDeg, entries: muscleForces(gazeQuaternion({ xDeg, yDeg })) });
+      const q = gazeQuaternion({ xDeg, yDeg });
+      // `+ 0` turns −0 into 0 so the JSON round-trips exactly.
+      gazes.push({ xDeg, yDeg, quaternion: [q[0] + 0, q[1] + 0, q[2] + 0, q[3] + 0], entries: muscleForces(q) });
     }
   }
   return {

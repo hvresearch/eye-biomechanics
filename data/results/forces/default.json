@@ -13,6 +13,12 @@
   {
    "xDeg": -30,
    "yDeg": -30,
+   "quaternion": [
+    -0.2672612419124243,
+    0.23145502494313783,
+    0,
+    0.9354143466934853
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -193,6 +199,12 @@
   {
    "xDeg": -15,
    "yDeg": -30,
+   "quaternion": [
+    -0.26089010792231865,
+    0.11695383584721367,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -373,6 +385,12 @@
   {
    "xDeg": 0,
    "yDeg": -30,
+   "quaternion": [
+    -0.2588190451025207,
+    0,
+    0,
+    0.9659258262890683
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -553,6 +571,12 @@
   {
    "xDeg": 15,
    "yDeg": -30,
+   "quaternion": [
+    -0.26089010792231865,
+    -0.11695383584721367,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -733,6 +757,12 @@
   {
    "xDeg": 30,
    "yDeg": -30,
+   "quaternion": [
+    -0.2672612419124243,
+    -0.23145502494313783,
+    0,
+    0.9354143466934853
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -913,6 +943,12 @@
   {
    "xDeg": -30,
    "yDeg": -15,
+   "quaternion": [
+    -0.13504665721829617,
+    0.2520004930655098,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -1093,6 +1129,12 @@
   {
    "xDeg": -15,
    "yDeg": -15,
+   "quaternion": [
+    -0.13163272708614698,
+    0.12714745067736993,
+    0,
+    0.9831105486902832
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -1273,6 +1315,12 @@
   {
    "xDeg": 0,
    "yDeg": -15,
+   "quaternion": [
+    -0.13052619222005155,
+    0,
+    0,
+    0.9914448613738104
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -1453,6 +1501,12 @@
   {
    "xDeg": 15,
    "yDeg": -15,
+   "quaternion": [
+    -0.13163272708614698,
+    -0.12714745067736993,
+    0,
+    0.9831105486902832
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -1633,6 +1687,12 @@
   {
    "xDeg": 30,
    "yDeg": -15,
+   "quaternion": [
+    -0.13504665721829617,
+    -0.2520004930655098,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -1813,6 +1873,12 @@
   {
    "xDeg": -30,
    "yDeg": 0,
+   "quaternion": [
+    0,
+    0.2588190451025207,
+    0,
+    0.9659258262890683
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -1993,6 +2059,12 @@
   {
    "xDeg": -15,
    "yDeg": 0,
+   "quaternion": [
+    0,
+    0.13052619222005155,
+    0,
+    0.9914448613738104
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -2173,6 +2245,12 @@
   {
    "xDeg": 0,
    "yDeg": 0,
+   "quaternion": [
+    0,
+    0,
+    0,
+    1
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -2353,6 +2431,12 @@
   {
    "xDeg": 15,
    "yDeg": 0,
+   "quaternion": [
+    0,
+    -0.13052619222005155,
+    0,
+    0.9914448613738104
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -2533,6 +2617,12 @@
   {
    "xDeg": 30,
    "yDeg": 0,
+   "quaternion": [
+    0,
+    -0.2588190451025207,
+    0,
+    0.9659258262890683
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -2713,6 +2803,12 @@
   {
    "xDeg": -30,
    "yDeg": 15,
+   "quaternion": [
+    0.13504665721829617,
+    0.2520004930655098,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -2893,6 +2989,12 @@
   {
    "xDeg": -15,
    "yDeg": 15,
+   "quaternion": [
+    0.13163272708614698,
+    0.12714745067736993,
+    0,
+    0.9831105486902832
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -3073,6 +3175,12 @@
   {
    "xDeg": 0,
    "yDeg": 15,
+   "quaternion": [
+    0.13052619222005155,
+    0,
+    0,
+    0.9914448613738104
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -3253,6 +3361,12 @@
   {
    "xDeg": 15,
    "yDeg": 15,
+   "quaternion": [
+    0.13163272708614698,
+    -0.12714745067736993,
+    0,
+    0.9831105486902832
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -3433,6 +3547,12 @@
   {
    "xDeg": 30,
    "yDeg": 15,
+   "quaternion": [
+    0.13504665721829617,
+    -0.2520004930655098,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -3613,6 +3733,12 @@
   {
    "xDeg": -30,
    "yDeg": 30,
+   "quaternion": [
+    0.2672612419124243,
+    0.23145502494313783,
+    0,
+    0.9354143466934853
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -3793,6 +3919,12 @@
   {
    "xDeg": -15,
    "yDeg": 30,
+   "quaternion": [
+    0.26089010792231865,
+    0.11695383584721367,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -3973,6 +4105,12 @@
   {
    "xDeg": 0,
    "yDeg": 30,
+   "quaternion": [
+    0.2588190451025207,
+    0,
+    0,
+    0.9659258262890683
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -4153,6 +4291,12 @@
   {
    "xDeg": 15,
    "yDeg": 30,
+   "quaternion": [
+    0.26089010792231865,
+    -0.11695383584721367,
+    0,
+    0.9582578733665088
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -4333,6 +4477,12 @@
   {
    "xDeg": 30,
    "yDeg": 30,
+   "quaternion": [
+    0.2672612419124243,
+    -0.23145502494313783,
+    0,
+    0.9354143466934853
+   ],
    "entries": [
     {
      "name": "lateralRectus",
@@ -4513,7 +4663,7 @@
  ],
  "provenance": {
   "generatedBy": "pnpm --filter @eye/eye-model export-forces --grid 5 --range 30 --out ../data/results/forces/default.json",
-  "gitHash": "b9949651f6e30775babb4b4350f249392b7f7a6a-dirty",
+  "gitHash": "13d92cb68b017ea87515c39371b5dfe5c350436a-dirty",
   "date": "2026-10-28",
   "citation": "Eye model (web/packages/eye-model) with data/eom/geometry-default.json, activation.json, and forces.json; forceN = activation x maxForceN, activation from the length proxy (data/eom/activation.json); an approximation. Not verified (see those tables)."
  }

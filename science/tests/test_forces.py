@@ -63,3 +63,14 @@ def test_rejects_malformed_tables(tmp_path, mutate, message):
     mutate(doc)
     with pytest.raises(ValueError, match=message):
         load_force_table(_write(tmp_path, doc))
+
+
+def test_body_frame_undoes_the_gaze_rotation():
+    t = load_force_table(TABLE_PATH)
+    primary = t.body_frame(t.at(0, 0))
+    assert np.allclose(primary["insertion_mm"], t.insertion_mm[t.at(0, 0)])
+    # Every gaze's insertions, taken back to the globe's frame, are the primary insertions.
+    for g in range(len(t.gazes_deg)):
+        assert np.allclose(t.body_frame(g)["insertion_mm"], primary["insertion_mm"], atol=1e-9)
+    moved = t.at(30, 0)
+    assert not np.allclose(t.insertion_mm[moved], primary["insertion_mm"])
