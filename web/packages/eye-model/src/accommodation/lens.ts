@@ -23,12 +23,23 @@ export function findSurface(params: EyeParameters, name: string): Surface {
   return s;
 }
 
+/** Reference radius of a lens surface: `radiusMm`, or the section along `axisDeg` (`rxMm`) for a toric. */
 function radius(s: Surface): number {
-  if (s.radiusMm === undefined) throw new Error(`Surface ${s.name} has no radiusMm (only conic surfaces are supported)`);
-  return s.radiusMm;
+  const r = s.type === "toric" ? s.rxMm : s.radiusMm;
+  if (r === undefined) throw new Error(`Surface ${s.name} has no ${s.type === "toric" ? "rxMm" : "radiusMm"}`);
+  return r;
 }
 
-/** Relaxed lens geometry read straight from the document's surfaces. */
+/** Reference conic constant: `conic`, or `conicX` for a toric. */
+function conicOf(s: Surface): number {
+  return (s.type === "toric" ? s.conicX : s.conic) ?? 0;
+}
+
+/**
+ * Relaxed lens geometry read straight from the document's surfaces. For a toric lens surface
+ * the radius and conic are those of its `axisDeg` section; the builder applies the
+ * accommodation change to both sections.
+ */
 export function relaxedLensGeometry(params: EyeParameters): LensGeometry {
   const cp = findSurface(params, SURFACE_NAMES.corneaPosterior);
   const la = findSurface(params, SURFACE_NAMES.lensAnterior);
@@ -37,8 +48,8 @@ export function relaxedLensGeometry(params: EyeParameters): LensGeometry {
     anteriorRadiusMm: radius(la),
     posteriorRadiusMm: radius(lp),
     thicknessMm: la.thicknessToNextMm,
-    anteriorConic: la.conic ?? 0,
-    posteriorConic: lp.conic ?? 0,
+    anteriorConic: conicOf(la),
+    posteriorConic: conicOf(lp),
     index555: la.mediumAfter.index555,
     anteriorChamberDepthMm: cp.thicknessToNextMm,
   };

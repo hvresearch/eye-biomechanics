@@ -73,6 +73,14 @@ describe("traceRay through the Navarro eye", () => {
     expect(["cornea.posterior", "lens.anterior"]).toContain(r.vignettedAt);
   });
 
+  it("reports a miss when the ray never reaches a surface and an aperture clip otherwise", () => {
+    const miss = traceRay({ origin: [0, -20, -1], dir: [0, 1, 0], wavelengthNm: 555 }, surfaces, 1);
+    expect(miss.vignetted).toBe(true);
+    expect(miss.reason).toBe("miss");
+    const clipped = traceRay({ origin: [6.5, 0, -10], dir: [0, 0, 1], wavelengthNm: 555 }, surfaces, 1);
+    expect(clipped.reason).toBe("aperture");
+  });
+
   it("flags total internal reflection", () => {
     const glass = { name: "glass", index555: 1.8 };
     const air = { name: "air", index555: 1 };

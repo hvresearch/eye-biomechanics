@@ -1,40 +1,56 @@
 import { normalize, type Vec3 } from "../math/vec3";
-import type { Surface } from "./types";
+import type { ConicSurface, Surface } from "./types";
 
-/** Smallest ray parameter accepted as a forward hit, in mm. */
-const T_EPS = 1e-9;
-/** Relative tolerance for matching a quadratic root to the sag branch, in mm. */
+/** Smallest ray parameter accepted as a forward hit, in mm (numerical). */
+export const T_EPS = 1e-9;
+/** Relative tolerance for matching a quadratic root to the sag branch, in mm (numerical). */
 const BRANCH_TOL = 1e-7;
 
-function curvature(s: Surface): number {
-  return Number.isFinite(s.radiusMm) ? 1 / s.radiusMm : 0;
+/** Result of an intersection: the hit, `null` when it falls outside the aperture, `"miss"` when there is none. */
+export type Intersection = { point: Vec3; t: number } | null | "miss";
+
+function curvature(radiusMm: number): number {
+  return Number.isFinite(radiusMm) ? 1 / radiusMm : 0;
 }
 
-function assertNoTilt(s: Surface): void {
+export function assertNoTilt(s: Surface): void {
   if (s.tilt.xDeg !== 0 || s.tilt.yDeg !== 0) {
-    throw new Error(`Surface "${s.name}" has a non-zero tilt; tilt is not supported in this milestone`);
+    throw new Error(`Surface "${s.name}" has a non-zero tilt; tilt is not supported`);
   }
 }
 
-/** Surface height relative to the vertex plane at lateral position (x, y), mm. */
-export function sag(s: Surface, x: number, y: number): number {
-  const c = curvature(s);
+/** Conic sag at radial distance² `r2` from the vertex axis, mm; NaN beyond the conic's edge. */
+export function conicSagR2(radiusMm: number, k: number, r2: number): number {
+  const c = curvature(radiusMm);
   if (c === 0) return 0;
-  const dx = x - s.decenter.xMm;
-  const dy = y - s.decenter.yMm;
-  const r2 = dx * dx + dy * dy;
-  const arg = 1 - (1 + s.conic) * c * c * r2;
+  const arg = 1 - (1 + k) * c * c * r2;
   if (arg < 0) return Number.NaN;
   return (c * r2) / (1 + Math.sqrt(arg));
 }
 
+/** Slope dz/dr divided by r (so dz/dx = x·value), for the conic at r². */
+export function conicSlopeOverR(radiusMm: number, k: number, r2: number): number {
+  const c = curvature(radiusMm);
+  if (c === 0) return 0;
+  const arg = 1 - (1 + k) * c * c * r2;
+  if (!(arg > 0)) return Number.NaN;
+  return c / Math.sqrt(arg);
+}
+
+/** Surface height relative to the vertex plane at lateral position (x, y), mm. */
+export function conicSag(s: ConicSurface, x: number, y: number): number {
+  const dx = x - s.decenter.xMm;
+  const dy = y - s.decenter.yMm;
+  return conicSagR2(s.radiusMm, s.conic, dx * dx + dy * dy);
+}
+
 /** Unit normal at lateral position (x, y), oriented toward −z (facing the incoming ray). */
-export function normalAt(s: Surface, x: number, y: number): Vec3 {
-  const c = curvature(s);
+export function conicNormal(s: ConicSurface, x: number, y: number): Vec3 {
+  const c = curvature(s.radiusMm);
   if (c === 0) return [0, 0, -1];
   const dx = x - s.decenter.xMm;
   const dy = y - s.decenter.yMm;
-  const z = sag(s, x, y);
+  const z = conicSag(s, x, y);
   // Gradient of F = c (r² + (1+k) z²) − 2 z.
   const g: Vec3 = [2 * c * dx, 2 * c * dy, 2 * c * (1 + s.conic) * z - 2];
   const n = normalize(g);
@@ -42,37 +58,39 @@ export function normalAt(s: Surface, x: number, y: number): Vec3 {
 }
 
 /**
- * Intersect a ray with the surface. Returns the first forward hit inside the aperture
- * on the vertex branch of the conic, or null when the ray misses (aperture, no forward
- * root, or wrong branch only).
+ * Forward roots (t > T_EPS) of the ray with the conic quadric of radius R and constant k whose
+ * vertex sits at `vertexZMm` and axis at (cx, cy), polished by Newton and restricted to the
+ * vertex branch, in increasing t. Apertures are not applied.
  */
-export function intersect(
-  s: Surface,
+export function conicRoots(
+  radiusMm: number,
+  k: number,
+  vertexZMm: number,
+  center: { xMm: number; yMm: number },
   origin: Vec3,
   dir: Vec3,
-): { point: Vec3; t: number } | null {
-  assertNoTilt(s);
-  const c = curvature(s);
-  const px = origin[0] - s.decenter.xMm;
-  const py = origin[1] - s.decenter.yMm;
-  const pz = origin[2] - s.vertexZMm;
+): Array<{ point: Vec3; t: number }> {
+  const c = curvature(radiusMm);
+  const px = origin[0] - center.xMm;
+  const py = origin[1] - center.yMm;
+  const pz = origin[2] - vertexZMm;
   const [dx, dy, dz] = dir;
-  const k1 = 1 + s.conic;
+  const k1 = 1 + k;
 
   let candidates: number[];
   if (c === 0) {
-    if (dz === 0) return null;
+    if (dz === 0) return [];
     candidates = [-pz / dz];
   } else {
     const A = c * (dx * dx + dy * dy + k1 * dz * dz);
     const B = 2 * c * (px * dx + py * dy + k1 * pz * dz) - 2 * dz;
     const C = c * (px * px + py * py + k1 * pz * pz) - 2 * pz;
     if (Math.abs(A) < 1e-15) {
-      if (B === 0) return null;
+      if (B === 0) return [];
       candidates = [-C / B];
     } else {
       const disc = B * B - 4 * A * C;
-      if (disc < 0) return null;
+      if (disc < 0) return [];
       const sq = Math.sqrt(disc);
       // Numerically stable pair of roots.
       const q = -0.5 * (B + Math.sign(B || 1) * sq);
@@ -80,7 +98,7 @@ export function intersect(
     }
   }
 
-  let best: { point: Vec3; t: number } | null = null;
+  const out: Array<{ point: Vec3; t: number }> = [];
   for (let t of candidates) {
     if (!(t > T_EPS)) continue;
     // Two Newton polish steps on F(t) remove the cancellation error of the closed form.
@@ -93,17 +111,27 @@ export function intersect(
       if (fp === 0) break;
       t -= f / fp;
     }
-    const x = origin[0] + t * dx;
-    const y = origin[1] + t * dy;
-    const z = origin[2] + t * dz;
-    const rx = x - s.decenter.xMm;
-    const ry = y - s.decenter.yMm;
-    if (Math.hypot(rx, ry) > s.apertureSemiDiamMm) continue;
-    const zs = sag(s, x, y);
+    const x = px + t * dx;
+    const y = py + t * dy;
+    const zr = pz + t * dz;
+    const zs = conicSagR2(radiusMm, k, x * x + y * y);
     if (Number.isNaN(zs)) continue;
-    const zr = z - s.vertexZMm;
     if (Math.abs(zr - zs) > BRANCH_TOL * (1 + Math.abs(zr))) continue;
-    if (best === null || t < best.t) best = { point: [x, y, z], t };
+    out.push({ point: [origin[0] + t * dx, origin[1] + t * dy, origin[2] + t * dz], t });
   }
-  return best;
+  return out.sort((a, b) => a.t - b.t);
+}
+
+/**
+ * Intersect a ray with the conic: the first forward hit on the vertex branch, `null` when
+ * that hit lies outside the aperture, `"miss"` when there is no forward hit on the branch.
+ */
+export function conicIntersect(s: ConicSurface, origin: Vec3, dir: Vec3): Intersection {
+  assertNoTilt(s);
+  const roots = conicRoots(s.radiusMm, s.conic, s.vertexZMm, s.decenter, origin, dir);
+  if (roots.length === 0) return "miss";
+  for (const r of roots) {
+    if (Math.hypot(r.point[0] - s.decenter.xMm, r.point[1] - s.decenter.yMm) <= s.apertureSemiDiamMm) return r;
+  }
+  return null;
 }

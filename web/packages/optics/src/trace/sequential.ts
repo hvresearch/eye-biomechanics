@@ -1,15 +1,15 @@
 import { distance } from "../math/vec3";
-import { intersect, normalAt } from "../surfaces/conic";
+import { intersect, normalAt } from "../surfaces/geometry";
 import type { Surface } from "../surfaces/types";
 import type { Ray, TraceHit, TraceResult } from "./ray";
 import { refract } from "./refract";
 
 /**
  * Trace one ray sequentially through `surfaces`. The trace stops at the first surface the
- * ray misses (aperture or no forward intersection) or where it undergoes total internal
- * reflection; the result then has `vignetted: true` with the surface name and reason. A
- * surface whose medium index equals the incoming index (the retina) is hit without
- * refraction.
+ * ray misses (`"aperture"` when the hit lies outside the aperture, `"miss"` when there is no
+ * forward intersection) or where it undergoes total internal reflection (`"tir"`); the result
+ * then has `vignetted: true` with the surface name and reason. A surface whose medium index
+ * equals the incoming index (the retina, a stop) is hit without refraction.
  */
 export function traceRay(ray: Ray, surfaces: readonly Surface[], indexBefore = 1): TraceResult {
   const hits: TraceHit[] = [];
@@ -20,8 +20,8 @@ export function traceRay(ray: Ray, surfaces: readonly Surface[], indexBefore = 1
 
   for (const s of surfaces) {
     const hit = intersect(s, origin, dir);
-    if (hit === null) {
-      return { hits, opticalPathMm: opl, vignetted: true, vignettedAt: s.name, reason: "aperture" };
+    if (hit === null || hit === "miss") {
+      return { hits, opticalPathMm: opl, vignetted: true, vignettedAt: s.name, reason: hit === null ? "aperture" : "miss" };
     }
     opl += n * distance(origin, hit.point);
     const n2 = s.mediumAfter.index555;

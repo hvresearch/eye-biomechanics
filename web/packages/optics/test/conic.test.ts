@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { add, cross, dot, norm, normalize, scale, sub } from "../src/math/vec3";
-import { intersect, normalAt, sag } from "../src/surfaces/conic";
+import { intersect, normalAt, sag } from "../src/surfaces/geometry";
 import { surfacesFromSequential } from "../src/surfaces/sequential";
-import type { Surface } from "../src/surfaces/types";
+import type { ConicSurface } from "../src/surfaces/types";
 
 const air = { name: "air", index555: 1 };
 
-function conic(over: Partial<Surface>): Surface {
+function conic(over: Partial<ConicSurface>): ConicSurface {
   return {
     name: "s",
     kind: "conic",
@@ -73,7 +73,7 @@ describe("conic intersect", () => {
   it("axial ray hits at the vertex with t equal to the distance", () => {
     const s = conic({ vertexZMm: 5 });
     const hit = intersect(s, [0, 0, -3], [0, 0, 1]);
-    expect(hit).not.toBeNull();
+    if (hit === null || hit === "miss") throw new Error("expected a hit");
     expect(hit?.point[0]).toBe(0);
     expect(hit?.point[1]).toBe(0);
     expect(hit?.point[2]).toBeCloseTo(5, 12);
@@ -82,21 +82,25 @@ describe("conic intersect", () => {
   it("off-axis parallel ray lands on the sag", () => {
     const s = conic({ radiusMm: 10, vertexZMm: 2 });
     const hit = intersect(s, [1, 0, -3], [0, 0, 1]);
-    expect(hit?.point[2]).toBeCloseTo(2 + sag(s, 1, 0), 12);
+    if (hit === null || hit === "miss") throw new Error("expected a hit");
+    expect(hit.point[2]).toBeCloseTo(2 + sag(s, 1, 0), 12);
   });
   it("returns null outside the aperture", () => {
     expect(intersect(conic({ apertureSemiDiamMm: 2 }), [3, 0, -3], [0, 0, 1])).toBeNull();
   });
-  it("returns null when the surface is behind the ray", () => {
-    expect(intersect(conic({ vertexZMm: -5 }), [0, 0, 0], [0, 0, 1])).toBeNull();
+  it("reports a miss when the surface is behind the ray", () => {
+    expect(intersect(conic({ vertexZMm: -5 }), [0, 0, 0], [0, 0, 1])).toBe("miss");
   });
   it("hits a flat surface", () => {
     const hit = intersect(conic({ radiusMm: Infinity, vertexZMm: 4 }), [1, 1, 0], [0, 0, 1]);
-    expect(hit?.point).toEqual([1, 1, 4]);
+    if (hit === null || hit === "miss") throw new Error("expected a hit");
+    expect(hit.point).toEqual([1, 1, 4]);
   });
   it("applies decenter to the aperture and sag", () => {
     const s = conic({ radiusMm: 10, apertureSemiDiamMm: 2, decenter: { xMm: 3, yMm: 0 } });
-    expect(intersect(s, [3, 0, -1], [0, 0, 1])?.point).toEqual([3, 0, 0]);
+    const hit = intersect(s, [3, 0, -1], [0, 0, 1]);
+    if (hit === null || hit === "miss") throw new Error("expected a hit");
+    expect(hit.point).toEqual([3, 0, 0]);
     expect(intersect(s, [0, 0, -1], [0, 0, 1])).toBeNull();
   });
   it("rejects tilted surfaces loudly in this milestone", () => {
@@ -113,9 +117,11 @@ describe("surfacesFromSequential", () => {
       { name: "b", radiusMm: -10, conic: -1, thicknessToNextMm: 3, mediumAfter: air, apertureSemiDiamMm: 5 },
     ]);
     expect(out.map((s) => s.vertexZMm)).toEqual([0, 2]);
-    expect(out[0]?.conic).toBe(0);
-    expect(out[0]?.tilt).toEqual({ xDeg: 0, yDeg: 0 });
-    expect(out[1]?.conic).toBe(-1);
+    const [a, b] = out;
+    if (a?.kind !== "conic" || b?.kind !== "conic") throw new Error("expected conic surfaces");
+    expect(a.conic).toBe(0);
+    expect(a.tilt).toEqual({ xDeg: 0, yDeg: 0 });
+    expect(b.conic).toBe(-1);
   });
   it("honours a start position", () => {
     const out = surfacesFromSequential(

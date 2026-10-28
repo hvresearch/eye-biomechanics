@@ -1,4 +1,12 @@
+import { meridianCurvature } from "../surfaces/geometry";
 import type { Surface } from "../surfaces/types";
+
+const DEG = Math.PI / 180;
+
+export interface ParaxialOptions {
+  /** Meridian (degrees from +x toward +y) whose section curvatures are used; 0 by default. Matters only for toric and Zernike surfaces. */
+  meridianDeg?: number;
+}
 
 export interface ParaxialResult {
   /** Equivalent power of the refracting surfaces, diopters. */
@@ -39,11 +47,11 @@ interface SystemMatrix {
 }
 
 /**
- * Reduced ABCD matrix of the refracting surfaces: state (y, n·u) in mm and radians. A
- * surface whose `mediumAfter.index555` equals the incoming index is an image surface
- * (the retina) and ends the system.
+ * Reduced ABCD matrix of the surfaces before the image surface: state (y, n·u) in mm and
+ * radians, in the section along `meridianRad`. The first surface flagged `image` (the
+ * retina) ends the system; an index-matched surface without the flag has no power.
  */
-function systemMatrix(surfaces: readonly Surface[], indexBefore: number): SystemMatrix {
+function systemMatrix(surfaces: readonly Surface[], indexBefore: number, meridianRad: number): SystemMatrix {
   let M: Mat = [1, 0, 0, 1];
   let n = indexBefore;
   let lastVertexZ = Number.NaN;
@@ -52,20 +60,14 @@ function systemMatrix(surfaces: readonly Surface[], indexBefore: number): System
   let refractingCount = 0;
 
   for (const s of surfaces) {
-    const n2 = s.mediumAfter.index555;
-    if (prevVertexZ !== null) {
-      const t = s.vertexZMm - prevVertexZ;
-      if (n2 === n) {
-        // Image surface: finish the system here.
-        imageSurfaceZ = s.vertexZMm;
-        break;
-      }
-      M = mul([1, t / n, 0, 1], M);
-    } else if (n2 === n) {
-      throw new Error(`First surface "${s.name}" does not refract`);
+    if (s.image) {
+      if (prevVertexZ === null) throw new Error(`The image surface "${s.name}" comes before any refracting surface`);
+      imageSurfaceZ = s.vertexZMm;
+      break;
     }
-    const c = Number.isFinite(s.radiusMm) ? 1 / s.radiusMm : 0;
-    const power = (n2 - n) * c; // per mm
+    const n2 = s.mediumAfter.index555;
+    if (prevVertexZ !== null) M = mul([1, (s.vertexZMm - prevVertexZ) / n, 0, 1], M);
+    const power = (n2 - n) * meridianCurvature(s, meridianRad); // per mm
     M = mul([1, 0, -power, 1], M);
     n = n2;
     prevVertexZ = s.vertexZMm;
@@ -92,17 +94,23 @@ function vergenceImagingTo(sys: SystemMatrix, imageZMm: number): number {
  * lies at absolute `imageZMm` (`±Infinity` allowed). The far point is this vergence for the
  * retina; the difference between two such vergences is an exact defocus in diopters.
  */
-export function objectVergenceForImageD(surfaces: readonly Surface[], imageZMm: number, indexBefore = 1): number {
-  return vergenceImagingTo(systemMatrix(surfaces, indexBefore), imageZMm);
+export function objectVergenceForImageD(
+  surfaces: readonly Surface[],
+  imageZMm: number,
+  indexBefore = 1,
+  opts: ParaxialOptions = {},
+): number {
+  return vergenceImagingTo(systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG), imageZMm);
 }
 
 /**
- * Paraxial ABCD trace in reduced form: state (y, n·u) in mm and radians. A surface
- * whose `mediumAfter.index555` equals the incoming index is an image surface (the
- * retina) and is not refracted; the first such surface defines `farPointD`.
+ * Paraxial ABCD trace in reduced form: state (y, n·u) in mm and radians, in one meridian
+ * (toric and Zernike surfaces contribute the vertex curvature of that section). The first
+ * surface flagged `image` (the retina) ends the system and defines `farPointD`; without one,
+ * `farPointD` is NaN.
  */
-export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1): ParaxialResult {
-  const sys = systemMatrix(surfaces, indexBefore);
+export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1, opts: ParaxialOptions = {}): ParaxialResult {
+  const sys = systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG);
   const [a, , c] = sys.M;
   const nImage = sys.nImage;
   const powerD = -c * 1000;

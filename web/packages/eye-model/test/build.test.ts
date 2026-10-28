@@ -22,6 +22,13 @@ const relaxed: EyeState = {
   eomPaths: [],
 };
 
+/** The i-th built surface, asserted conic (the presets' surfaces are). */
+function conicAt(s: Surface[], i: number): Extract<Surface, { kind: "conic" }> {
+  const x = s[i];
+  if (x?.kind !== "conic") throw new Error(`surface ${i} is not conic`);
+  return x;
+}
+
 describe("buildSurfaces", () => {
   it("returns the four refracting surfaces plus the retina at the axial length", () => {
     const eye = loadPreset("navarro-1985");
@@ -38,10 +45,10 @@ describe("buildSurfaces", () => {
     const state = { ...relaxed, accommodationD: 2, lensParameterA: 2 };
     const g = lensGeometry(eye, 2);
     const s = buildSurfaces(eye, state);
-    expect(s[2]?.radiusMm).toBe(g.anteriorRadiusMm);
-    expect(s[2]?.conic).toBe(g.anteriorConic);
+    expect(conicAt(s, 2).radiusMm).toBe(g.anteriorRadiusMm);
+    expect(conicAt(s, 2).conic).toBe(g.anteriorConic);
     expect(s[2]?.mediumAfter.index555).toBe(g.index555);
-    expect(s[3]?.radiusMm).toBe(g.posteriorRadiusMm);
+    expect(conicAt(s, 3).radiusMm).toBe(g.posteriorRadiusMm);
     expect(s[2]?.vertexZMm).toBeCloseTo(0.55 + g.anteriorChamberDepthMm, 12);
     expect(s[3]?.vertexZMm).toBeCloseTo(0.55 + g.anteriorChamberDepthMm + g.thicknessMm, 12);
     expect(retinalDefocusD(s, 0.5, 1).defocusD).toBeLessThan(0.5);
@@ -57,24 +64,61 @@ describe("buildSurfaces", () => {
     const eye = loadPreset("navarro-1985");
     const g = lensGeometry(eye, 1.7);
     const s = buildSurfaces(eye, { ...relaxed, accommodationD: 2, lensParameterA: 1.7 });
-    expect(s[2]?.radiusMm).toBe(g.anteriorRadiusMm);
+    expect(conicAt(s, 2).radiusMm).toBe(g.anteriorRadiusMm);
   });
 
   it("defaults absent conic, tilt, and decenter to zero", () => {
     const eye = loadPreset("navarro-1985");
     eye.surfaces = eye.surfaces.map(({ conic: _c, tilt: _t, decenter: _d, ...rest }) => rest);
     const s = buildSurfaces(eye, relaxed);
-    expect(s[0]?.conic).toBe(0);
+    expect(conicAt(s, 0).conic).toBe(0);
     expect(s[0]?.tilt).toEqual({ xDeg: 0, yDeg: 0 });
     expect(s[0]?.decenter).toEqual({ xMm: 0, yMm: 0 });
   });
 
-  it("rejects non-conic surfaces in this milestone", () => {
+  it("marks the retina as the image surface", () => {
+    const s = buildSurfaces(loadPreset("navarro-1985"), relaxed);
+    expect(s[4]?.image).toBe(true);
+    expect(s.slice(0, 4).some((x) => x.image)).toBe(false);
+  });
+
+  it("builds a toric anterior cornea from the document's radii, axis, and conics", () => {
     const eye = loadPreset("navarro-1985");
     const first = eye.surfaces[0];
     if (!first) throw new Error("no surfaces");
-    eye.surfaces[0] = { ...first, type: "toric", rxMm: 7.7, ryMm: 7.9, axisDeg: 0 };
-    expect(() => buildSurfaces(eye, relaxed)).toThrow(/toric/);
+    const { radiusMm: _r, conic: _k, ...rest } = first;
+    eye.surfaces[0] = { ...rest, type: "toric", rxMm: 7.6, ryMm: 7.9, axisDeg: 20, conicX: -0.2, conicY: -0.3 };
+    const c = buildSurfaces(eye, relaxed)[0];
+    if (c?.kind !== "toric") throw new Error("expected a toric surface");
+    expect([c.rxMm, c.ryMm, c.axisDeg, c.conicX, c.conicY]).toEqual([7.6, 7.9, 20, -0.2, -0.3]);
+  });
+
+  it("builds a Zernike-perturbed surface from zernikeHeight", () => {
+    const eye = loadPreset("navarro-1985");
+    const first = eye.surfaces[0];
+    if (!first) throw new Error("no surfaces");
+    eye.surfaces[0] = { ...first, type: "zernike", zernikeHeight: { normRadiusMm: 4, coeffsMicrons: [0, 0, 0, 0, 0.5] } };
+    const c = buildSurfaces(eye, relaxed)[0];
+    if (c?.kind !== "zernike") throw new Error("expected a Zernike surface");
+    expect(c.radiusMm).toBe(7.72);
+    expect(c.normRadiusMm).toBe(4);
+    expect(c.coeffsMicrons).toEqual([0, 0, 0, 0, 0.5]);
+  });
+
+  it("applies accommodation to a toric lens surface as a shift of both sections", () => {
+    const eye = loadPreset("navarro-1985");
+    const la = eye.surfaces[2];
+    if (!la) throw new Error("no lens");
+    const { radiusMm: _r, conic: _k, ...rest } = la;
+    eye.surfaces[2] = { ...rest, type: "toric", rxMm: 10.2, ryMm: 9.8, axisDeg: 0, conicX: -3.1316, conicY: -3.1316 };
+    const g0 = lensGeometry(loadPreset("navarro-1985"), 0);
+    const g2 = lensGeometry(loadPreset("navarro-1985"), 2);
+    const s = buildSurfaces(eye, { ...relaxed, lensParameterA: 2 })[2];
+    if (s?.kind !== "toric") throw new Error("expected a toric lens");
+    const dR = g2.anteriorRadiusMm - g0.anteriorRadiusMm;
+    expect(s.rxMm).toBeCloseTo(10.2 + dR, 12);
+    expect(s.ryMm).toBeCloseTo(9.8 + dR, 12);
+    expect(s.conicX).toBeCloseTo(-3.1316 + (g2.anteriorConic - g0.anteriorConic), 12);
   });
 
   it("realises the controller's response optically when given a paraxial far point", () => {

@@ -161,15 +161,15 @@ Closes the M1/M2 follow-ups assigned to M3 that touch only data, docs, or small 
 
 Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, seeded by the base conic's closed-form root (for toric, the conic of the mean curvature); derivative of the Zernike height by central difference with h = 1e-6 mm. Toric sag: `z = (cx u² + cy v²) / (1 + √(1 − (1+kx)cx²u² − (1+ky)cy²v²))` with `(u, v)` the decentered coordinates rotated by `axisDeg`.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `zernike-poly.test.ts`: index round trip for j < 45; `Z(2,0) = √3(2ρ²−1)`; orthonormality on the unit disk by numerical integration (polar Gauss–Legendre × uniform θ, order ≤ 4, tolerance 1e-3, master plan Task 3.2 test placed here because the polynomials live here); `zernikeRho2Coefficient` for j = 4 is `2√3` and for j = 12 (Z(4,0)) is `−6√5`.
   - `surfaces.test.ts`: toric with `rx = ry` equals the conic sag at 50 random points (1e-12); toric sag along the axis meridian equals the conic sag of `rx` and along the perpendicular of `ry`; rotating `axisDeg` by 90° swaps them; a Zernike surface with all zeros equals its base; `C(2,0) = 1 µm` at `normRadius = 3 mm` changes sag at r = 3 mm by `√3·(2−1)` µm (1e-12 mm); Newton converges for a 30° oblique ray on both kinds (residual `|z − sag| < 1e-9`); a ray parallel to and outside a toric surface returns `"miss"`; normals are unit and face −z; `meridianCurvature` of a toric at `axisDeg` is `1/rx`, at `axisDeg + 90°` is `1/ry`, and of a Zernike surface with `c(2,0)` equals `1/R + 4√3·c·1e-3/a²`.
   - `trace.test.ts`: a ray whose path never reaches a surface reports `reason: "miss"`; a ray clipped by the aperture reports `"aperture"`.
   - `paraxial.test.ts`: an index-matched non-image surface before the retina does not end the system (the Navarro power is unchanged when a plane `index`-matched surface is inserted in the aqueous); a toric cornea's per-meridian power differs by `(n−1)(1/rx − 1/ry)·1000` D to first order.
   - `build.test.ts`: the built retina has `image: true`; a document with a toric anterior cornea builds a `"toric"` surface with the document's radii and axis.
-- [ ] **Step 2:** Run `cd web && pnpm --filter @eye/optics test && pnpm --filter @eye/eye-model test`; expect FAIL.
-- [ ] **Step 3:** Implement the union, `zernike.ts`, `toric.ts`, `zernikeSag.ts`, `geometry.ts` (conic keeps its closed form), update the trace, paraxial, defocus, sequential conversion, the Navarro test helper (`image: true` on the retina), and eye-model's builder.
-- [ ] **Step 4:** Run; PASS. Full gate (the viewer's worker uses the flag through eye-model). Commit: `feat(optics): toric and Zernike surfaces, image flag, miss reason`.
+- [x] **Step 2:** Run `cd web && pnpm --filter @eye/optics test && pnpm --filter @eye/eye-model test`; expect FAIL.
+- [x] **Step 3:** Implement the union, `zernike.ts`, `toric.ts`, `zernikeSag.ts`, `geometry.ts` (conic keeps its closed form), update the trace, paraxial, defocus, sequential conversion, the Navarro test helper (`image: true` on the retina), and eye-model's builder.
+- [x] **Step 4:** Run; PASS. Full gate (the viewer's worker uses the flag through eye-model). Commit: `feat(optics): toric and Zernike surfaces, image flag, miss reason`.
 
 ### Task 3.2: Media dispersion and photopic weights
 
