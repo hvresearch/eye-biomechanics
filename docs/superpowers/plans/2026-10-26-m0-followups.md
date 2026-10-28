@@ -18,9 +18,6 @@ in that commit.
   reference with `referencing.Registry`. (M6, Task 6.1)
 - Negative schema tests assert only `ok === false`; also assert the error names
   the offending key. (first task that edits `schema.test.ts`)
-- `science/eyebiomech/schema.py` reads the schema from the repository checkout;
-  packaging `eyebiomech` outside the repo needs the schema bundled as package
-  data. (M4, Task 4.6 CLI)
 - Python `re.fullmatch(..., re.ASCII)` and the TS regex agree, but the schema
   pattern's `$` tolerates a trailing newline in some regex engines. Cosmetic.
 
@@ -31,8 +28,6 @@ in that commit.
 
 ## Python
 
-- `requires-python = ">=3.12"` is uncapped; consider `<3.14` once scikit-fem and
-  SciPy wheels for 3.14 are confirmed. (M4)
 
 ## CI and workflows (edit locally; cloud tokens lack the workflow scope)
 
