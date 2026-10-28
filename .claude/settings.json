@@ -1,6 +1,21 @@
 {
   "model": "claude-opus-5-5",
   "effortLevel": "high",
+  "permissions": {
+    "allow": [
+      "Bash(gh api -X PUT repos/hvresearch/eye-biomechanics/pulls/*)",
+      "Bash(gh api -X DELETE repos/hvresearch/eye-biomechanics/git/refs/heads/*)",
+      "Bash(gh pr merge *)",
+      "Bash(gh pr ready *)"
+    ]
+  },
+  "autoMode": {
+    "allow": [
+      "$defaults",
+      "In hvresearch/eye-biomechanics, squash-merging a pull request whose head carries a `<!-- driver-review ... verdict=APPROVE -->` comment and green required checks is the repository owner's standing instruction (docs/automation/driver.md). The review already happened; this is not a merge without review.",
+      "In hvresearch/eye-biomechanics, updating a pull request branch from main, marking a draft pull request ready, and deleting a merged pull request's branch are routine driver steps."
+    ]
+  },
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "600000",
     "BASH_MAX_TIMEOUT_MS": "600000"
