@@ -25,7 +25,7 @@ export function readoutTooltips(pupilMm: number, pupilModel: string, unverifiedL
     defocus: `Approximation: position of minimum RMS spot found by exact ray tracing through a ${pupil}, expressed as the exact object-vergence difference to the retina; includes spherical aberration. Positive: focus behind the retina (hyperopic). Homogeneous lens index.${unverified}`,
     bestFocus: `Approximation: axial distance of the minimum RMS spot from the retina, found by exact ray tracing through a ${pupil}; includes spherical aberration. Positive: behind the retina. Homogeneous lens index.`,
     accommodation: `Approximation: response = demand − lag, clipped to amplitude; the Navarro lens parameter is solved so the paraxial far point moves by exactly this response. Lag model: ${LAG_TABLE.citation}`,
-    demand: "Approximation: 1 / (this eye's distance to the target) minus the relaxed far point, which comes from the paraxial (ABCD) trace of the schematic eye with a homogeneous lens index.",
+    demand: "Approximation: 1 / (this eye's distance to the target) minus the relaxed far point (the spherical equivalent: mean of two perpendicular meridians), which comes from the paraxial (ABCD) trace of the schematic eye with a homogeneous lens index.",
     amplitude: `Anderson et al. 2008 sigmoid of objective amplitude versus age. ${AMPLITUDE_TABLE.domain.note ?? ""}`.trim(),
     ciliaryActivation: "Approximation: response divided by amplitude.",
     paraxialPower:

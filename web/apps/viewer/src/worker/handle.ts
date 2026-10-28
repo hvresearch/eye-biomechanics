@@ -65,7 +65,11 @@ export function fanRays(req: Pick<EyeOpticsRequest, "fanRays" | "objectDistanceM
   return rays;
 }
 
-const farPointOf = (s: Surface[]) => paraxialPower(s).farPointD;
+/**
+ * Paraxial far point as a spherical equivalent, the mean of two perpendicular meridians: with a
+ * toric surface the far point of a single meridian would depend on the cylinder axis (spec §4.2).
+ */
+const farPointOf = (s: Surface[]) => (paraxialPower(s, 1, { meridianDeg: 0 }).farPointD + paraxialPower(s, 1, { meridianDeg: 90 }).farPointD) / 2;
 
 /** The lens of a clinical prescription in the optics frame of this eye (TABO → local axis). */
 export function lensPrescription(lens: ClinicalLens, side: "left" | "right"): Prescription {

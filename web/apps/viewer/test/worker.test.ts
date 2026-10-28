@@ -1,4 +1,5 @@
 import {
+  applyRefraction,
   applyRefractivePreset,
   buildSurfacesAt,
   deriveBinocular,
@@ -194,6 +195,24 @@ describe("handle", () => {
     const worn = handle(hyperopeRequest({ spectacles: lens(2), corrected: true, accommodationD: accWorn })).eyes[0]!.wave!;
     expect(Math.abs(worn.uncorrected.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
     expect(Math.abs(worn.corrected!.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
+  });
+
+  it("takes the far point of an astigmat as its spherical equivalent, whatever the cylinder axis", () => {
+    const meridianFp = (doc: EyeParameters, deg: number) => paraxialPower(buildSurfacesAt(doc, 0), 1, { meridianDeg: deg }).farPointD;
+    const fps = [90, 180, 45].map((axisDegTabo) => {
+      const astigmat = applyRefraction(eye, { mechanism: "corneal", sphereD: 0, cylinderD: -1.5, axisDegTabo }, farPointOf);
+      const se = (meridianFp(astigmat, 0) + meridianFp(astigmat, 90)) / 2;
+      expect(relaxedFarPointD(astigmat)).toBeCloseTo(se, 9);
+      const b = deriveBinocular(scene, { left: astigmat, right: astigmat }, { farPointD: { left: se, right: se } });
+      const res = handle({ ...request(), eyes: [{ ...request().eyes[0]!, params: astigmat, accommodationD: b.right.accommodationD }] });
+      expect(res.eyes[0]!.farPointD).toBeCloseTo(se, 9);
+      return se;
+    });
+    // −1.5 D of cylinder about plano: −0.75 D spherical equivalent, the same at every axis.
+    for (const fp of fps) {
+      expect(fp).toBeCloseTo(fps[0]!, 3);
+      expect(fp - relaxedFarPointD(eye)).toBeCloseTo(-0.75, 1);
+    }
   });
 
   it("stays inside the per-frame budget for two eyes (median of 5)", () => {
