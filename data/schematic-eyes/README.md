@@ -27,5 +27,5 @@ Every number is transcribed from the cited paper at implementation time, never f
 
 | File | Role | Status |
 |---|---|---|
-| `navarro-1985.json` | regression fixture (paraxial power 60.42 D at 589 nm) | transcribed; verification set by Task 1.6 |
+| `navarro-1985.json` | regression fixture (paraxial power 60.42 D at 589 nm) | transcribed; paraxial power verified (Task 1.6) |
 | `zapata-diaz-2019.json` | intended default preset | stub; full text unreachable from the cloud session, see the file's note |

@@ -40,8 +40,7 @@ describe("amplitudeForAge (Anderson 2008)", () => {
     expect(() => amplitudeForAge(Number.NaN)).toThrow(RangeError);
   });
 
-  it("is backed by a verified data file", () => {
-    expect(AMPLITUDE_TABLE.verified).toBe(true);
+  it("cites the paper (verification against group means is pending; see provenance.test.ts)", () => {
     expect(AMPLITUDE_TABLE.doi).toBe("10.1167/iovs.07-1492");
   });
 });

@@ -36,7 +36,12 @@ function reversed<T>(a: readonly T[]): T[] {
  * the globe, retina, sclera, iris, and ciliary body are drawing approximations
  * parametrized by data/anatomy/globe-cutaway.json.
  */
-export function globeProfiles(surfaces: readonly Surface[], axialLengthMm: number, retinaRadiusMm: number): GlobeProfiles {
+export function globeProfiles(
+  surfaces: readonly Surface[],
+  axialLengthMm: number,
+  retinaRadiusMm: number,
+  pupilDiameterMm: number,
+): GlobeProfiles {
   const byName = new Map(surfaces.map((s) => [s.name, s] as const));
   const ca = byName.get("cornea.anterior");
   const cp = byName.get("cornea.posterior");
@@ -82,7 +87,7 @@ export function globeProfiles(surfaces: readonly Surface[], axialLengthMm: numbe
   ];
 
   const irisZ = zLaEdge - ANATOMY.irisThicknessMm - 0.1;
-  const pupilR = 2; // drawn pupil; the optical pupil is the traced bundle
+  const pupilR = pupilDiameterMm / 2; // the document's pupil (pupilDiameterMm of its pupil model)
   const iris: ProfilePoint[] = [
     [pupilR, irisZ],
     [apexR, irisZ],

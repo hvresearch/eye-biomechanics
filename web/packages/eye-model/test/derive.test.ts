@@ -17,19 +17,20 @@ const scene = (over: Partial<SceneState> = {}): SceneState => ({
 describe("deriveEyeState", () => {
   it("fills accommodation for a 30-year-old at 0.5 m", () => {
     const s = deriveEyeState(scene(), loadPreset("navarro-1985"), "right");
-    expect(s.demandD).toBeCloseTo(2, 12);
+    // Demand from this eye's own distance: 0.5 m ahead of the midpoint, 31.5 mm to the side.
+    expect(s.demandD).toBeCloseTo(1 / Math.hypot(0.5, 0.0315), 12);
     expect(s.accommodationD).toBeGreaterThanOrEqual(1.5);
     expect(s.accommodationD).toBeLessThanOrEqual(2);
     expect(s.amplitudeD).toBeGreaterThan(5);
     expect(s.pupilMm).toBe(4);
-    expect(s.gaze).toEqual([0, 0, 0, 1]);
-    expect(s.eomActivation).toEqual([]);
+    expect(s.gazeDeg.xDeg).toBeLessThan(0); // converged: the right eye turns nasally
+    expect(s.eomActivation).toHaveLength(6);
     expect(s.ciliaryActivation).toBeCloseTo(s.accommodationD / s.amplitudeD, 12);
   });
 
   it("is presbyopic at 60", () => {
     const s = deriveEyeState(scene({ ageYears: 60, targetDistanceM: 1 / 3 }), loadPreset("navarro-1985"), "right");
-    expect(s.demandD).toBeCloseTo(3, 12);
+    expect(s.demandD).toBeCloseTo(1 / Math.hypot(1 / 3, 0.0315), 12);
     expect(s.accommodationD).toBeLessThan(0.2);
   });
 

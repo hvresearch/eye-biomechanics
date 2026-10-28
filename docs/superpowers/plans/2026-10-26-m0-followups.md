@@ -20,8 +20,6 @@ in that commit.
 - `data/schematic-eyes/navarro-1985.json`: the two conic-constant coefficients
   of Table 4 (−0.34 and −0.125 per ln(1+A)) are listed as `unverified`; confirm
   against the paper in the same session. (M3)
-- Spec §4.2: the accommodation "time constant ≈ 0.3 s" is uncited; cross-reference
-  the §4.4 dynamics bullet (Kasthurirangan & Glasser 2005). (M2, Task 2.5)
 
 ## Schema and validators
 

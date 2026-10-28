@@ -7,7 +7,7 @@ export interface AmplitudeTable {
   verified: boolean;
   equation: string;
   coefficients: { maxD: number; slopePerYear: number; centerAgeYears: number; offset: number };
-  domain: { minAgeYears: number; maxAgeYears: number };
+  domain: { minAgeYears: number; maxAgeYears: number; note?: string };
 }
 
 export const AMPLITUDE_TABLE: AmplitudeTable = table;

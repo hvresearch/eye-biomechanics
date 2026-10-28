@@ -65,6 +65,20 @@ test("typing into the number boxes key by key commits the typed value", async ({
   await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
 });
 
+test("the distance slider maps logarithmically onto the target distance", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.getByTestId("defocus")).not.toHaveText("…");
+  const slider = page.getByTestId("target-distance-slider");
+  // The slider runs over log10(distance): its minimum is 0.1 m, about 9.5 D for each eye
+  // (31.5 mm to the side of the midline).
+  await slider.fill(String(Math.log10(0.1)));
+  await expect(page.getByTestId("target-distance")).toHaveValue("0.1");
+  await expect.poll(async () => num(page, "demand")).toBeGreaterThan(9);
+  await slider.fill(Math.log10(0.33).toFixed(3)); // on the slider's 0.001 step grid
+  await expect(page.getByTestId("target-distance")).toHaveValue("0.33");
+  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+});
+
 test("selecting the untranscribed preset shows an error and keeps the eye", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("defocus")).not.toHaveText("…");

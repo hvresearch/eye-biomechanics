@@ -1,7 +1,18 @@
-import { buildSurfaces, deriveEyeState, loadPreset, type SceneState } from "@eye/eye-model";
+import { buildSurfaces, deriveEyeState, loadPreset, pupilDiameterMm, type EyeParameters, type SceneState } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
 import { globeProfiles } from "../src/scene/profiles";
-import { derive } from "../src/store/derive";
+import { handle } from "../src/worker/handle";
+
+/** The right eye's optics as the store would request them. */
+function derive(scene: SceneState, eye: EyeParameters) {
+  const state = deriveEyeState(scene, eye, "right");
+  const res = handle({
+    id: 1,
+    eyes: [{ side: "right", params: eye, accommodationD: state.accommodationD, objectDistanceM: state.targetDistanceM, pupilSemiDiamMm: 2, fanRays: 0 }],
+  });
+  const optics = res.eyes[0]!;
+  return { eye: state, surfaces: optics.surfaces, paraxialPowerD: optics.paraxialPowerD, farPointD: optics.farPointD };
+}
 
 const scene: SceneState = {
   targetDistanceM: 6,
@@ -17,7 +28,7 @@ describe("globeProfiles", () => {
   it("produces finite, non-negative-radius profiles that start on the axis for solids", () => {
     const eye = loadPreset("navarro-1985");
     const s = buildSurfaces(eye, deriveEyeState(scene, eye, "right"));
-    const p = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm);
+    const p = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, pupilDiameterMm(eye));
     for (const [name, profile] of Object.entries(p)) {
       expect(profile.length, name).toBeGreaterThan(2);
       for (const [r, z] of profile) {
@@ -39,22 +50,17 @@ describe("globeProfiles", () => {
       const zs = pf.lens.map(([, z]) => z);
       return Math.max(...zs) - Math.min(...zs);
     };
-    expect(span(globeProfiles(near.surfaces, eye.axialLengthMm, eye.retina.radiusMm))).toBeGreaterThan(
-      span(globeProfiles(far.surfaces, eye.axialLengthMm, eye.retina.radiusMm)),
+    expect(span(globeProfiles(near.surfaces, eye.axialLengthMm, eye.retina.radiusMm, 4))).toBeGreaterThan(
+      span(globeProfiles(far.surfaces, eye.axialLengthMm, eye.retina.radiusMm, 4)),
     );
     expect(near.eye.accommodationD).toBeGreaterThan(far.eye.accommodationD);
   });
-});
 
-describe("derive", () => {
-  it("uses the relaxed far point so an emmetropic preset has zero demand at 6 m", () => {
-    const d = derive(scene, loadPreset("navarro-1985"));
-    expect(Math.abs(d.farPointD)).toBeLessThan(0.05);
-    expect(d.eye.demandD).toBeCloseTo(1 / 6 + d.farPointD, 12);
-    // At 6 m the eye accommodates 0.17 D, so the accommodated power sits just above relaxed.
-    expect(d.paraxialPowerD).toBeGreaterThan(60.42);
-    expect(d.paraxialPowerD).toBeLessThan(60.9);
-    const inf = derive({ ...scene, targetDistanceM: Number.POSITIVE_INFINITY }, loadPreset("navarro-1985"));
-    expect(inf.paraxialPowerD).toBeCloseTo(60.42, 1);
+  it("draws the pupil from the document's pupil model, not a fixed size", () => {
+    const eye = loadPreset("navarro-1985");
+    const s = buildSurfaces(eye, deriveEyeState(scene, eye, "right"));
+    const iris = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, 3).iris;
+    expect(iris[0]?.[0]).toBeCloseTo(1.5, 12);
+    expect(globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, pupilDiameterMm(eye)).iris[0]?.[0]).toBeCloseTo(2, 12);
   });
 });

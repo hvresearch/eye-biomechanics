@@ -59,7 +59,8 @@ export function buildSurfaces(params: EyeParameters, state: EyeState): Surface[]
   return buildSurfacesAt(params, state.lensParameterA);
 }
 
-function buildSurfacesAt(params: EyeParameters, lensParameterA: number): Surface[] {
+/** `buildSurfaces` for a lens parameter alone (A = 0 is the relaxed eye). */
+export function buildSurfacesAt(params: EyeParameters, lensParameterA: number): Surface[] {
   const lens = lensGeometry(params, lensParameterA);
   const seq: SequentialSurface[] = params.surfaces.map((s) => {
     const q = toSequential(s);
