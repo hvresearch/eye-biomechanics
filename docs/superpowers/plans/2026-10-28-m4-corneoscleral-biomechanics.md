@@ -157,10 +157,10 @@ Each leaf group carries its own `citation` and `verified`. `shaw-2010.json`: `{ 
 **Interfaces:**
 - Produces: `units.py`: `MMHG_TO_MPA: float`, `KPA_TO_MPA: float`, `mmhg_to_mpa(p) -> float`. `data.py`: `DATA_DIR: Path`; `load_materials(path=None) -> dict`; `load_eyelid(path=None) -> dict`; `load_eom_table(path=None) -> dict`; `age_factor(age_years: float, table: dict) -> float` (multiplies every stiffness; 1 at the reference age, clamped to the table's age range 6–90).
 
-- [ ] **Step 1:** Search excerpts for each quantity (Elsheikh et al. 2007 Curr Eye Res 32:11-19 age stiffening; Whitford, Studer, Boote, Meek, Elsheikh 2015 J Mech Behav Biomed Mater 42:76-87 fiber parameters; Pandolfi & Holzapfel 2008 J Biomech Eng 130:061006; central/limbal corneal and regional scleral thickness (Olsen 1998, Vurgese 2012, Norman 2010); optic nerve sheath radius at the sclera; scleral spur position; Shaw, Collins, Davis & Carney 2008-2010 lid pressure and contact height; a published corneal inflation curve with numbers). Write the two tables and the READMEs with excerpt status per value.
-- [ ] **Step 2:** Failing tests (`test_fem_data.py`): both tables load; every leaf group has `citation` and `verified`; `age_factor` is 1 at the reference age, monotone non-decreasing, and clamps at 6 and 90; `mmhg_to_mpa(15) ≈ 0.0019998` (1e-7); every stiffness is positive and `lambdaMPa / muMPa > 10` (near incompressibility, a check of the transcription).
-- [ ] **Step 3:** Run `cd science && uv run pytest tests/test_fem_data.py`; FAIL. Implement `units.py`, `data.py`. Run; PASS.
-- [ ] **Step 4:** Full gate. Commit: `feat(fem): material, thickness, and eyelid tables with loaders`.
+- [x] **Step 1:** Search excerpts for each quantity (Elsheikh et al. 2007 Curr Eye Res 32:11-19 age stiffening; Whitford, Studer, Boote, Meek, Elsheikh 2015 J Mech Behav Biomed Mater 42:76-87 fiber parameters; Pandolfi & Holzapfel 2008 J Biomech Eng 130:061006; central/limbal corneal and regional scleral thickness (Olsen 1998, Vurgese 2012, Norman 2010); optic nerve sheath radius at the sclera; scleral spur position; Shaw, Collins, Davis & Carney 2008-2010 lid pressure and contact height; a published corneal inflation curve with numbers). Write the two tables and the READMEs with excerpt status per value.
+- [x] **Step 2:** Failing tests (`test_fem_data.py`): both tables load; every leaf group has `citation` and `verified`; `age_factor` is 1 at the reference age, monotone non-decreasing, and clamps at 6 and 90; `mmhg_to_mpa(15) ≈ 0.0019998` (1e-7); every stiffness is positive and `lambdaMPa / muMPa > 10` (near incompressibility, a check of the transcription).
+- [x] **Step 3:** Run `cd science && uv run pytest tests/test_fem_data.py`; FAIL. Implement `units.py`, `data.py`. Run; PASS.
+- [x] **Step 4:** Full gate. Commit: `feat(fem): material, thickness, and eyelid tables with loaders`.
 
 ### Task 4.3: Muscle force export and import
 

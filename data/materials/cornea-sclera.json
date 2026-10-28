@@ -1,0 +1,107 @@
+{
+  "name": "cornea-sclera-default",
+  "label": "Corneoscleral shell material, thickness, and support defaults for the elastic FEM (Milestone 4)",
+  "verified": false,
+  "citation": "Partial transcription from search-engine excerpts (2026-10-28); the cloud session could not reach the full texts. Each group below names its source and whether a value is transcribed or assumed. See data/materials/README.md.",
+  "constitutive": "W = mu/2 (I1 - 3) - mu ln J + lambda/2 (ln J)^2 + sum over fiber families of k1/(2 k2) (exp(k2 E^2) - 1), with E = kappa (I1 - 3) + (1 - 3 kappa)(I4 - 1) for the family's unit reference direction a0 (I4 = |F a0|^2), active only when E > 0; lambda = 2 mu nu / (1 - 2 nu). Stiffnesses (mu, k1) are multiplied by ageStiffening.",
+  "regions": {
+    "cornea": {
+      "matrix": {
+        "muMPa": 0.6624,
+        "poissonRatio": 0.49,
+        "citation": "muMPa = 2 x c1 with c1 = 0.3312 MPa, the Holzapfel-Gasser-Ogden isotropic constant listed for Pandolfi (reference [11]) in Gonzalez-Cabrero, Gomez, Paredes & Cavas, Addressing parameter variability in corneal biomechanical models, Biomimetics 10(10):683, 2025, doi 10.3390/biomimetics10100683 (excerpt; the excerpt could not confirm that [11] is Pandolfi & Holzapfel 2008, J Biomech Eng 130:061006). Taking c1 as C10 of W = C10 (I1 - 3), so mu = 2 C10, is an assumption about the paper's convention. poissonRatio: assumption (near incompressibility of hydrated soft tissue, a common modeling choice).",
+        "verified": false
+      },
+      "fibers": {
+        "k1MPa": 2.9211,
+        "k2": 20.7395,
+        "kappa": 0,
+        "families": ["nasalTemporal", "superiorInferior"],
+        "citation": "k1 and k2: the same Pandolfi-attributed HGO row in Gonzalez-Cabrero et al. 2025 (excerpt). kappa = 0 (no dispersion) and the two orthogonal in-plane families: assumption (the preferred nasal-temporal and superior-inferior lamellar directions of the central cornea; Pandolfi & Holzapfel use a dispersed distribution whose parameters were not reachable).",
+        "verified": false
+      },
+      "thicknessMm": {
+        "central": "document",
+        "limbal": 0.7,
+        "citation": "central: the document's anterior-to-posterior apex distance. limbal: 0.7 mm, the lower end of the 0.7-0.9 mm limbal range in a corneal pachymetry teaching presentation (Slideshare, 'Corneal pachymetry', excerpt; weak source). The inner corneal surface follows the document's posterior surface until the thickness reaches this value (M4 plan, Task 4.4).",
+        "verified": false
+      }
+    },
+    "limbus": {
+      "halfWidthMm": 1.0,
+      "matrix": {
+        "muMPa": 0.6624,
+        "poissonRatio": 0.49,
+        "citation": "assumption: the corneal matrix.",
+        "verified": false
+      },
+      "fibers": {
+        "k1MPa": 2.9211,
+        "k2": 20.7395,
+        "kappa": 0,
+        "families": ["circumferential"],
+        "citation": "assumption: the corneal fiber constants with one circumferential family (the limbal annulus of circumferential collagen); halfWidthMm (half the arc length of the limbal transition band on the scleral sphere) is an assumption.",
+        "verified": false
+      }
+    },
+    "sclera": {
+      "matrix": {
+        "muMPa": 0.2,
+        "poissonRatio": 0.49,
+        "citation": "muMPa: neo-Hookean matrix shear modulus 200 kPa, cited to Coudrillier et al. 2015a and Girard et al. 2009 by 'A direct fiber approach to model sclera collagen architecture and biomechanics' (bioRxiv 10.1101/2022.11.20.517259; excerpt). poissonRatio: assumption.",
+        "verified": false
+      },
+      "fibers": {
+        "k1MPa": 2.9211,
+        "k2": 20.7395,
+        "kappa": 0,
+        "families": ["meridional", "circumferential"],
+        "citation": "assumption: no excerpt gave HGO fiber constants for human sclera (the search found Mooney-Rivlin fiber fits only), so the corneal constants are used with meridional and circumferential families. Candidate source: Grytz et al. 2014 (age- and race-related human scleral properties) or Coudrillier et al. 2012.",
+        "verified": false
+      },
+      "thicknessMm": {
+        "limbus": 0.5,
+        "equator": 0.42,
+        "midpoint": 0.65,
+        "posterior": 0.94,
+        "citation": "Scleral thickness in human eyes, PLoS One 2012 (PMC3253100; usually cited as Vurgese et al.; the excerpt's author list was inconsistent), histology of 238 globes, eyes with axial length <= 26 mm: limbus 0.50 +/- 0.11, equator 0.42 +/- 0.15, midpoint between equator and posterior pole 0.65 +/- 0.15, posterior pole 0.94 +/- 0.18 mm (excerpt; Olsen et al. 1998 give 0.53, 0.39, and 0.9-1.0 mm). Interpolated linearly in polar angle between limbus, equator (90 deg), midpoint (135 deg), and posterior pole (180 deg).",
+        "verified": false
+      }
+    }
+  },
+  "ageStiffening": {
+    "form": "exponential",
+    "referenceAgeYears": 50,
+    "ratePerYear": 0.02165,
+    "clampAgeYears": [50, 90],
+    "citation": "Elsheikh, Wang & Pye, Determination of the modulus of elasticity of the human cornea, J Refract Surg 2007 (PubMed 17985801) (36 corneas aged 50-95): stiffness rises about 89-98% between the 50-64 and 80-95 year groups (a secondary summary in a search excerpt). ratePerYear = ln(1.935) / 30.5 for a 1.935-fold increase between the group midpoints 57 and 87.5 years. The factor is 1 at and below 50 years (no excerpt covers younger corneas; assumption) and is held constant above 90.",
+    "verified": false
+  },
+  "opticNerve": {
+    "radiusMm": 2.55,
+    "citation": "Half the median optic nerve sheath diameter, 5.1 mm, in 519 healthy Chinese adults (Ultrasound measurement of optic nerve diameter and optic nerve sheath diameter in healthy Chinese adults, BMC Neurol 2015, PMC4493801; excerpt), measured 3 mm behind the globe. Used as the radius of the fixed support around the posterior pole (M4 plan, Deviation 4); taking the sheath diameter behind the globe for its scleral insertion is an approximation.",
+    "verified": false
+  },
+  "scleralSpur": {
+    "arcFromLimbusMm": 1.5,
+    "citation": "About 1.5 mm posterior to the corneal limbus in the horizontal meridian (2 mm in the vertical), from a patent on identifying the scleral spur (US 8,967,810; excerpt); the horizontal value is used for every meridian (approximation).",
+    "verified": false
+  },
+  "ciliaryTensionNPerMmPerD": {
+    "value": 0.001,
+    "citation": "assumption",
+    "reasoning": "No excerpt gives the force the ciliary muscle exerts on the scleral spur. 1e-3 N per mm of spur circumference per diopter puts the total axial pull at 3 D (about 0.12 N on a 40 mm circumference) at the size of a rectus muscle's primary-position force, an order-of-magnitude choice. The CLI defaults to 0 D, so the committed result does not depend on it.",
+    "verified": false
+  },
+  "inflationReference": {
+    "source": "Age-related differences in the elasticity of the human cornea, Invest Ophthalmol Vis Sci (iovs.arvojournals.org article 2187713), 50 donor corneas aged 24-102 years (mean 73.1)",
+    "protocol": "anterior chamber held at 15.0 mmHg, then raised to 15.5 mmHg; apical displacement measured",
+    "fit": "apical displacement (um) = 6.84 - 0.0035 x age (years), first eyes, R^2 = 0.84",
+    "iopFromMmHg": 15.0,
+    "iopToMmHg": 15.5,
+    "specimenAgeYears": 73.1,
+    "apexRiseUm": 6.584,
+    "citation": "Search excerpt only; the excerpt's summary itself warned that the units of the 6.84 intercept looked inconsistent, and the authors were not named in it. apexRiseUm is the fit at the mean age. Used by the slow inflation test of Task 4.4.",
+    "verified": false
+  }
+}
