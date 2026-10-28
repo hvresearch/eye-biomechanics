@@ -272,16 +272,16 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
   - `nelderMead(f: (x: number[]) => number, x0: number[], opts: { step: number[]; tolerance?: number; maxEvaluations?: number }): { x: number[]; fx: number; evaluations: number }`.
   - `interface AutoPrescribeOptions { metric?: "rms" | "strehl"; vertexMm?; baseCurveD?; index?; centerThicknessMm?; gridN?: number /* 24 while searching */; wavelengthNm?: number }`.
   - `autoPrescribe(eyeSurfaces: Surface[], view: ViewSpec, opts?: AutoPrescribeOptions): { prescription: Prescription; residualRmsMicrons: number; evaluations: number; seed: Prescription }`: seeds from the uncorrected wavefront refraction vertex-shifted per principal meridian (`F = R/(1 + d·R)`), searches the lens power vector `(M, J0, J45)` (Review Focus 3), and reports the residual at the full grid (64).
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `lensSurfaces` back-vertex power equals the prescription in both principal meridians within 0.01 D via `paraxialPower(..., { meridianDeg })` for five prescriptions, including an oblique axis;
   - `nelderMead` minimizes the Rosenbrock function to within 1e-6;
   - a Navarro eye lengthened to a −3 D far point (axial length solved by bisection in the test) is corrected by `autoPrescribe` to `|M| < 0.05` D of residual traced refraction, and the prescription's sphere is about −3 D vertex-adjusted (−3.1 ± 0.15 at 12 mm);
   - a Navarro eye with 1.5 D of corneal toricity yields `|C|` within 0.1 D of the eye's traced cylinder and axis within 3°;
   - moving the corrected lens from 12 to 14 mm leaves the corrected −3 D myope under-corrected (residual M more negative), the correct direction for a minus lens;
   - with `metric: "strehl"` the result's Strehl is at least that of the RMS result minus 0.01.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): spectacle lenses and auto-prescribe`.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): spectacle lenses and auto-prescribe`.
 
 ### Task 3.7: Pupil model and near response
 

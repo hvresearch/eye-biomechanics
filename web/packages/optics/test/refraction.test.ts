@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { paraxialPower } from "../src/paraxial/abcd";
-import type { Surface } from "../src/surfaces/types";
 import { analyzeWavefront } from "../src/wavefront/analyze";
 import { powerVectors, refractionFromZernike, sphereCylFromPowerVectors, wrapAxisDeg } from "../src/wavefront/refraction";
+import { toricNavarro } from "./helpers/eyes";
 import { navarroSurfaces } from "./helpers/navarro";
 import { onAxisView } from "./helpers/systems";
 
@@ -10,24 +10,6 @@ function coeffs(entries: Record<number, number>): number[] {
   const c = new Array(45).fill(0);
   for (const [j, v] of Object.entries(entries)) c[Number(j)] = v;
   return c;
-}
-
-/** The Navarro eye with a toric anterior cornea whose x section (0°) is flatter by `cylD` in the eye's far point. */
-export function toricNavarro(cylD: number): Surface[] {
-  const s = navarroSurfaces();
-  const c = s[0];
-  if (c?.kind !== "conic") throw new Error("expected a conic cornea");
-  const withRx = (rx: number): Surface[] => [{ ...c, kind: "toric", rxMm: rx, ryMm: c.radiusMm, axisDeg: 0, conicX: c.conic, conicY: c.conic }, ...s.slice(1)];
-  const far = (rx: number) => paraxialPower(withRx(rx), 1, { meridianDeg: 0 }).farPointD;
-  const target = paraxialPower(s).farPointD + cylD; // x section: less myopic (flatter) by cylD
-  let lo = c.radiusMm;
-  let hi = c.radiusMm + 2;
-  for (let i = 0; i < 80; i++) {
-    const mid = (lo + hi) / 2;
-    if (far(mid) < target) lo = mid;
-    else hi = mid;
-  }
-  return withRx((lo + hi) / 2);
 }
 
 describe("power vectors", () => {
