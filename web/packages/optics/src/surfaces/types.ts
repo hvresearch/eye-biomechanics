@@ -1,7 +1,18 @@
-/** Optical medium following a surface. Index at 555 nm; `dispersion` (Task 3.2) gives other wavelengths. */
+/**
+ * Wavelength dependence of a medium as a Cauchy law n(λ) = A + B/λ² + C/λ⁴ (λ in µm). Only the
+ * differences from 555 nm are used, so A is not stored (see `indexAt`).
+ */
+export interface CauchyDispersion {
+  form: "cauchy";
+  bUm2: number;
+  cUm4: number;
+}
+
+/** Optical medium following a surface: index at 555 nm, and optionally its dispersion. */
 export interface Medium {
   name: string;
   index555: number;
+  dispersion?: CauchyDispersion;
 }
 
 /**

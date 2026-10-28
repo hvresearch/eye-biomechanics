@@ -68,3 +68,5 @@ export {
   stepDynamics,
 } from "./gaze/dynamics";
 export type { DynamicState, DynamicTargets, DynamicsTable, PerEye } from "./gaze/dynamics";
+export { DISPERSION_TABLE, MEDIA_DISPERSION, PHOTOPIC, withDispersion } from "./optics/dispersion";
+export type { MediumName } from "./optics/dispersion";

@@ -1,6 +1,7 @@
 export type { Vec3 } from "./math/vec3";
 export { add, cross, distance, dot, norm, normalize, scale, sub } from "./math/vec3";
 export type {
+  CauchyDispersion,
   ConicSurface,
   Medium,
   SequentialSurface,
@@ -22,6 +23,7 @@ export {
   zernikeRho2Coefficient,
   zernikeValue,
 } from "./math/zernike";
+export { cauchyFit, indexAt } from "./color/dispersion";
 export { objectVergenceForImageD, paraxialPower } from "./paraxial/abcd";
 export type { ParaxialOptions, ParaxialResult } from "./paraxial/abcd";
 export type { Ray, TraceHit, TraceResult, VignetteReason } from "./trace/ray";

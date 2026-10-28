@@ -1,3 +1,4 @@
+import { indexAt } from "../color/dispersion";
 import { distance } from "../math/vec3";
 import { intersect, normalAt } from "../surfaces/geometry";
 import type { Surface } from "../surfaces/types";
@@ -9,7 +10,9 @@ import { refract } from "./refract";
  * ray misses (`"aperture"` when the hit lies outside the aperture, `"miss"` when there is no
  * forward intersection) or where it undergoes total internal reflection (`"tir"`); the result
  * then has `vignetted: true` with the surface name and reason. A surface whose medium index
- * equals the incoming index (the retina, a stop) is hit without refraction.
+ * equals the incoming index (the retina, a stop) is hit without refraction. Indices follow
+ * each medium's dispersion at the ray's wavelength; `indexBefore` is the index of the
+ * object space at that wavelength (air, 1, by default).
  */
 export function traceRay(ray: Ray, surfaces: readonly Surface[], indexBefore = 1): TraceResult {
   const hits: TraceHit[] = [];
@@ -24,7 +27,7 @@ export function traceRay(ray: Ray, surfaces: readonly Surface[], indexBefore = 1
       return { hits, opticalPathMm: opl, vignetted: true, vignettedAt: s.name, reason: hit === null ? "aperture" : "miss" };
     }
     opl += n * distance(origin, hit.point);
-    const n2 = s.mediumAfter.index555;
+    const n2 = indexAt(s.mediumAfter, ray.wavelengthNm);
     const normal = normalAt(s, hit.point[0], hit.point[1]);
     const out = refract(dir, normal, n, n2);
     if (out === null) {

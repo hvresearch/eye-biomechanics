@@ -183,10 +183,10 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
 - Produces (optics): `interface CauchyDispersion { form: "cauchy"; bUm2: number; cUm4: number }` (A is not stored: only differences from 555 nm are used); `Medium.dispersion?: CauchyDispersion`; `indexAt(m: Medium, wavelengthNm: number): number = index555 + B(λ⁻² − 0.555⁻²) + C(λ⁻⁴ − 0.555⁻⁴)` (λ in µm; no dispersion → `index555`); `cauchyFit(wavelengthsNm: number[], indices: number[]): { a; bUm2; cUm4; maxResidual }` (least squares, three terms).
 - Produces (eye-model): `MEDIA_DISPERSION: Record<"cornea" | "aqueous" | "lens" | "vitreous", CauchyDispersion>` fitted at load from the table; `withDispersion(surfaces: Surface[]): Surface[]` attaches it by `mediumAfter.name` unless the medium already has one; `PHOTOPIC: { wavelengthsNm: number[]; weights: number[] }` (V(λ), normalized to sum 1). `buildSurfacesAt` calls `withDispersion`. The document's `index555` stays the 555 nm value by definition (for Navarro, the stored d-line values, as accepted in M1).
 
-- [ ] **Step 1:** Failing tests: `cauchyFit` of the four cornea values has `maxResidual < 2e-4`; `indexAt` at 555 nm equals `index555` exactly; the lens index at 458 nm exceeds that at 632.8 nm by the table's difference within 2e-4; a traced ray at 450 nm through the Navarro eye focuses in front of the 650 nm ray (longitudinal chromatic aberration between 450 and 650 nm in the range 0.8–1.6 D, by `objectVergence` of each wavelength's best focus — a plausibility band, not a published fit); `PHOTOPIC.weights` sum to 1 and peak at 555.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement; write `data/dispersion/README.md` (source, excerpt status, fit choice).
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): media dispersion and photopic weights`.
+- [x] **Step 1:** Failing tests: `cauchyFit` of the four cornea values has `maxResidual < 2e-4`; `indexAt` at 555 nm equals `index555` exactly; the lens index at 458 nm exceeds that at 632.8 nm by the table's difference within 2e-4; a traced ray at 450 nm through the Navarro eye focuses in front of the 650 nm ray (longitudinal chromatic aberration between 450 and 650 nm in the range 0.8–1.6 D, by `objectVergence` of each wavelength's best focus — a plausibility band, not a published fit); `PHOTOPIC.weights` sum to 1 and peak at 555.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement; write `data/dispersion/README.md` (source, excerpt status, fit choice).
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): media dispersion and photopic weights`.
 
 ### Task 3.3: Pupil-plane bundles, OPD map, Zernike fit
 

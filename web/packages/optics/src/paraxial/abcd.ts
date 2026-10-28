@@ -1,3 +1,4 @@
+import { indexAt } from "../color/dispersion";
 import { meridianCurvature } from "../surfaces/geometry";
 import type { Surface } from "../surfaces/types";
 
@@ -6,6 +7,8 @@ const DEG = Math.PI / 180;
 export interface ParaxialOptions {
   /** Meridian (degrees from +x toward +y) whose section curvatures are used; 0 by default. Matters only for toric and Zernike surfaces. */
   meridianDeg?: number;
+  /** Wavelength at which media indices are taken (their dispersion), nm; 555 by default. */
+  wavelengthNm?: number;
 }
 
 export interface ParaxialResult {
@@ -51,7 +54,7 @@ interface SystemMatrix {
  * radians, in the section along `meridianRad`. The first surface flagged `image` (the
  * retina) ends the system; an index-matched surface without the flag has no power.
  */
-function systemMatrix(surfaces: readonly Surface[], indexBefore: number, meridianRad: number): SystemMatrix {
+function systemMatrix(surfaces: readonly Surface[], indexBefore: number, meridianRad: number, wavelengthNm = 555): SystemMatrix {
   let M: Mat = [1, 0, 0, 1];
   let n = indexBefore;
   let lastVertexZ = Number.NaN;
@@ -65,7 +68,7 @@ function systemMatrix(surfaces: readonly Surface[], indexBefore: number, meridia
       imageSurfaceZ = s.vertexZMm;
       break;
     }
-    const n2 = s.mediumAfter.index555;
+    const n2 = indexAt(s.mediumAfter, wavelengthNm);
     if (prevVertexZ !== null) M = mul([1, (s.vertexZMm - prevVertexZ) / n, 0, 1], M);
     const power = (n2 - n) * meridianCurvature(s, meridianRad); // per mm
     M = mul([1, 0, -power, 1], M);
@@ -100,7 +103,7 @@ export function objectVergenceForImageD(
   indexBefore = 1,
   opts: ParaxialOptions = {},
 ): number {
-  return vergenceImagingTo(systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG), imageZMm);
+  return vergenceImagingTo(systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG, opts.wavelengthNm), imageZMm);
 }
 
 /**
@@ -110,7 +113,7 @@ export function objectVergenceForImageD(
  * `farPointD` is NaN.
  */
 export function paraxialPower(surfaces: readonly Surface[], indexBefore = 1, opts: ParaxialOptions = {}): ParaxialResult {
-  const sys = systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG);
+  const sys = systemMatrix(surfaces, indexBefore, (opts.meridianDeg ?? 0) * DEG, opts.wavelengthNm);
   const [a, , c] = sys.M;
   const nImage = sys.nImage;
   const powerD = -c * 1000;

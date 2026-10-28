@@ -1,5 +1,6 @@
 import type { SequentialSurface, Surface } from "@eye/optics";
 import { SURFACE_NAMES, lensGeometry, lensParameterForAccommodation, relaxedLensGeometry } from "../accommodation/lens";
+import { withDispersion } from "../optics/dispersion";
 import type { EyeParameters, Surface as SchemaSurface } from "../schema/types";
 import type { EyeState } from "./../state/types";
 
@@ -11,13 +12,22 @@ function required(s: SchemaSurface, key: "radiusMm" | "rxMm" | "ryMm" | "axisDeg
   return v;
 }
 
+/** A document medium's dispersion when it is a Cauchy law in the optics form; other forms are ignored. */
+function cauchyOf(d: Record<string, unknown> | undefined): { form: "cauchy"; bUm2: number; cUm4: number } | undefined {
+  if (d?.form === "cauchy" && typeof d.bUm2 === "number" && typeof d.cUm4 === "number") {
+    return { form: "cauchy", bUm2: d.bUm2, cUm4: d.cUm4 };
+  }
+  return undefined;
+}
+
 function toSequential(s: SchemaSurface): SequentialSurface {
+  const dispersion = cauchyOf(s.mediumAfter.dispersion);
   const common = {
     name: s.name,
     tilt: s.tilt ?? { xDeg: 0, yDeg: 0 },
     decenter: s.decenter ?? { xMm: 0, yMm: 0 },
     thicknessToNextMm: s.thicknessToNextMm,
-    mediumAfter: { name: s.mediumAfter.name, index555: s.mediumAfter.index555 },
+    mediumAfter: { name: s.mediumAfter.name, index555: s.mediumAfter.index555, ...(dispersion ? { dispersion } : {}) },
     apertureSemiDiamMm: s.apertureSemiDiamMm,
   };
   switch (s.type) {
@@ -91,7 +101,8 @@ function reshape(q: SequentialSurface, dR: number, dK: number, thicknessToNextMm
  * and anterior chamber replaced by the accommodation-dependent geometry, followed by
  * the retina as the image surface (`image: true`). The anterior corneal vertex is z = 0.
  * Schema defaults (conic, tilt, decenter absent → zero) are applied here; toric and
- * Zernike surfaces are passed through.
+ * Zernike surfaces are passed through. The ocular media get the dispersion of
+ * data/dispersion (`withDispersion`) unless the document gives a Cauchy law.
  *
  * The lens follows `state.lensParameterA` (the model parameter, see `EyeState`). The retina
  * stays at `axialLengthMm`: accommodation reshapes the lens inside a globe of fixed length,
@@ -151,7 +162,7 @@ export function buildSurfacesAt(params: EyeParameters, lensParameterA: number): 
     apertureSemiDiamMm: Math.abs(params.retina.radiusMm),
     image: true,
   });
-  return place(seq);
+  return withDispersion(place(seq));
 }
 
 /**

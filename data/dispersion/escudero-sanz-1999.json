@@ -1,0 +1,15 @@
+{
+  "name": "escudero-sanz-1999-media",
+  "citation": "Escudero-Sanz I, Navarro R. Off-axis aberrations of a wide-angle schematic eye model. J Opt Soc Am A 16(8):1881-1891, 1999. Table 2 (refractive indices of the ocular media at four wavelengths).",
+  "doi": "10.1364/JOSAA.16.001881",
+  "verified": false,
+  "note": "Transcribed 2026-10-28 from two search-engine excerpts of Table 2 that agree (the 543 nm column is also quoted by a later study using the model); the paper itself was unreachable from the cloud session. Set verified: true after comparing with the paper. The 589.3 nm column equals the Navarro 1985 indices stored in navarro-1985.json.",
+  "wavelengthsNm": [458, 543, 589.3, 632.8],
+  "media": {
+    "cornea": [1.3828, 1.3777, 1.376, 1.3747],
+    "aqueous": [1.3445, 1.3391, 1.3374, 1.336],
+    "lens": [1.4292, 1.4222, 1.42, 1.4183],
+    "vitreous": [1.3428, 1.3377, 1.336, 1.3347]
+  },
+  "model": "Each medium's dispersion is a three-term Cauchy fit n(λ) = A + B/λ² + C/λ⁴ (λ in µm) to the four values, a modeling choice (web/packages/eye-model/src/optics/dispersion.ts). Only differences from 555 nm are applied: n(λ) = index555 + [n_fit(λ) − n_fit(555)], so each document keeps its own 555 nm index."
+}
