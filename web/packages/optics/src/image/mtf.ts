@@ -39,6 +39,55 @@ export function diffractionMtf(pupilRadiusMm: number, wavelengthNm: number, freq
 }
 
 /**
+ * OTFs of two PSFs of the same size from one complex FFT (their real intensities packed as
+ * real and imaginary parts, separated by Hermitian symmetry): X_a = (Z[k] + Z*[−k])/2,
+ * X_b = (Z[k] − Z*[−k])/(2i).
+ */
+export function otfPair(a: Psf, b: Psf): [Otf, Otf] {
+  const n = a.n;
+  if (b.n !== n) throw new RangeError("otfPair needs PSFs of the same size");
+  let sa = 0;
+  let sb = 0;
+  for (let i = 0; i < n * n; i++) {
+    sa += a.intensity[i]!;
+    sb += b.intensity[i]!;
+  }
+  const re = new Float64Array(n * n);
+  const im = new Float64Array(n * n);
+  for (let i = 0; i < n * n; i++) {
+    re[i] = a.intensity[i]! / sa;
+    im[i] = b.intensity[i]! / sb;
+  }
+  fftShift(re, n);
+  fftShift(im, n);
+  fft2(re, im, n);
+  const ar = new Float64Array(n * n);
+  const ai = new Float64Array(n * n);
+  const br = new Float64Array(n * n);
+  const bi = new Float64Array(n * n);
+  for (let u = 0; u < n; u++) {
+    const um = (n - u) % n;
+    for (let v = 0; v < n; v++) {
+      const k = u * n + v;
+      const km = um * n + ((n - v) % n);
+      const zr = re[k]!;
+      const zi = im[k]!;
+      const cr = re[km]!;
+      const ci = -im[km]!; // conj(Z[−k])
+      ar[k] = (zr + cr) / 2;
+      ai[k] = (zi + ci) / 2;
+      // (Z − conj)/(2i) = −i(Z − conj)/2
+      br[k] = (zi - ci) / 2;
+      bi[k] = -(zr - cr) / 2;
+    }
+  }
+  return [
+    { re: ar, im: ai, n },
+    { re: br, im: bi, n },
+  ];
+}
+
+/**
  * Radially averaged MTF from a PSF: |OTF| normalized at zero frequency, in integer frequency
  * bins up to n/2. Pass the PSF's `otf` to reuse it.
  */

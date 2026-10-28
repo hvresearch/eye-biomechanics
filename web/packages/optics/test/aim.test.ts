@@ -35,8 +35,8 @@ describe("pupilBundle", () => {
       const b = pupilBundle(onAxisView(2.5, d), 11, 555, front);
       expect(b.unaimed).toBe(0);
       crossings(b.rays, front, -1).forEach(([x, y], i) => {
-        expect(Math.abs(x - (b.pupilXYMm[2 * i] ?? 0))).toBeLessThan(1e-8);
-        expect(Math.abs(y - (b.pupilXYMm[2 * i + 1] ?? 0))).toBeLessThan(1e-8);
+        expect(Math.abs(x - (b.pupilXYMm[2 * i] ?? 0))).toBeLessThan(1e-7);
+        expect(Math.abs(y - (b.pupilXYMm[2 * i + 1] ?? 0))).toBeLessThan(1e-7);
       });
     }
   });

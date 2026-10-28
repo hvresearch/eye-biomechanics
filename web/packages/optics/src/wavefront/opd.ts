@@ -2,7 +2,7 @@ import { distance, dot, sub, type Vec3 } from "../math/vec3";
 import { splitImageSurface } from "../metrics/defocus";
 import type { Surface } from "../surfaces/types";
 import type { PupilBundle } from "../trace/aim";
-import { traceRay } from "../trace/sequential";
+import { traceRay, traceToEnd } from "../trace/sequential";
 
 /**
  * Optical path difference over the pupil, in µm: W = OPL_chief − OPL_ray at the reference
@@ -57,20 +57,18 @@ export function opdMap(surfaces: readonly Surface[], bundle: PupilBundle): OpdMa
   bundle.rays.forEach((ray, i) => {
     xs[i] = bundle.pupilXYMm[2 * i] ?? 0;
     ys[i] = bundle.pupilXYMm[2 * i + 1] ?? 0;
-    const r = traceRay(ray, refracting, 1);
-    if (r.vignetted) return;
-    const last = r.hits[r.hits.length - 1];
-    if (!last || !(last.dirAfter[2] > 0)) return;
+    const last = traceToEnd(ray, refracting, 1);
+    if (last === null || !(last.dir[2] > 0)) return;
     // |p + t d − P| = R; take the root nearest the last hit.
     const w = sub(last.point, P);
-    const b = dot(w, last.dirAfter);
+    const b = dot(w, last.dir);
     const disc = b * b - (dot(w, w) - R * R);
     if (disc < 0) return;
     const sq = Math.sqrt(disc);
     const t1 = -b - sq;
     const t2 = -b + sq;
     const t = Math.abs(t1) < Math.abs(t2) ? t1 : t2;
-    const opl = r.opticalPathMm + last.indexAfter * t;
+    const opl = last.opticalPathMm + last.index * t;
     opd[i] = (chiefOpl - opl) * 1000;
     valid[i] = 1;
     nValid++;

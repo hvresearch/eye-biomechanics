@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  cartesianRow,
   zernikeBasis,
+  zernikeToCartesian,
   zernikeCount,
   zernikeIndex,
   zernikeJ,
@@ -71,5 +73,27 @@ describe("Zernike polynomials", () => {
     expect(zernikeRho2Coefficient(5)).toBeCloseTo(Math.sqrt(6), 12);
     expect(zernikeRho2Coefficient(7)).toBe(0);
     expect(zernikeRho2Coefficient(0)).toBe(0);
+  });
+
+  it("expands Σ c_j Z_j to a Cartesian polynomial that evaluates identically (order 8)", () => {
+    let seed = 5;
+    const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647) - 0.5;
+    const coeffs = Array.from({ length: 45 }, () => rnd());
+    const { poly, order } = zernikeToCartesian(coeffs);
+    expect(order).toBe(8);
+    const row = new Float64Array(order + 1);
+    const z = new Float64Array(45);
+    for (let k = 0; k < 40; k++) {
+      const r = Math.sqrt(Math.abs(rnd()) * 2);
+      const t = rnd() * 2 * Math.PI;
+      const x = r * Math.cos(t);
+      const y = r * Math.sin(t);
+      cartesianRow(poly, order, y, row);
+      let w = 0;
+      for (let p = order; p >= 0; p--) w = w * x + row[p]!;
+      zernikeBasis(8, Math.hypot(x, y), Math.atan2(y, x), z);
+      const want = coeffs.reduce((s2, c, j) => s2 + c * z[j]!, 0);
+      expect(Math.abs(w - want)).toBeLessThan(1e-10);
+    }
   });
 });

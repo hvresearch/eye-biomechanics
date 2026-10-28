@@ -1,4 +1,4 @@
-import { zernikeBasis, zernikeCount } from "../math/zernike";
+import { cartesianRow, zernikeToCartesian } from "../math/zernike";
 import { refractionFromZernike } from "../wavefront/refraction";
 import { fft2, fftShift } from "./fft";
 
@@ -55,9 +55,9 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   const lambdaMm = input.wavelengthNm * 1e-6;
   const dx = lambdaMm / (n * pixelRad);
   const R = input.pupilRadiusMm;
-  let order = 0;
-  while (zernikeCount(order) < input.coeffsMicrons.length) order++;
-  const z = new Float64Array(zernikeCount(order));
+  // The wavefront as one Cartesian polynomial: per row, a Horner polynomial in x.
+  const { poly, order } = zernikeToCartesian(input.coeffsMicrons);
+  const row = new Float64Array(order + 1);
   const reA = new Float64Array(n * n);
   const imA = new Float64Array(n * n);
   const idealKey = `${n}|${R}|${input.wavelengthNm}|${pixelRad}`;
@@ -68,13 +68,14 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   const h = n / 2;
   for (let i = 0; i < n; i++) {
     const y = (i - h) * dx;
+    if (Math.abs(y) > R) continue;
+    cartesianRow(poly, order, y / R, row);
     for (let j = 0; j < n; j++) {
       const x = (j - h) * dx;
-      const r = Math.hypot(x, y);
-      if (r > R) continue;
-      zernikeBasis(order, r / R, Math.atan2(y, x), z);
+      if (x * x + y * y > R * R) continue;
+      const u = x / R;
       let w = 0;
-      for (let a = 0; a < input.coeffsMicrons.length; a++) w += (input.coeffsMicrons[a] ?? 0) * z[a]!;
+      for (let p = order; p >= 0; p--) w = w * u + row[p]!;
       const idx = i * n + j;
       reA[idx] = Math.cos(k * w);
       imA[idx] = Math.sin(k * w);

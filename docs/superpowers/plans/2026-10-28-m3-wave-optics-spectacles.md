@@ -350,14 +350,14 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
   - `EyeOpticsRequest` gains `spectacles: ClinicalLens | null` (`ClinicalPrescription & { vertexMm; baseCurveD; index; centerThicknessMm }`), `corrected: boolean` (which configuration drives defocus and the far point), `wave: WaveRequest | null` (`{ gridN: number; psfN: number; polychromatic: boolean; letterArcmin: number; autoPrescribe: boolean }`), and the pupil from the main thread as now.
   - `EyeOptics` gains `wave: { uncorrected: WaveResult; corrected: WaveResult | null; autoRx: (ClinicalLens & { residualRmsMicrons: number }) | null } | null`, with `WaveResult = { refraction /* TABO */; coeffsMicrons: number[]; rmsMicrons; hoRmsMicrons; strehl; psf: Float32Array; psfN; pixelArcmin; fieldArcmin; aliased; mtf: { freqCpd: Float32Array; radial: Float32Array; diffraction: Float32Array }; retinal: Float32Array; opdGrid: Float32Array /* gridN², NaN outside the pupil */; gridN; pupilRadiusMm; validFraction }`. The relaxed far point is of the active configuration (eye alone or eye plus lens).
   - Typed arrays are transferred (`postMessage(out, transferables)`).
-  - `OpticsClient` keeps at most one request in flight: `request()` while one is pending stores the body as `queued` and resolves the earlier caller with `StaleRequestError`; the queued body is sent when the response arrives (M2 follow-up).
-- [ ] **Step 1:** Failing tests:
+  - `OpticsClient` keeps at most one request in flight: `request()` while one is pending stores the body as `queued` (a body it replaces rejects with `StaleRequestError` and is never sent); the in-flight response still resolves, being the newest result available, and the queued body is sent when it arrives (M2 follow-up). As built: the wave pipeline pairs the two configurations' real FFTs (OTF and retinal image) and evaluates the PSF's pupil function from a Cartesian expansion of the fit; the benchmark runs at about 70 ms median locally.
+- [x] **Step 1:** Failing tests:
   - `worker.test.ts`: a right-eye request with `wave` returns PSF, MTF, retinal image, and a refraction near 0 for the emmetrope at 6 m; a −3 D axial myope with a −3.1 D spectacle at 12 mm has corrected `|M| < 0.1` and corrected RMS below 20% of uncorrected; `autoPrescribe: true` returns an `autoRx` whose corrected RMS is below the manual one; the aim-plane assertion fix (M2 follow-up): an off-axis fan ray crosses `firstVertexZ − DEFAULT_LAUNCH_OFFSET_MM` at its pupil height.
-  - `worker.test.ts`, `OpticsClient` with a fake `Worker` object: three requests while the first is in flight send exactly two messages (the first and the last); a response to a superseded id is ignored.
+  - `worker.test.ts`, `OpticsClient` with a fake `Worker` object: three requests while the first is in flight send exactly two messages (the first and the last); the replaced middle request rejects as stale; a response with an unknown id is ignored.
   - `bench.test.ts`: `handle()` for both eyes with right-eye wave optics (64 grid, 256 PSF, monochromatic, corrected and uncorrected) has a median under 100 ms over five runs after one warm-up.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(viewer): wave optics, spectacles, and backpressure in the worker`.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(viewer): wave optics, spectacles, and backpressure in the worker`.
 
 ### Task 3.11: Optics strip, spectacles panel, presets, pupil in the viewer
 

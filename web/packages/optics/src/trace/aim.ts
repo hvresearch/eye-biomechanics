@@ -2,7 +2,7 @@ import { add, dot, normalize, scale, sub, type Vec3 } from "../math/vec3";
 import type { Surface } from "../surfaces/types";
 import { fieldDirection } from "./bundle";
 import type { Ray } from "./ray";
-import { traceRay } from "./sequential";
+import { traceToEnd } from "./sequential";
 
 /**
  * How an eye views an object: where the object is, and the pupil disk the bundle fills.
@@ -40,7 +40,7 @@ export interface PupilBundle {
 const LAUNCH_MARGIN_MM = 5;
 /** Ray aiming: finite-difference step and tolerance in the pupil plane, mm; iteration limit (numerical). */
 const AIM_STEP_MM = 1e-6;
-const AIM_TOL_MM = 1e-9;
+const AIM_TOL_MM = 1e-7;
 const AIM_MAX_ITER = 8;
 
 interface Launcher {
@@ -81,41 +81,68 @@ function crossing(ray: Ray, front: readonly Surface[], zp: number): [number, num
   let p = ray.origin;
   let d = ray.dir;
   if (front.length > 0) {
-    const r = traceRay(ray, front, 1);
-    if (r.vignetted) return null;
-    const last = r.hits[r.hits.length - 1];
-    if (!last) return null;
+    const last = traceToEnd(ray, front, 1);
+    if (last === null) return null;
     p = last.point;
-    d = last.dirAfter;
+    d = last.dir;
   }
   if (!(d[2] > 0)) return null;
   const q = add(p, scale(d, (zp - p[2]) / d[2]));
   return [q[0], q[1]];
 }
 
-/** Aim so the ray crosses the pupil plane at `target` after `front` (2-D Newton, finite-difference Jacobian). */
-function aim(l: Launcher, target: readonly [number, number], front: readonly Surface[], zp: number): Ray | null {
-  if (front.length === 0) return l.ray(target);
-  let a: [number, number] = [target[0], target[1]];
+/** Jacobian of the pupil-plane crossing with respect to the aim point, by finite differences. */
+function jacobian(l: Launcher, a: readonly [number, number], c: readonly [number, number], front: readonly Surface[], zp: number): Jacobian | null {
+  const cx = crossing(l.ray([a[0] + AIM_STEP_MM, a[1]]), front, zp);
+  const cy = crossing(l.ray([a[0], a[1] + AIM_STEP_MM]), front, zp);
+  if (cx === null || cy === null) return null;
+  const j11 = (cx[0] - c[0]) / AIM_STEP_MM;
+  const j21 = (cx[1] - c[1]) / AIM_STEP_MM;
+  const j12 = (cy[0] - c[0]) / AIM_STEP_MM;
+  const j22 = (cy[1] - c[1]) / AIM_STEP_MM;
+  const det = j11 * j22 - j12 * j21;
+  if (!(Math.abs(det) > 0)) return null;
+  return { i11: j22 / det, i12: -j12 / det, i21: -j21 / det, i22: j11 / det };
+}
+
+/** Inverse of the 2 × 2 crossing Jacobian. */
+interface Jacobian {
+  i11: number;
+  i12: number;
+  i21: number;
+  i22: number;
+}
+
+/**
+ * Aim so the ray crosses the pupil plane at `target` after `front`: a chord iteration from
+ * `start` with the inverse Jacobian `inv` (from the chief ray; the map is nearly linear through a
+ * spectacle lens), refreshing the Jacobian at the current point when convergence stalls.
+ * Returns the aim point (the undeviated crossing of the launched ray) or null.
+ */
+function aim(
+  l: Launcher,
+  target: readonly [number, number],
+  front: readonly Surface[],
+  zp: number,
+  inv0: Jacobian | null,
+  start: readonly [number, number],
+): [number, number] | null {
+  let a: [number, number] = [start[0], start[1]];
+  let inv = inv0;
+  let prev = Number.POSITIVE_INFINITY;
   for (let i = 0; i < AIM_MAX_ITER; i++) {
     const c = crossing(l.ray(a), front, zp);
     if (c === null) return null;
     const ex = c[0] - target[0];
     const ey = c[1] - target[1];
-    if (Math.hypot(ex, ey) < AIM_TOL_MM) return l.ray(a);
-    const cx = crossing(l.ray([a[0] + AIM_STEP_MM, a[1]]), front, zp);
-    const cy = crossing(l.ray([a[0], a[1] + AIM_STEP_MM]), front, zp);
-    if (cx === null || cy === null) return null;
-    const j11 = (cx[0] - c[0]) / AIM_STEP_MM;
-    const j21 = (cx[1] - c[1]) / AIM_STEP_MM;
-    const j12 = (cy[0] - c[0]) / AIM_STEP_MM;
-    const j22 = (cy[1] - c[1]) / AIM_STEP_MM;
-    const det = j11 * j22 - j12 * j21;
-    if (!(Math.abs(det) > 0)) return null;
-    a = [a[0] - (j22 * ex - j12 * ey) / det, a[1] - (-j21 * ex + j11 * ey) / det];
+    const err = Math.hypot(ex, ey);
+    if (err < AIM_TOL_MM) return a;
+    if (inv === null || err > 0.5 * prev) inv = jacobian(l, a, c, front, zp);
+    if (inv === null) return null;
+    prev = err;
+    a = [a[0] - (inv.i11 * ex + inv.i12 * ey), a[1] - (inv.i21 * ex + inv.i22 * ey)];
   }
-  const c = crossing(l.ray(a), front, zp);
-  return c !== null && Math.hypot(c[0] - target[0], c[1] - target[1]) < 1e3 * AIM_TOL_MM ? l.ray(a) : null;
+  return null;
 }
 
 /**
@@ -136,22 +163,37 @@ export function pupilBundle(view: ViewSpec, gridN: number, wavelengthNm: number,
   const xy: number[] = [];
   const idx: number[] = [];
   let unaimed = 0;
+  // With front surfaces, aim the chief ray first; its aim point and Jacobian predict the others.
+  let chiefAim: [number, number] = [cx, cy];
+  let inv: Jacobian | null = null;
+  if (front.length > 0) {
+    const c0 = crossing(launch.ray(chiefAim), front, zp);
+    inv = c0 === null ? null : jacobian(launch, chiefAim, c0, front, zp);
+    const a = aim(launch, [cx, cy], front, zp, inv, chiefAim);
+    if (a === null) unaimed++;
+    else chiefAim = a;
+  }
   for (let i = 0; i < gridN; i++) {
     const y = -R + (2 * R * i) / (gridN - 1);
     for (let j = 0; j < gridN; j++) {
       const x = -R + (2 * R * j) / (gridN - 1);
       if (Math.hypot(x, y) > R * (1 + 1e-12)) continue;
       const target: [number, number] = [cx + x, cy + y];
-      let ray = aim(launch, target, front, zp);
-      if (ray === null) {
-        unaimed++;
+      let ray: Ray;
+      if (front.length === 0) {
         ray = launch.ray(target);
+      } else {
+        const start: [number, number] =
+          inv === null ? target : [chiefAim[0] + inv.i11 * x + inv.i12 * y, chiefAim[1] + inv.i21 * x + inv.i22 * y];
+        const a = aim(launch, target, front, zp, inv, start);
+        if (a === null) unaimed++;
+        ray = launch.ray(a ?? target);
       }
       rays.push(ray);
       xy.push(x, y);
       idx.push(i * gridN + j);
     }
   }
-  const chief = aim(launch, [cx, cy], front, zp) ?? launch.ray([cx, cy]);
+  const chief = launch.ray(chiefAim);
   return { rays, pupilXYMm: Float64Array.from(xy), gridIndex: Uint32Array.from(idx), gridN, chief, collimated, view, unaimed };
 }

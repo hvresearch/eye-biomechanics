@@ -15,6 +15,9 @@ export type { Intersection } from "./surfaces/geometry";
 export { placeSurface, surfacesFromSequential } from "./surfaces/sequential";
 export {
   zernikeBasis,
+  zernikeBasisXY,
+  zernikeToCartesian,
+  cartesianRow,
   zernikeCount,
   zernikeIndex,
   zernikeJ,
@@ -28,7 +31,8 @@ export { objectVergenceForImageD, paraxialPower } from "./paraxial/abcd";
 export type { ParaxialOptions, ParaxialResult } from "./paraxial/abcd";
 export type { Ray, TraceHit, TraceResult, VignetteReason } from "./trace/ray";
 export { refract } from "./trace/refract";
-export { traceRay } from "./trace/sequential";
+export { traceRay, traceToEnd } from "./trace/sequential";
+export type { TraceEnd } from "./trace/sequential";
 export { collimatedBundle, fieldDirection, pointSourceBundle, pupilGrid } from "./trace/bundle";
 export { DEFAULT_LAUNCH_OFFSET_MM, InsufficientRaysError, retinalDefocusD, splitImageSurface } from "./metrics/defocus";
 export type { DefocusOptions, DefocusResult } from "./metrics/defocus";
@@ -45,11 +49,11 @@ export type { WavefrontAnalysis, WavefrontOptions } from "./wavefront/analyze";
 export { fft2, fftShift } from "./image/fft";
 export { polychromaticPsf, psf } from "./image/psf";
 export type { Psf, PsfOptions, WavefrontInput } from "./image/psf";
-export { diffractionMtf, mtf, otf } from "./image/mtf";
+export { diffractionMtf, mtf, otf, otfPair } from "./image/mtf";
 export type { Mtf, Otf } from "./image/mtf";
 export { grating, snellenE } from "./image/targets";
 export type { Bitmap, EOrientation } from "./image/targets";
-export { retinalImage } from "./image/retinal";
+export { retinalImage, retinalImagePair } from "./image/retinal";
 export { SPECTACLE_DEFAULTS, lensSurfaces } from "./lenses/prescription";
 export type { Prescription } from "./lenses/prescription";
 export { nelderMead } from "./lenses/nelderMead";

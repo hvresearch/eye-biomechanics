@@ -1,4 +1,4 @@
-import { zernikeBasis, zernikeCount } from "../math/zernike";
+import { zernikeBasisXY, zernikeCount } from "../math/zernike";
 import { InsufficientRaysError } from "../metrics/defocus";
 import type { OpdMap } from "./opd";
 
@@ -68,7 +68,7 @@ export function fitZernike(map: OpdMap, maxRadialOrder = 8): ZernikeFit {
     if (!map.valid[i]) continue;
     const x = map.xs[i]!;
     const y = map.ys[i]!;
-    zernikeBasis(maxRadialOrder, Math.sqrt(x * x + y * y) / R, Math.atan2(y, x), z);
+    zernikeBasisXY(maxRadialOrder, x / R, y / R, z);
     basis.set(z, row * J);
     row++;
     const w = map.opdMicrons[i]!;
@@ -109,7 +109,7 @@ export function zernikeWavefront(coeffsMicrons: readonly number[], x: number, y:
   let order = 0;
   while (zernikeCount(order) < coeffsMicrons.length) order++;
   const z = new Float64Array(zernikeCount(order));
-  zernikeBasis(order, Math.hypot(x, y) / pupilRadiusMm, Math.atan2(y, x), z);
+  zernikeBasisXY(order, x / pupilRadiusMm, y / pupilRadiusMm, z);
   let w = 0;
   coeffsMicrons.forEach((c, j) => (w += c * (z[j] ?? 0)));
   return w;

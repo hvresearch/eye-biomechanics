@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
+import { otf, otfPair } from "../src/image/mtf";
 import { psf, type Psf } from "../src/image/psf";
-import { retinalImage } from "../src/image/retinal";
+import { retinalImage, retinalImagePair } from "../src/image/retinal";
 import { grating, snellenE } from "../src/image/targets";
 
 const optotypes = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../../data/acuity/optotypes.json"), "utf8")) as {
@@ -75,6 +76,26 @@ describe("retinalImage", () => {
     const s1 = t.data.reduce((a, b) => a + b, 0);
     const s2 = o2.data.reduce((a, b) => a + b, 0);
     expect(Math.abs(s2 - s1) / s1).toBeLessThan(1e-6);
+  });
+
+  it("pairs two configurations in one FFT with the same results as one at a time", () => {
+    const a = psf({ coeffsMicrons: [0, 0, 0, 0.1, 0.4, -0.2], pupilRadiusMm: 2, wavelengthNm: 555 });
+    const b = psf({ coeffsMicrons: [0, 0, 0, -0.3, 0.1, 0.25, 0.05], pupilRadiusMm: 2, wavelengthNm: 555 });
+    const [ka, kb] = otfPair(a, b);
+    const sa = otf(a);
+    const sb = otf(b);
+    for (let i = 0; i < ka.re.length; i += 31) {
+      expect(Math.abs(ka.re[i]! - sa.re[i]!) + Math.abs(ka.im[i]! - sa.im[i]!)).toBeLessThan(1e-12);
+      expect(Math.abs(kb.re[i]! - sb.re[i]!) + Math.abs(kb.im[i]! - sb.im[i]!)).toBeLessThan(1e-12);
+    }
+    const t = snellenE(a.n, a.pixelArcmin, 8);
+    const [ia, ib] = retinalImagePair(t, a, b, ka, kb);
+    const ra = retinalImage(t, a);
+    const rb = retinalImage(t, b);
+    for (let i = 0; i < ia.data.length; i += 17) {
+      expect(Math.abs(ia.data[i]! - ra.data[i]!)).toBeLessThan(1e-6);
+      expect(Math.abs(ib.data[i]! - rb.data[i]!)).toBeLessThan(1e-6);
+    }
   });
 
   it("rejects a target on another grid", () => {

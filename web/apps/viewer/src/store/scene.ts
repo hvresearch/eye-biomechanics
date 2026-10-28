@@ -18,12 +18,17 @@ import {
 } from "@eye/eye-model";
 import { create } from "zustand";
 import { OpticsClient, StaleRequestError } from "../worker/client";
-import type { EyeOptics, OpticsRequest, OpticsResponse } from "../worker/messages";
+import type { EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
 import { throttle } from "./throttle";
 
 export const DEFAULT_PRESET: PresetName = "navarro-1985";
 /** Rays in the drawn fan of the cutaway (right) eye; odd so the chief ray is included. A drawing choice. */
 export const FAN_RAYS = 15;
+/**
+ * Wave optics of the right (cutaway) eye: the spec's 64 × 64 pupil grid and 256 PSF grid, at
+ * 555 nm, with a 20/20 Snellen E (5 arcmin) as the retinal-image target.
+ */
+export const WAVE_REQUEST: WaveRequest = { gridN: 64, psfN: 256, polychromatic: false, letterArcmin: 5, autoPrescribe: false };
 /** Minimum interval between worker requests while inputs change, ms (one frame). */
 const REQUEST_INTERVAL_MS = 16;
 /** Target directions span the comfortable oculomotor range, degrees (a UI bound, not physiology). */
@@ -146,6 +151,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           objectDistanceM: b[side].targetDistanceM,
           pupilSemiDiamMm: b[side].pupilMm / 2,
           fanRays: side === "right" ? FAN_RAYS : 0,
+          wave: side === "right" ? WAVE_REQUEST : null,
         })),
       };
       worker

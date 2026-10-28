@@ -1,4 +1,5 @@
 import {
+  applyRefractivePreset,
   buildSurfacesAt,
   deriveBinocular,
   defaultScene,
@@ -7,11 +8,12 @@ import {
   type EyeParameters,
   type SceneState,
 } from "@eye/eye-model";
-import { DEFAULT_LAUNCH_OFFSET_MM, paraxialPower } from "@eye/optics";
+import { DEFAULT_LAUNCH_OFFSET_MM, SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
 import { describe, expect, it } from "vitest";
 import { OpticsClient, StaleRequestError } from "../src/worker/client";
 import { handle, relaxedFarPointD } from "../src/worker/handle";
-import type { OpticsRequest, OpticsWorkerMessage } from "../src/worker/messages";
+import { WAVE_REQUEST } from "../src/store/scene";
+import { transferables, type ClinicalLens, type OpticsRequest, type OpticsWorkerMessage } from "../src/worker/messages";
 
 const eye = loadPreset("navarro-1985");
 const scene: SceneState = { ...defaultScene("navarro-1985"), targetDistanceM: 0.5 };
@@ -61,12 +63,19 @@ describe("handle", () => {
   });
 
   it("aims the drawn fan at the same plane as the defocus bundle", () => {
-    const res = handle(request());
+    const req = request();
+    const res = handle(req);
     const first = res.eyes[0]!.surfaces[0]!.vertexZMm;
-    // The chief ray of a point source on the axis stays on the axis through the aim plane.
-    const chief = res.eyes[0]!.fan[5]!;
-    expect(chief[0]![1]).toBeCloseTo(0, 12);
-    expect(first - DEFAULT_LAUNCH_OFFSET_MM).toBeLessThan(first);
+    const aimZ = first - DEFAULT_LAUNCH_OFFSET_MM;
+    const n = res.eyes[0]!.fan.length;
+    const R = req.eyes[0]!.pupilSemiDiamMm;
+    // Each fan ray crosses the aim plane at its pupil height (an off-axis ray, not only the chief).
+    for (const i of [0, 2, n - 1]) {
+      const [a, b] = res.eyes[0]!.fan[i]!;
+      if (!a || !b) throw new Error("short fan line");
+      const t = (aimZ - a[2]) / (b[2] - a[2]);
+      expect(a[1] + t * (b[1] - a[1])).toBeCloseTo(-R + (2 * R * i) / (n - 1), 9);
+    }
   });
 
   it("works for a distant target with collimated rays, and draws no fan when asked for none", () => {
@@ -83,11 +92,79 @@ describe("handle", () => {
     expect(relaxedFarPointD(copy)).toBe(a);
   });
 
+  it("returns wave optics for the right eye: PSF, MTF, retinal image, and a refraction near 0 for the emmetrope at 6 m", () => {
+    const far: SceneState = { ...scene, targetDistanceM: 6 };
+    const b = deriveBinocular(far, { left: eye, right: eye });
+    const res = handle({
+      id: 2,
+      eyes: [{ side: "right", params: eye, accommodationD: b.right.accommodationD, objectDistanceM: 6, pupilSemiDiamMm: b.right.pupilMm / 2, fanRays: 0, wave: WAVE_REQUEST }],
+    });
+    const w = res.eyes[0]!.wave;
+    if (!w) throw new Error("no wave optics");
+    expect(w.corrected).toBeNull();
+    const u = w.uncorrected;
+    expect(Math.abs(u.refraction.M)).toBeLessThan(0.35);
+    expect(u.psf).toHaveLength(256 * 256);
+    expect(u.retinal).toHaveLength(256 * 256);
+    expect(u.opdGrid).toHaveLength(64 * 64);
+    expect(u.mtf.radial[0]).toBeCloseTo(1, 6);
+    expect(u.strehl).toBeGreaterThan(0);
+    expect(u.strehl).toBeLessThanOrEqual(1);
+    expect(u.coeffsMicrons).toHaveLength(45);
+    expect(transferables(res)).toHaveLength(6);
+    // NaN outside the pupil, finite inside.
+    expect(Number.isNaN(u.opdGrid[0]!)).toBe(true);
+    expect(Number.isFinite(u.opdGrid[32 * 64 + 32]!)).toBe(true);
+  });
+
+  const farPointOf = (s: Surface[], meridianDeg = 0) => paraxialPower(s, 1, { meridianDeg }).farPointD;
+  const myope = applyRefractivePreset(eye, "myope-3-axial", farPointOf);
+  const lens = (sphereD: number): ClinicalLens => ({ sphereD, cylinderD: 0, axisDeg: 180, ...SPECTACLE_DEFAULTS });
+  const myopeRequest = (over: Partial<OpticsRequest["eyes"][number]>): OpticsRequest => ({
+    id: 3,
+    eyes: [{ side: "right", params: myope, accommodationD: 0, objectDistanceM: Number.POSITIVE_INFINITY, pupilSemiDiamMm: 1.5, fanRays: 5, wave: WAVE_REQUEST, ...over }],
+  });
+
+  it("corrects a −3 D axial myope with a −3.1 D spectacle at 12 mm", () => {
+    const res = handle(myopeRequest({ spectacles: lens(-3.1), corrected: true }));
+    const e = res.eyes[0]!;
+    const w = e.wave!;
+    expect(w.uncorrected.refraction.M).toBeLessThan(-2.8);
+    // At the fovea (angle alpha) even the emmetrope reads slightly myopic with oblique astigmatism,
+    // so the corrected myope is compared with the emmetrope seen the same way.
+    const emm = handle({ ...myopeRequest({}), eyes: [{ ...myopeRequest({}).eyes[0]!, params: eye }] }).eyes[0]!.wave!.uncorrected;
+    expect(Math.abs(w.corrected!.refraction.M - emm.refraction.M)).toBeLessThan(0.1);
+    expect(Math.abs(w.corrected!.refraction.cylinderD - emm.refraction.cylinderD)).toBeLessThan(0.1);
+    expect(w.corrected!.rmsMicrons).toBeLessThan(0.25 * w.uncorrected.rmsMicrons);
+    // Worn: the far point and defocus follow the corrected eye; the lens surfaces come back for drawing.
+    expect(Math.abs(e.farPointD)).toBeLessThan(0.15);
+    expect(Math.abs(e.defocusD)).toBeLessThan(0.3);
+    expect(e.lensSurfaces).toHaveLength(2);
+    expect(e.surfaces).toHaveLength(5);
+    expect(e.fan[0]).toHaveLength(1 + 7);
+    // Not worn: the lens is still analyzed, but the eye drives the readouts.
+    const off = handle(myopeRequest({ spectacles: lens(-3.1), corrected: false })).eyes[0]!;
+    expect(off.farPointD).toBeLessThan(-2.8);
+    expect(off.wave?.corrected).not.toBeNull();
+    expect(off.lensSurfaces).toHaveLength(0);
+  });
+
+  it("auto-prescribes a lens that beats the manual one", () => {
+    const res = handle(myopeRequest({ spectacles: lens(-2.5), corrected: true, wave: { ...WAVE_REQUEST, autoPrescribe: true } }));
+    const w = res.eyes[0]!.wave!;
+    const auto = w.autoRx!;
+    expect(auto.sphereD).toBeLessThan(-2.9);
+    expect(auto.residualRmsMicrons).toBeLessThan(w.corrected!.rmsMicrons);
+    expect(auto.vertexMm).toBe(12);
+    expect(auto.axisDeg).toBeGreaterThan(0);
+    expect(auto.axisDeg).toBeLessThanOrEqual(180);
+  });
+
   it("stays inside the per-frame budget for two eyes (median of 5)", () => {
     const req = request();
     handle(req); // warm up
     const times = Array.from({ length: 5 }, () => handle(req).elapsedMs).sort((x, y) => x - y);
-    expect(times[2]!).toBeLessThan(16);
+    expect(times[2]!).toBeLessThan(16); // without wave optics: the M2 per-frame pipeline
   });
 });
 
@@ -102,16 +179,24 @@ describe("OpticsClient", () => {
     terminate() {}
   }
 
-  it("resolves only the latest request and rejects stale ones", async () => {
+  it("keeps one request in flight and sends only the latest of those made meanwhile", async () => {
     const fake = new FakeWorker();
     const client = new OpticsClient(fake as unknown as Worker);
     const { id: _id, ...body } = request();
     const p1 = client.request(body);
     const p2 = client.request(body);
-    await expect(p1).rejects.toBeInstanceOf(StaleRequestError);
-    const res = handle({ ...body, id: fake.posted[1]?.id ?? -1 });
-    client.receive(res);
-    await expect(p2).resolves.toMatchObject({ id: res.id });
+    const p3 = client.request(body);
+    expect(fake.posted).toHaveLength(1);
+    await expect(p2).rejects.toBeInstanceOf(StaleRequestError);
+    const first = handle({ ...body, id: fake.posted[0]!.id });
+    client.receive(first);
+    await expect(p1).resolves.toMatchObject({ id: first.id });
+    expect(fake.posted).toHaveLength(2); // the first and the last
+    const last = handle({ ...body, id: fake.posted[1]!.id });
+    client.receive({ ...last, id: 999 }); // an unknown id is ignored
+    client.receive(last);
+    await expect(p3).resolves.toMatchObject({ id: last.id });
+    expect(fake.posted).toHaveLength(2);
   });
 
   it("rejects when the worker reports a failure", async () => {
