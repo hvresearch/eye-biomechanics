@@ -66,10 +66,13 @@ numbers. All move to M5.
   set (Grytz et al. 2014) in a session with document access, then calibrate (the spec makes
   tissue stiffness a calibration parameter). (M5)
 - `science/eyebiomech/fem/loads.py` (`from_force_table`): the length-proxy muscle forces are not
-  torque-balanced, and in nasal gazes no non-negative balanced set exists without passive
-  orbital torques (the CLI rejects those gazes). Before the duty cycle uses eccentric gazes,
-  model passive orbital torques or the v2 static equilibrium (spec §4.4). (M5, blocking for the
-  duty cycle)
+  torque-balanced. The smallest balancing change moves the primary-gaze lateral and medial recti
+  by +57% and −47%, has no non-negative solution in nasal gazes, and switches off the agonist in
+  vertical and far temporal gazes, so the CLI accepts primary gaze only. The induced astigmatism
+  is about five times larger when the orbit carries the moment instead (Deviation 15). Model
+  passive orbital torques or the v2 static equilibrium (spec §4.4), rerun the committed result,
+  and re-enable eccentric gazes in the CLI. (M5, blocking for the duty cycle and for any claim
+  about the size of the effect)
 - `science/eyebiomech/fem`: the document geometry is treated as stress-free (no prestress or
   inverse solve; Deviation 3). Add an inverse (fixed-point) solve for the unloaded geometry so the
   IOP's own deformation of the measured shape is accounted for. (M5)
@@ -82,8 +85,8 @@ numbers. All move to M5.
 - `data/results/fem/`: the committed result is built from the regression fixture, which has no
   lens accommodation model, so the loaded eye cannot accommodate in the viewer; run the CLI on a
   preset document that carries one (the exporter keeps it). (M5)
-- `science/eyebiomech/fem/cli.py`: mesh refinement 12 → 16 changed the induced astigmatism by
-  about 5%; check 20 (and two layers) for the M5 prediction grid's tolerance. (M5)
+- `science/eyebiomech/fem/cli.py`: mesh refinement 12 → 16 changes the anterior c(2,2) by about
+  8% and ΔC by about 3%; check 20 (and two layers) for the M5 prediction grid's tolerance. (M5)
 - `web/apps/viewer/src/scene/DeformationMap.tsx`: the heat map is a full shell that hides the
   cutaway while shown; clip it to the cutaway's half or draw it translucent. (M6)
 - `web/apps/viewer/test/bench.test.ts`: in this cloud container the worker benchmark varies
@@ -104,12 +107,9 @@ numbers. All move to M5.
   globe size and always uses `data/eom/geometry-default.json` and the default force table; warn
   or reject until the force table is generated from the document. (M5)
 - `science/eyebiomech/fem/loads.py`: the lid bands and the orbital support are placed in the
-  globe frame and are not counter-rotated for off-primary gazes (for example 30,30, which the
-  CLI accepts); rotate them by the inverse gaze or reject non-primary gazes. (M5, blocking for
-  the duty cycle)
-- `web/apps/viewer/src/ui/tooltips.ts`: the induced-refraction tooltip omits "fixed optic-nerve
-  cap", and the heat-map tooltip has no "Approximation:" label (displacements are relative to the
-  clamp and the assumed orbital reaction). (M5)
+  globe frame and are not counter-rotated for off-primary gazes; the CLI now rejects
+  non-primary gazes (driver review of 8ac4f73). Rotate them by the inverse gaze when eccentric
+  gazes are re-enabled. (M5, blocking for the duty cycle)
 - `science/tests/test_fem_export.py`: add the Task 4.7 test that a non-converged solve
   (`NewtonDidNotConverge`) exits with code 2 and writes no files. (M5)
 - `science/eyebiomech/fem/cli.py`: a missing `--eye`/`--forces` file or a malformed force table
@@ -124,3 +124,24 @@ numbers. All move to M5.
 - Spec §7 / master plan Task 4.2: the corneal inflation check within 15% is replaced by the
   ocular-rigidity plausibility check (Deviation 1); the owner should accept this gap explicitly
   or keep it open for M5 calibration. (owner, M5)
+
+## From the driver review of 8ac4f73 (2026-10-28, Minor findings not fixed in M4)
+
+- `science/tests/test_fem_material.py`: `tangent_tensor`, the tangent the solver uses, has no
+  direct finite-difference test; add `einsum(A, dF) == tangent(F, dF)` for an HGO material with
+  κ > 0 and shares. (M5)
+- `science/eyebiomech/fem/cli.py`: `--iop` defaults to 15.0 mmHg, a physiological value in code;
+  make it required (as the plan's interface says) or take the default from `data/`. (M5)
+- `science/eyebiomech/fem/cli.py` (`_git_hash`): returns "" for a dirty tree, so the committed
+  result has `gitHash: ""`; write `<hash>-dirty` like the TypeScript exporter (the schema pattern
+  may need to allow it) or regenerate from a clean tree. (M5)
+- `science/eyebiomech/schema.py` (`validate_deformation`): mirror the TypeScript checks that
+  `vertices`, `displacementMm`, and `region` have equal lengths and triangle indices are in
+  range. (M5)
+- `science/eyebiomech/fem/export.py` (`check_physical`): the tilt terms (j = 1, 2) count toward the
+  500 µm limit, and the committed anterior map already carries 29.6 µm of Z(1,1) from rigid
+  motion; exclude them or remove the rigid motion first. (M5)
+- `web/apps/viewer/test/worker.test.ts`: the committed-result test asserts `cylinderD <= 0`,
+  which a zero cylinder passes; also assert `|ΔC| > 1e-3`. (M6)
+- Spec §7 "start axisymmetric for verification" was replaced by the 3D Lamé sphere test without a
+  deviation entry; add one line to the M4 plan's deviations or accept the gap. (owner, M5)

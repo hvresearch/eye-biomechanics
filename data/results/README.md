@@ -17,10 +17,10 @@ corners the antagonists relax to zero force.
 
 Mesh `n_face = 16`, `layers = 1` (55 314 degrees of freedom), two load steps for the IOP-only
 reference and two for the other loads from it; about 4.5 min on the cloud session's 4 cores.
-Refining from `n_face = 12` to 16 changed the lid- and muscle-induced corneal astigmatism by
-about 5%; `n_face = 8` is too coarse (the lid effect doubled). That refinement study, and the
-lids-alone and muscles-alone split below, were run before the review fixes of edd021b and have
-not been repeated.
+Refining from `n_face = 12` to 16 changes the anterior c(2,2) from −0.249 to −0.269 µm (8%) and
+ΔC from −0.036 to −0.037 D (3%); `n_face = 8` is not converged (ΔC −0.007 D). This refinement was
+repeated after the review fixes of edd021b (by the driver review of 8ac4f73); the lids-alone and
+muscles-alone split below was not.
 
 Regenerated after the review of edd021b, which found that the cornea's diagonal fiber families
 followed the meridians instead of sitting at ±45° to nasal-temporal/superior-inferior, and that
@@ -34,3 +34,15 @@ shorter eye: in this model the muscles' pull, taken by the orbit behind the glob
 globe axially. Before the fixes, the lids alone gave about +0.11 D of J0 and the muscles alone
 about −0.08 D (paraxial estimates from the anterior surface). Everything here is elastic,
 uncalibrated, and built on unverified data (see `data/materials/README.md`): it shows what the model does, not what eyes do.
+
+**Sensitivity to the muscle torque balance.** The length-proxy forces do not balance torque, and
+the CLI changes them by the smallest weighted amount that does (plan Deviation 15). In primary
+gaze that moves the lateral rectus from 0.116 to 0.182 N and the medial rectus from 0.147 to
+0.078 N (the other four by under 3%); each insertion in the sidecar's loads records both
+`tableForceN` and `forceN`. Leaving the table forces unbalanced and letting the orbital
+reaction's rotational term carry their moment instead (same optic-nerve reaction, 0.40 N) gives,
+at `n_face = 12`, anterior c(2,2) −1.03 µm instead of −0.25 µm and ΔJ0 +0.089 D, ΔC −0.18 D
+instead of +0.018 D and −0.036 D. The size of the induced astigmatism therefore depends about
+fivefold on an equilibrium choice that neither variant settles; Milestone 5 replaces both with
+passive orbital torques or the v2 static equilibrium. Eccentric gazes are rejected until then:
+the balanced set unloads the agonist there.
