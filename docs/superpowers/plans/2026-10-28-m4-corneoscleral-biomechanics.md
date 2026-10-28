@@ -1,7 +1,7 @@
 # Milestone 4: Corneoscleral biomechanics
 
 Date: 2026-10-28
-Status: in progress (draft PR "Milestone 4: Corneoscleral biomechanics")
+Status: complete 2026-10-28 (PR #13 "Milestone 4: Corneoscleral biomechanics", ready for review)
 Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 4 section)
 
 **Goal:** `uv run eyebiomech fem --eye data/fixtures/emmetrope-right.eye.json --gaze 0,0 --iop 15 --out data/results/fem/emmetrope-right-primary-15mmHg.eye.json` builds a 3D hyperelastic model of the corneoscleral shell from the document, loads it with intraocular pressure, the six muscle insertion forces exported from the TypeScript eye model, a ciliary ring load, and the eyelid band, solves it with Newton's method in scikit-fem, fits the deformed corneal surfaces to conic-plus-Zernike height maps, and writes a new EyeParameters document with provenance. The viewer loads that document (from a results dropdown or a file input), shows the induced refraction against the unloaded eye, and paints a displacement heat map on the globe with an exaggeration slider. The Milestone 0–3 follow-ups assigned to M4 are closed or re-filed with a reason. Every result is labeled **elastic**; remodeling is Milestone 5.
@@ -30,6 +30,16 @@ Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 4 sec
 14. **Wrapping muscles load the arc of contact (decided in Task 4.3).** A muscle that wraps the globe pulls at its insertion along the surface, not along its free segment (for the default lateral rectus in primary position the two directions differ by about 73°), and presses on the sclera along the arc of contact with a line pressure `F/R` (a frictionless band). The force table therefore also carries `insertionDir` (the great-circle tangent at the insertion toward the tangent point) and `arcOfContactMm`, and `Loads.insertion` takes the tangent point to add the contact pressure. The net load still equals `F · pullDir`.
 15. **Muscle torque balance and orbital support (decided while running the full model).** The length-proxy forces do not balance torque about the globe center (in primary position the net moment is 1.6 N·mm, mostly from the medial rectus's larger capacity at equal activation), and an unbalanced load set pivots the globe about the small optic-nerve support. `Loads.from_force_table` therefore changes the six forces by the smallest weighted amount that zeroes their net moment while keeping the total tension and every force non-negative (a small quadratic program; the v1 stand-in for the v2 static equilibrium), and `Loads.orbital_support()` adds a traction `a + ω × x` on the posterior hemisphere that cancels the remaining net force (and the lids' and ciliary ring's) so the support carries essentially nothing. In nasal gazes no non-negative torque-balanced set exists without passive orbital torques, so the CLI rejects those gazes; this limits the v1 activation model to gazes near primary and temporal, which Milestone 5's duty cycle must respect or replace (follow-up).
 16. **IOP first, then the other loads.** Ramping every load together from the stress-free state inverts elements in the first Newton step (the unpressurized shell has no membrane stiffening). The loaded state is solved from the IOP-only equilibrium with only the dead loads ramped (`solve(..., initial_u=reference.u, ramp="dead")`), and a failed increment is retried at half size (at most six times).
+
+## Outcome notes (post-execution)
+
+- **Committed result** (`data/results/fem/emmetrope-right-primary-15mmHg.eye.json`, n_face 16, one quadratic layer, 55 314 dofs, 226 s): against its IOP-only state the fixture eye shows ΔM +0.13 D, ΔJ0 +0.05 D, ΔJ45 −0.04 D (ΔS +0.19, ΔC −0.13 × 161 TABO), the same at 3, 4, and 6 mm pupils. The sphere change comes mostly from a 43 µm axial shortening (cornea and lens move back relative to the retina: the muscles' net pull, taken by the orbit behind the globe, squeezes the globe). Lids alone give about +0.11 D of J0 and the muscles alone about −0.08 D (paraxial estimates, `data/results/README.md`). Elastic, uncalibrated, and on unverified data: what the model does, not what eyes do.
+- **Verification.** Lamé sphere 1.2% at 1 kPa (finite strain) and 1e-4 in the linear limit; quadratic Newton convergence; path independence; loads integrate to their resultants (insertions exactly, wrap bands within 1%, lid and ciliary bands within 2%); mirror symmetry to 1e-6; ocular rigidity 0.028 /µL against the in-vivo mean 0.0126 /µL of Pallikaris et al. 2005 (factor 2.2, within the stored plausibility factor 3); mesh refinement 12 → 16 changes the induced astigmatism by about 5%.
+- **Not met: the master plan's 15% agreement with a corneal inflation curve** (Deviation 1 outcome). The only inflation numbers found disagree with the whole-globe model by 7–11 times while its ocular rigidity agrees within 2.2 times; stiffness calibration moves to M5.
+- **Found while running the full model** (Deviations 11, 14–16): wrapping muscles must load the arc of contact; the length-proxy muscle forces must be torque-balanced (infeasible in nasal gazes without passive orbital torques); the net muscle force needs an orbital reaction; in-plane fiber dispersion is needed for shear stiffness; and the loaded state must be solved from the pressurized globe.
+- **Solver performance.** Vectorized element assembly (about 2 s for 55k dofs) and SuperLU with a minimum-degree ordering in symmetric mode (5–10 times faster than its default); the full CLI run takes about 4 minutes on four cores.
+- **Viewer.** Loading the committed result shows the induced refraction (worker, paraxial method, cached) and the displacement heat map; the worker benchmark in this container varies between 50 and 140 ms per run before and after the change (environment noise near the 100 ms budget, recorded as a follow-up).
+- Still unverified (`verified: false`): every material constant and thickness, the lid pressures and band, the muscle capacities and tendon stiffness, the ciliary tension (assumption), the optic-nerve radius, and the scleral spur position; see `2026-10-28-m4-followups.md`.
 
 ## Global Constraints
 
@@ -308,9 +318,9 @@ Closes the M0 follow-up "`schema.py` reads the schema from the repository checko
 
 ### Task 4.9: Finish
 
-- [ ] Update this plan's status and add Outcome notes (solver timing, the committed result's induced refraction, what stays unverified); write the remaining deferred items to `2026-10-28-m4-followups.md`.
-- [ ] Update `data/results/README.md` and `docs/literature/README.md`.
-- [ ] Full gate including `-m slow` and e2e. Commit: `docs: M4 outcome notes and follow-ups`.
+- [x] Update this plan's status and add Outcome notes (solver timing, the committed result's induced refraction, what stays unverified); write the remaining deferred items to `2026-10-28-m4-followups.md`.
+- [x] Update `data/results/README.md` and `docs/literature/README.md`.
+- [x] Full gate including `-m slow` and e2e. Commit: `docs: M4 outcome notes and follow-ups`.
 - [ ] Update the PR body with a summary and the verification run, then mark the PR ready.
 
 ## Follow-ups absorbed from earlier milestones

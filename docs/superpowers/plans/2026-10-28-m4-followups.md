@@ -56,3 +56,36 @@ numbers. All move to M5.
   Re-filed from M3 to M6: it is optics and viewer behavior with no biomechanics
   content, and M6 owns the other worker and readout follow-ups (M4 plan, Deviation 13).
   (M6)
+
+## From implementation (2026-10-28)
+
+- `data/materials/cornea-sclera.json`: calibrate tissue stiffness. The uncalibrated globe is
+  2.2 times stiffer than the in-vivo ocular rigidity of Pallikaris et al. 2005, and the corneal
+  inflation excerpt (6.6 µm for 15 → 15.5 mmHg) is 7–11 times the model's apex rise; transcribe
+  Pandolfi & Holzapfel 2008, Whitford et al. 2015, Elsheikh et al. 2007/2010, and a scleral HGO
+  set (Grytz et al. 2014) in a session with document access, then calibrate (the spec makes
+  tissue stiffness a calibration parameter). (M5)
+- `science/eyebiomech/fem/loads.py` (`from_force_table`): the length-proxy muscle forces are not
+  torque-balanced, and in nasal gazes no non-negative balanced set exists without passive
+  orbital torques (the CLI rejects those gazes). Before the duty cycle uses eccentric gazes,
+  model passive orbital torques or the v2 static equilibrium (spec §4.4). (M5, blocking for the
+  duty cycle)
+- `science/eyebiomech/fem`: the document geometry is treated as stress-free (no prestress or
+  inverse solve; Deviation 3). Add an inverse (fixed-point) solve for the unloaded geometry so the
+  IOP's own deformation of the measured shape is accounted for. (M5)
+- `data/eyelid/shaw-2010.json`: the lower-lid pressure and band are assumed equal to the upper's,
+  and the bands are placed symmetrically about the corneal center; transcribe lower-lid values
+  and the lid margin positions in primary gaze. (M5, or any session with document access)
+- `data/eom/forces.json`: vertical rectus and oblique capacities are assumptions (Collins 1981
+  measured the horizontal recti). Tendon stiffness is a lower bound from a transverse modulus.
+  (M5, or any session with document access)
+- `data/results/fem/`: the committed result is built from the regression fixture, which has no
+  lens accommodation model, so the loaded eye cannot accommodate in the viewer; run the CLI on a
+  preset document that carries one (the exporter keeps it). (M5)
+- `science/eyebiomech/fem/cli.py`: mesh refinement 12 → 16 changed the induced astigmatism by
+  about 5%; check 20 (and two layers) for the M5 prediction grid's tolerance. (M5)
+- `web/apps/viewer/src/scene/DeformationMap.tsx`: the heat map is a full shell that hides the
+  cutaway while shown; clip it to the cutaway's half or draw it translucent. (M6)
+- `web/apps/viewer/test/bench.test.ts`: in this cloud container the worker benchmark varies
+  between 50 and 140 ms per run (median near the 100 ms budget) with or without the M4 changes;
+  watch CI and implement the planned performance work if it flakes. (M6)
