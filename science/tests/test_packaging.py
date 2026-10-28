@@ -17,7 +17,6 @@ def test_package_schemas_equal_the_repository_schemas(name):
     assert packaged.read_bytes() == (ROOT / "schemas" / name).read_bytes()
 
 
-@pytest.mark.slow
 def test_the_wheel_contains_the_schemas(tmp_path):
     subprocess.run(
         ["uv", "build", "--wheel", "--out-dir", str(tmp_path)],

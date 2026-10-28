@@ -122,7 +122,6 @@ def cavity_volume_change(sol) -> float:
     return float(np.sum(np.sum(u * -fb.normals, axis=0) * fb.dx))
 
 
-@pytest.mark.slow
 def test_ocular_rigidity_is_within_the_plausibility_band_of_the_in_vivo_mean():
     """Friedenwald coefficient K = ln(P2/P1) / ΔV between 10 and 20 mmHg, against Pallikaris
     et al. 2005 (data/materials/cornea-sclera.json, ocularRigidityReference; Deviation 1)."""
