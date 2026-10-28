@@ -1,6 +1,6 @@
 import { eyeOptics, useScene } from "../store/scene";
 import { formatSigned } from "./format";
-import { readoutTooltips, vergenceTooltip } from "./tooltips";
+import { gazeTooltip, readoutTooltips, vergenceTooltip } from "./tooltips";
 
 function Stat({
   k,
@@ -39,9 +39,10 @@ export function Readout() {
   const pending = useScene((s) => s.pending);
   const vergenceDeg = useScene((s) => s.binocular.vergenceDeg);
   const pupilModel = useScene((s) => s.eyes.right.pupil.model);
+  const unverified = useScene((s) => s.eyes.right.lensAccommodationModel?.unverified);
   const powerD = optics?.paraxialPowerD ?? Number.NaN;
   const focusOffsetMm = optics ? optics.bestFocusZMm - optics.retinaZMm : Number.NaN;
-  const tips = readoutTooltips(eye.pupilMm, pupilModel);
+  const tips = readoutTooltips(eye.pupilMm, pupilModel, Array.isArray(unverified) ? unverified.map(String) : []);
 
   return (
     <section className="readout" aria-label="Readout">
@@ -94,7 +95,7 @@ export function Readout() {
           title={tips.paraxialPower}
         />
         <Stat k="Vergence" v={vergenceDeg.toFixed(2)} u="°" testId="vergence" title={vergenceTooltip()} />
-        <Stat k="Gaze" v={`${formatSigned(eye.gazeDeg.xDeg, 1)}, ${formatSigned(eye.gazeDeg.yDeg, 1)}`} u="° (temporal, up)" testId="gaze" />
+        <Stat k="Gaze" v={`${formatSigned(eye.gazeDeg.xDeg, 1)}, ${formatSigned(eye.gazeDeg.yDeg, 1)}`} u="° (temporal, up)" testId="gaze" title={gazeTooltip()} />
         <Stat
           k="Pupil"
           v={eye.pupilMm.toFixed(1)}

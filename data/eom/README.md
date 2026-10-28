@@ -3,6 +3,8 @@
 | File | Content | Status |
 |---|---|---|
 | `geometry-default.json` | Right-eye origins, insertions, tendons, globe radius | partial transcription from search excerpts; `verified: false` |
+| `activation.json` | Length-proxy activation constants (baseline, gain) | approximation by design (spec §4.4 v1); `verified: false` |
+| `dynamics.json` | Saccade main sequence, vergence and accommodation latencies and time constants | partly confirmed by excerpt (main sequence, vergence latency); the time constants are the master plan's values; `verified: false` |
 
 ## Frame
 

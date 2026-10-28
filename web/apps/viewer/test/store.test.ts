@@ -1,6 +1,6 @@
 import { MIN_TARGET_DISTANCE_M, loadPreset } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
-import { createSceneStore } from "../src/store/scene";
+import { MAX_DIRECTION_DEG, clampDirectionDeg, createSceneStore } from "../src/store/scene";
 import { handle } from "../src/worker/handle";
 
 describe("scene store", () => {
@@ -10,6 +10,15 @@ describe("scene store", () => {
     expect(store.getState().scene.targetDistanceM).toBe(MIN_TARGET_DISTANCE_M);
     store.getState().setTargetDistance(Number.NaN);
     expect(store.getState().scene.targetDistanceM).toBe(MIN_TARGET_DISTANCE_M);
+  });
+
+  it("clamps target directions to the inspector's range, from a drag or a field", () => {
+    const store = createSceneStore();
+    store.getState().setTarget({ distanceM: 1, directionDeg: { x: 70, y: -55 } });
+    expect(store.getState().scene.targetDirectionDeg).toEqual({ x: MAX_DIRECTION_DEG, y: -MAX_DIRECTION_DEG });
+    store.getState().setTargetDirection({ x: -41, y: 12 });
+    expect(store.getState().scene.targetDirectionDeg).toEqual({ x: -MAX_DIRECTION_DEG, y: 12 });
+    expect(clampDirectionDeg({ x: Number.NaN, y: 3 })).toEqual({ x: 0, y: 3 });
   });
 
   it("reports an unsupported schema version in the parameter error, keeping a working eye", () => {

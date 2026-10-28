@@ -126,12 +126,12 @@ Closes the M1/M2 follow-ups assigned to M3 that touch only data, docs, or small 
 **Interfaces:**
 - Produces: `gazeTooltip(): string` and `readoutTooltips(...).defocus` mentions the unverified Table 4 conic coefficients by key; `clampDirectionDeg(deg: {x, y}): {x, y}` exported from the store module, applied in `setTarget` and `setTargetDirection` (bound `MAX_DIRECTION_DEG = 40`, moved from `Inspector.tsx` to the store and imported by the inspector).
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `tooltips.test.ts`: `gazeTooltip()` starts with "Approximation:" and mentions the globe center; the defocus tooltip names `anteriorConicPerLn` and `posteriorConicPerLn` as unverified (read from the preset table's `accommodation.unverified`, not hard-coded).
   - `store.test.ts`: `setTarget({ distanceM: 1, directionDeg: { x: 70, y: -55 } })` stores `{ x: 40, y: -40 }`.
   - `provenance.test.ts`: the Navarro table has an `apertureNote` saying the aperture semi-diameters are modeling choices.
-- [ ] **Step 2:** Run `cd web && pnpm -r test`; expect FAIL.
-- [ ] **Step 3:** Implement:
+- [x] **Step 2:** Run `cd web && pnpm -r test`; expect FAIL.
+- [x] **Step 3:** Implement:
   - `Muscle.tsx`: look up the tendon length by muscle `name`, not by index in `MUSCLE_NAMES` order (M2 follow-up).
   - `Target.tsx`/store: clamp drags to ±40° (M2 follow-up).
   - `Readout.tsx`: Gaze readout gets `gazeTooltip()` (M2 follow-up).
@@ -139,7 +139,7 @@ Closes the M1/M2 follow-ups assigned to M3 that touch only data, docs, or small 
   - `navarro-1985.json`: add `apertureNote` ("aperture semi-diameters are modeling choices large enough to pass any pupil up to 8 mm; the paper gives none"). The pupil `diameterMm: 4.0` follow-up is closed in Task 3.7, which replaces the fixed pupil.
   - `data/eom/README.md`: add `activation.json` (approximation by design) and `dynamics.json` (partly confirmed) to the status table (M2 follow-up).
   - Re-search, once each, for the values that need document access (Zapata-Díaz 2019 Table 1; Navarro 1985 Table 4 conic coefficients; Volkmann 1869 origins; Clark, Miller & Demer 2000 pulleys). The M3 planning search found none; if still unreachable, write `2026-10-28-m3-followups.md` with these items naming M4 ("needs a session with document access"), with the date and hosts tried.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `chore: M1/M2 follow-ups (tooltips, target clamp, provenance notes)`.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `chore: M1/M2 follow-ups (tooltips, target clamp, provenance notes)`.
 
 ### Task 3.1: Toric and Zernike surfaces, image flag, miss reason
 

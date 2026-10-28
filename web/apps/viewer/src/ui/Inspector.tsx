@@ -1,12 +1,10 @@
 import { AMPLITUDE_TABLE, PRESET_NAMES, presetTable, type PresetName } from "@eye/eye-model";
-import { useScene } from "../store/scene";
+import { MAX_DIRECTION_DEG, useScene } from "../store/scene";
 import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
 
 const MIN_M = 0.1;
 const MAX_M = 6;
-/** Direction fields span the comfortable oculomotor range (UI bounds, not physiology). */
-const MAX_DIRECTION_DEG = 40;
 /** IPD field bounds (UI bounds spanning children to large adults). */
 const IPD_RANGE_MM = [45, 80] as const;
 const toSlider = (m: number) => Math.log10(Math.min(MAX_M, Math.max(MIN_M, m)));

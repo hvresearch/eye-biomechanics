@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { muscleTooltip, readoutTooltips, vergenceTooltip } from "../src/ui/tooltips";
+import { presetTable } from "@eye/eye-model";
+import { gazeTooltip, muscleTooltip, readoutTooltips, vergenceTooltip } from "../src/ui/tooltips";
 
 describe("readoutTooltips", () => {
   const t = readoutTooltips(3.5, "fixed");
@@ -34,6 +35,15 @@ describe("readoutTooltips", () => {
   it("names the document's pupil model", () => {
     expect(t.pupil).toContain("fixed");
   });
+
+  it("lists the document's unverified lens-model coefficients in the defocus tooltip", () => {
+    const unverified = presetTable("navarro-1985").accommodation?.unverified ?? [];
+    expect(unverified).toEqual(["anteriorConicPerLn", "posteriorConicPerLn"]);
+    const tips = readoutTooltips(3.5, "fixed", unverified);
+    for (const key of unverified) expect(tips.defocus).toContain(key);
+    expect(tips.defocus).toMatch(/unverified/);
+    expect(t.defocus).not.toMatch(/unverified/);
+  });
 });
 
 describe("muscle and vergence tooltips", () => {
@@ -41,5 +51,10 @@ describe("muscle and vergence tooltips", () => {
     expect(muscleTooltip()).toMatch(/^Approximation: length-proxy activation/);
     expect(muscleTooltip()).toMatch(/pulley/);
     expect(vergenceTooltip()).toMatch(/^Approximation: /);
+  });
+
+  it("label the gaze readout's center of rotation", () => {
+    expect(gazeTooltip()).toMatch(/^Approximation: /);
+    expect(gazeTooltip()).toMatch(/globe center/);
   });
 });

@@ -26,6 +26,8 @@ export const DEFAULT_PRESET: PresetName = "navarro-1985";
 export const FAN_RAYS = 15;
 /** Minimum interval between worker requests while inputs change, ms (one frame). */
 const REQUEST_INTERVAL_MS = 16;
+/** Target directions span the comfortable oculomotor range, degrees (a UI bound, not physiology). */
+export const MAX_DIRECTION_DEG = 40;
 /** Seconds of oculomotor history kept for scrubbing. A UI choice. */
 export const HISTORY_S = 20;
 /** Longest step the animation takes in one frame, s (a backgrounded tab must not jump). */
@@ -93,6 +95,12 @@ function staticTargets(scene: SceneState, b: BinocularState): DynamicTargets {
 function clampDistance(m: number): number {
   if (Number.isNaN(m)) return MIN_TARGET_DISTANCE_M;
   return Math.max(MIN_TARGET_DISTANCE_M, m);
+}
+
+/** Clamp a target direction to ±MAX_DIRECTION_DEG on each axis (NaN → 0). */
+export function clampDirectionDeg(deg: { x: number; y: number }): { x: number; y: number } {
+  const c = (v: number) => (Number.isNaN(v) ? 0 : Math.min(MAX_DIRECTION_DEG, Math.max(-MAX_DIRECTION_DEG, v)));
+  return { x: c(deg.x), y: c(deg.y) };
 }
 
 let sharedClient: OpticsClient | null = null;
@@ -195,12 +203,12 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       hovered: null,
 
       setTargetDistance: (m) => update({ ...get().scene, targetDistanceM: clampDistance(m) }),
-      setTargetDirection: (deg) => update({ ...get().scene, targetDirectionDeg: { x: deg.x, y: deg.y } }),
+      setTargetDirection: (deg) => update({ ...get().scene, targetDirectionDeg: clampDirectionDeg(deg) }),
       setTarget: (t) =>
         update({
           ...get().scene,
           targetDistanceM: clampDistance(t.distanceM),
-          targetDirectionDeg: { x: t.directionDeg.x, y: t.directionDeg.y },
+          targetDirectionDeg: clampDirectionDeg(t.directionDeg),
         }),
       setAge: (years) => update({ ...get().scene, ageYears: years }),
       setIpd: (mm) => update({ ...get().scene, ipdMm: mm }),
