@@ -38,6 +38,8 @@ export function DeformationMap({ apexOffsetMm }: { apexOffsetMm: number }) {
     return c;
   }, [deformation]);
 
+  // `show` is a dependency because hiding the map unmounts the mesh: showing it again mounts an
+  // empty geometry that has to be filled anew.
   useLayoutEffect(() => {
     const g = ref.current;
     if (!g || !deformation || !colors) return;
@@ -48,7 +50,7 @@ export function DeformationMap({ apexOffsetMm }: { apexOffsetMm: number }) {
     g.setIndex(new BufferAttribute(deformation.triangles, 1));
     g.computeVertexNormals();
     g.computeBoundingSphere();
-  }, [deformation, colors, exaggeration]);
+  }, [deformation, colors, exaggeration, show]);
 
   if (!deformation || !show) return null;
   return (
