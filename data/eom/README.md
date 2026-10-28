@@ -31,7 +31,7 @@ Right eye, origin at the globe center (taken as the center of rotation, an appro
 
 The cloud session that wrote this table could reach only search-engine excerpts, not the papers (see Deviation 1 of `docs/superpowers/plans/2026-10-27-m2-muscles-gaze-dynamics.md`).
 
-- Excerpt-confirmed: rectus insertion distances from the limbus (BCSC); medial and lateral rectus widths, muscle and tendon lengths, and arcs of contact; the 12 mm globe and the common annulus origin of Trujillo Suárez 2018; the 51° trochlear angle; Volkmann's medial rectus row.
+- Excerpt-confirmed: rectus insertion distances from the limbus (BCSC); the superior oblique insertion width (Korean cadaver study, M4 search); medial and lateral rectus widths, muscle and tendon lengths, and arcs of contact; the 12 mm globe and the common annulus origin of Trujillo Suárez 2018; the 51° trochlear angle; Volkmann's medial rectus row.
 - Assumed: the limbus radius, insertion meridians, superior and inferior rectus widths and tendon lengths, oblique insertions and origins (by construction), every tendon stiffness, and the absence of pulleys.
 
 Every entry stays `verified: false` until a session with document access checks it against the papers (Volkmann 1869 via Eggers' Table 2 or Helmholtz; Clark, Miller & Demer 2000 for pulleys; Miller & Robinson's Orbit for tendon stiffness).
