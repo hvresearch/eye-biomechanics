@@ -95,9 +95,9 @@ numbers. All move to M5.
 
 ## From the driver review of edd021b (2026-10-28, Minor findings not fixed in M4)
 
-- `science/eyebiomech/fem/export.py` (`axial_shifts`): the retina shift is always 0 because the
-  inner posterior-pole node lies in the clamped optic-nerve support, so axial changes are relative
-  to the clamp. Measure the retina elsewhere or say so in Deviation 9, the tooltip, and
+- `science/eyebiomech/fem/export.py` (`axial_shifts`): the retina shift is ≈0 (0.12 µm after the
+  spur ring's tilt is removed, relative to the optic-nerve clamp) because the inner posterior-pole
+  node lies in the clamped optic-nerve support, so axial changes are relative to the clamp. Measure the retina elsewhere or say so in Deviation 9, the tooltip, and
   `data/results/README.md`. (M5)
 - `science/eyebiomech/fem/export.py`: the exported document is now relative to the lens (the
   spur ring's rigid lateral shift and tilt are removed; driver review of b6f5a0d), but the
@@ -164,3 +164,13 @@ numbers. All move to M5.
   clamp, widen the fit, or document it. (M5)
 - `science/eyebiomech/fem/loads.py`: the dead-load cache is keyed by `id(ctx)`, which can be
   reused after garbage collection; store the cache on the context. (M5)
+
+## From the driver review of 34e8f59 (2026-10-28, Minor findings not fixed in M4)
+
+- `science/tests/test_fem_export.py`: the `relative_to_lens` tests cover pure rigid motion only.
+  Add a case that superposes a known non-rigid field (a radial bulge or a c(2,2) height change) on
+  a pivot and asserts the maps equal those of the field alone, and a pure z-rotation (torsion)
+  that passes through unchanged. (M5)
+- Spec §7 "scleral shape, fitted to Zernike height maps": fit the deformed sclera (outer surface
+  relative to the spur ring) to Zernike height maps and export it, in the sidecar or a schema
+  extension (plan Deviation 17). (M5)

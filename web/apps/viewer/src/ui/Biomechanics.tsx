@@ -87,7 +87,9 @@ export function Biomechanics() {
               <span className="v">{induced ? `${formatSigned(induced.delta.cylinderD, 3)} × ${Math.round(induced.delta.axisDeg)}` : "…"}</span>
             </div>
             <div className="stat wide" data-testid="induced-vectors">
-              <span className="k">ΔM, J0, J45 (D)</span>
+              <span className="k">
+                <abbr title={inducedTooltip()}>ΔM, J0, J45 (D)</abbr>
+              </span>
               <span className="v">
                 {induced
                   ? `${formatSigned(induced.delta.M, 3)} ${formatSigned(induced.delta.J0, 3)} ${formatSigned(induced.delta.J45, 3)}`
