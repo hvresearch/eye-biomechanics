@@ -1,5 +1,6 @@
 import { AMPLITUDE_TABLE, PRESET_NAMES, REFRACTIVE_PRESETS, presetTable, type PresetName } from "@eye/eye-model";
 import { MAX_DIRECTION_DEG, useScene } from "../store/scene";
+import { Biomechanics } from "./Biomechanics";
 import { Decomposition } from "./Decomposition";
 import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
@@ -226,6 +227,8 @@ export function Inspector() {
       </section>
 
       <Spectacles />
+
+      <Biomechanics />
 
       <MuscleTable />
     </aside>

@@ -211,3 +211,39 @@ describe("scene store", () => {
     expect(store.getState().scrubS).toBeNull();
   });
 });
+
+describe("biomechanics results in the store", () => {
+  it("loads a result into the right eye and restores the preset on clear", async () => {
+    const { RESULTS } = await import("../src/results/catalog");
+    const store = createSceneStore();
+    const before = store.getState().eyes.right;
+    const entry = RESULTS.find((r) => r.id === "emmetrope-right-primary-15mmHg")!;
+    await store.getState().loadResult(entry);
+    const s = store.getState();
+    expect(s.loadError).toBeNull();
+    expect(s.loadedResult?.id).toBe(entry.id);
+    expect(s.eyes.right.id).toBe("emmetrope-right-fem");
+    expect(s.loadedResult?.deformation?.maxUm).toBeGreaterThan(0);
+    store.getState().clearLoadedResult();
+    expect(store.getState().loadedResult).toBeNull();
+    expect(store.getState().eyes.right).toEqual(before);
+  });
+
+  it("clamps the exaggeration to 1–200", () => {
+    const store = createSceneStore();
+    store.getState().setExaggeration(500);
+    expect(store.getState().exaggeration).toBe(200);
+    store.getState().setExaggeration(0);
+    expect(store.getState().exaggeration).toBe(1);
+    store.getState().setExaggeration(Number.NaN);
+    expect(store.getState().exaggeration).toBe(1);
+  });
+
+  it("reports a bad file without touching the eyes", async () => {
+    const store = createSceneStore();
+    const before = store.getState().eyes;
+    await store.getState().loadEyeFiles([new File([JSON.stringify({ schemaVersion: "2.0.0" })], "x.eye.json")]);
+    expect(store.getState().loadError).toMatch(/2\.0\.0/);
+    expect(store.getState().eyes).toBe(before);
+  });
+});

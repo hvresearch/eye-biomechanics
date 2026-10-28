@@ -22,7 +22,10 @@ import {
   otfPair,
   paraxialPower,
   polychromaticPsf,
+  powerVectors,
   psf,
+  refractionFromZernike,
+  sphereCylFromPowerVectors,
   retinalDefocusD,
   retinalImage,
   retinalImagePair,
@@ -39,7 +42,7 @@ import {
   type Vec3,
   type ViewSpec,
 } from "@eye/optics";
-import type { ClinicalLens, EyeOptics, EyeOpticsRequest, EyeWave, OpticsRequest, OpticsResponse, WaveRequest, WaveResult } from "./messages";
+import type { ClinicalLens, EyeOptics, EyeOpticsRequest, EyeWave, InducedRefraction, OpticsRequest, OpticsResponse, WaveRequest, WaveResult } from "./messages";
 
 /** How far in front of the cornea a drawn ray starts, mm (a drawing choice, not physiology). */
 export const FAN_LAUNCH_MM = 8;
@@ -227,6 +230,40 @@ export function relaxedFarPointD(params: EyeParameters, lens: Surface[] = []): n
   return fp;
 }
 
+/** Pupil grid of the induced-refraction comparison (numerical; the difference converges well below 0.001 D). */
+const INDUCED_GRID_N = 48;
+const inducedCache = new Map<string, InducedRefraction>();
+
+/**
+ * Relaxed refraction of `params` and `reference` and their difference (see
+ * `EyeOpticsRequest.induced`), cached by contents so a loaded result costs one computation.
+ */
+export function inducedRefraction(params: EyeParameters, reference: EyeParameters, pupilDiameterMm: number, side: "left" | "right"): InducedRefraction {
+  const key = JSON.stringify([params, reference, Math.round(pupilDiameterMm * 100), side]);
+  const hit = inducedCache.get(key);
+  if (hit) return hit;
+  const refract = (doc: EyeParameters) => {
+    const a = analyzeWavefront(buildSurfacesAt(doc, 0), eyeView(doc, Number.POSITIVE_INFINITY, pupilDiameterMm), { gridN: INDUCED_GRID_N });
+    return refractionFromZernike(a.fit.coeffsMicrons, a.fit.pupilRadiusMm, "paraxial");
+  };
+  const l = refract(params);
+  const r = refract(reference);
+  const M = l.M - r.M;
+  const J0 = l.J0 - r.J0;
+  const J45 = l.J45 - r.J45;
+  const sc = sphereCylFromPowerVectors(M, J0, J45);
+  const d = toClinicalRefraction({ ...sc, M, J0, J45 }, side);
+  const out: InducedRefraction = {
+    loaded: toClinicalRefraction(l, side),
+    reference: toClinicalRefraction(r, side),
+    delta: { M: d.M, J0: d.J0, J45: d.J45, sphereD: d.sphereD, cylinderD: d.cylinderD, axisDeg: d.axisDeg },
+    pupilDiameterMm,
+  };
+  if (inducedCache.size > 8) inducedCache.clear();
+  inducedCache.set(key, out);
+  return out;
+}
+
 function eyeOptics(req: EyeOpticsRequest): EyeOptics {
   // The lens parameter is solved so the optics accommodate by exactly the requested
   // response; without this the modeled lag of accommodation would not reach the optics.
@@ -262,6 +299,7 @@ function eyeOptics(req: EyeOpticsRequest): EyeOptics {
     fan,
     vignettedRays,
     wave: req.wave ? eyeWave(req, surfaces, lens, worn, req.wave) : null,
+    induced: req.induced ? inducedRefraction(req.params, req.induced.reference, 2 * req.pupilSemiDiamMm, req.side) : null,
   };
 }
 

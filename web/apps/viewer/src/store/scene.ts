@@ -23,6 +23,8 @@ import {
 } from "@eye/eye-model";
 import { SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
 import { create } from "zustand";
+import type { ResultEntry } from "../results/catalog";
+import { parseDeformation, parseEyeDocument, parseFiles, type Deformation } from "../results/load";
 import { OpticsClient, StaleRequestError } from "../worker/client";
 import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
 import { throttle } from "./throttle";
@@ -76,6 +78,19 @@ export function mirrorLens(lens: ClinicalLens): ClinicalLens {
 }
 
 export type PsfScale = "linear" | "log";
+
+/** Heat-map exaggeration bounds (spec §12: 1× to 200×) and the starting value (drawing choices). */
+export const EXAGGERATION_RANGE = [1, 200] as const;
+export const DEFAULT_EXAGGERATION = 10;
+
+/** A biomechanics result shown in the right eye (spec §7: "loading it in the viewer"). */
+export interface LoadedResult {
+  id: string;
+  label: string;
+  eye: EyeParameters;
+  /** Its displacement sidecar; without it the result shows refraction but no heat map. */
+  deformation: Deformation | null;
+}
 
 export type Hover = { kind: "structure"; label: string } | { kind: "muscle"; side: Side; index: number };
 
@@ -133,6 +148,20 @@ export interface SceneStore {
   tick: (dtS: number) => void;
   scrub: (timeS: number | null) => void;
   setHovered: (h: Hover | null) => void;
+  /** The biomechanics result in the right eye, if one is loaded. */
+  loadedResult: LoadedResult | null;
+  /** Why the last result or file could not be loaded (cleared by the next successful load). */
+  loadError: string | null;
+  /** Heat-map displacement exaggeration, 1–200. */
+  exaggeration: number;
+  showHeatMap: boolean;
+  loadResult: (entry: ResultEntry) => Promise<void>;
+  /** Load an EyeParameters file, with its .deformation.json when selected together. */
+  loadEyeFiles: (files: readonly File[]) => Promise<void>;
+  /** Back to the schematic eye and refractive preset. */
+  clearLoadedResult: () => void;
+  setExaggeration: (x: number) => void;
+  setShowHeatMap: (on: boolean) => void;
   /**
    * Show a worker response. `key` is `autoRxKey` of the state the request was made from; an
    * auto-prescription computed for inputs that have changed since is dropped.
@@ -230,7 +259,8 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
     const request = throttle(() => {
       const worker = getClient();
       if (!worker) return;
-      const { binocular: b, eyes, spectacles, corrected, polychromatic, autoPending } = get();
+      const { binocular: b, eyes, spectacles, corrected, polychromatic, autoPending, loadedResult } = get();
+      const reference = loadedResult?.deformation?.reference ?? null;
       const key = autoRxKey(get());
       const wave: WaveRequest = { ...WAVE_REQUEST, polychromatic, autoPrescribe: autoPending };
       const body: Omit<OpticsRequest, "id"> = {
@@ -245,6 +275,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           spectacles: spectacles?.[side] ?? null,
           corrected,
           wave: side === "right" ? wave : null,
+          induced: side === "right" && reference ? { reference } : null,
         })),
       };
       worker
@@ -294,6 +325,15 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       }
     };
 
+    /** The eyes and decomposition shown before the first result was loaded (restored on clear). */
+    let beforeResult: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
+    /** Put a loaded result in the right eye (the left eye keeps its document). */
+    const showResult = (result: LoadedResult) => {
+      if (get().loadedResult === null) beforeResult = { eyes: get().eyes, decomposition: get().decomposition };
+      set({ loadedResult: result, loadError: null, decomposition: null });
+      update(get().scene, { left: get().eyes.left, right: result.eye });
+    };
+
     if (typeof Worker !== "undefined") queueMicrotask(schedule);
 
     return {
@@ -318,6 +358,10 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       history: [],
       scrubS: null,
       hovered: null,
+      loadedResult: null,
+      loadError: null,
+      exaggeration: DEFAULT_EXAGGERATION,
+      showHeatMap: true,
 
       setTargetDistance: (m) => update({ ...get().scene, targetDistanceM: clampDistance(m) }),
       setTargetDirection: (deg) => update({ ...get().scene, targetDirectionDeg: clampDirectionDeg(deg) }),
@@ -333,7 +377,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
         if (!PRESET_NAMES.includes(name)) return;
         try {
           const eyes = presetEyes(name, get().refractivePreset);
-          set({ decomposition: decompose(eyes.right, name) });
+          set({ decomposition: decompose(eyes.right, name), loadedResult: null });
           update({ ...get().scene, preset: name }, eyes);
         } catch (e) {
           set({ paramError: message(e) });
@@ -345,7 +389,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
         try {
           const scene = get().scene;
           const eyes = presetEyes(scene.preset, name);
-          set({ refractivePreset: name, decomposition: decompose(eyes.right, scene.preset) });
+          set({ refractivePreset: name, decomposition: decompose(eyes.right, scene.preset), loadedResult: null });
           update({ ...scene, ageYears: preset.ageYears ?? scene.ageYears }, eyes);
         } catch (e) {
           set({ paramError: message(e) });
@@ -439,6 +483,41 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       },
 
       setHovered: (h) => set({ hovered: h }),
+
+      loadResult: async (entry) => {
+        try {
+          const raw = await entry.load();
+          const eye = parseEyeDocument(raw.eye);
+          const deformation = raw.deformation === null ? null : parseDeformation(raw.deformation);
+          showResult({ id: entry.id, label: entry.label, eye, deformation });
+        } catch (e) {
+          set({ loadError: message(e) });
+        }
+      },
+      loadEyeFiles: async (files) => {
+        try {
+          const { eye, deformation } = await parseFiles(files);
+          showResult({ id: eye.id, label: eye.label, eye, deformation });
+        } catch (e) {
+          set({ loadError: message(e) });
+        }
+      },
+      clearLoadedResult: () => {
+        if (get().loadedResult === null) return;
+        const { scene, refractivePreset } = get();
+        const before = beforeResult ?? (() => {
+          const eyes = presetEyes(scene.preset, refractivePreset);
+          return { eyes, decomposition: decompose(eyes.right, scene.preset) };
+        })();
+        beforeResult = null;
+        set({ loadedResult: null, loadError: null, decomposition: before.decomposition });
+        update(scene, before.eyes);
+      },
+      setExaggeration: (x) => {
+        const [lo, hi] = EXAGGERATION_RANGE;
+        set({ exaggeration: Number.isFinite(x) ? Math.min(hi, Math.max(lo, x)) : lo });
+      },
+      setShowHeatMap: (on) => set({ showHeatMap: on }),
 
       applyOptics: (res, key) => {
         const s = get();

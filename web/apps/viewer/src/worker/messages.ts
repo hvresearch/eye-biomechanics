@@ -45,6 +45,11 @@ export interface EyeOpticsRequest {
   /** Whether the lens is worn: it then drives the defocus, far point, and drawn fan. */
   corrected?: boolean;
   wave?: WaveRequest | null;
+  /**
+   * Compare this eye with a reference document (a biomechanics result against its unloaded
+   * eye): both relaxed, on the visual axis, at 555 nm, by the paraxial-method refraction.
+   */
+  induced?: { reference: EyeParameters } | null;
 }
 
 export interface OpticsRequest {
@@ -82,6 +87,15 @@ export interface EyeWave {
   autoRx: (ClinicalLens & { residualRmsMicrons: number }) | null;
 }
 
+/** Refraction of a loaded document and its reference, and their difference (clinical, TABO). */
+export interface InducedRefraction {
+  loaded: Refraction;
+  reference: Refraction;
+  /** Loaded minus reference: power vectors subtracted, then sphere, minus cylinder, axis. */
+  delta: { M: number; J0: number; J45: number; sphereD: number; cylinderD: number; axisDeg: number };
+  pupilDiameterMm: number;
+}
+
 export interface EyeOptics {
   side: "left" | "right";
   /** Accommodated eye surfaces, retina last (spectacle surfaces are not included). */
@@ -102,6 +116,7 @@ export interface EyeOptics {
   fan: Vec3[][];
   vignettedRays: number;
   wave: EyeWave | null;
+  induced: InducedRefraction | null;
 }
 
 export interface OpticsResponse {

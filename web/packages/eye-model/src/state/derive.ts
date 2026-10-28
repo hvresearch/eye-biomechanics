@@ -68,7 +68,9 @@ export function deriveEyeState(
   assertSupported(params);
   const dirs = eyeDirections({ distanceM: scene.targetDistanceM, directionDeg: scene.targetDirectionDeg }, scene.ipdMm);
   const targetDistanceM = dirs.distanceMm[side] / 1000;
-  const amplitudeD = amplitudeForAge(scene.ageYears);
+  // A document without a lens accommodation model has a fixed lens (spec §3.2: absent means
+  // not modeled), so it cannot accommodate whatever the age.
+  const amplitudeD = params.lensAccommodationModel ? amplitudeForAge(scene.ageYears) : 0;
   const demandD = demandFromDistance(targetDistanceM, farPointD);
   const accommodationD = overrides.accommodationD ?? accommodationResponse(demandD, amplitudeD);
   const lensParameterA = farPointOf ? lensParameterFor(params, accommodationD, farPointOf) : accommodationD;

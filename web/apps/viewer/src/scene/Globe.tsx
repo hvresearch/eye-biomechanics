@@ -1,5 +1,6 @@
 import { MUSCLE_NAMES } from "@eye/eye-model";
 import { useScene, type Side } from "../store/scene";
+import { DeformationMap } from "./DeformationMap";
 import { EyeCutaway } from "./EyeCutaway";
 import { Muscle } from "./Muscle";
 import { Orbit } from "./Orbit";
@@ -40,6 +41,8 @@ export function Globe({ side, cut }: { side: Side; cut: boolean }) {
           <EyeCutaway side={side} cut={cut} />
           {cut && <RayFan side={side} />}
         </group>
+        {/* A loaded biomechanics result's heat map (right eye only), in the eye's own frame. */}
+        {side === "right" && <DeformationMap apexOffsetMm={-(axial - retinaR)} />}
       </group>
     </group>
   );

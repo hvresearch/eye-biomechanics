@@ -263,3 +263,27 @@ describe("OpticsClient", () => {
     await expect(p).rejects.toThrow("boom");
   });
 });
+
+describe("induced refraction of a biomechanics result", () => {
+  it("is zero when the loaded and reference documents are the same", () => {
+    const res = handle(request({ induced: { reference: eye } }, 0));
+    const d = res.eyes[0]!.induced!.delta;
+    for (const v of [d.M, d.J0, d.J45, d.sphereD, d.cylinderD]) expect(Math.abs(v)).toBeLessThan(1e-9);
+  });
+
+  it("reports the committed result's change against its embedded reference", async () => {
+    const { RESULTS } = await import("../src/results/catalog");
+    const { parseDeformation, parseEyeDocument } = await import("../src/results/load");
+    const raw = await RESULTS.find((r) => r.id === "emmetrope-right-primary-15mmHg")!.load();
+    const loaded = parseEyeDocument(raw.eye);
+    const reference = parseDeformation(raw.deformation).reference;
+    // The loaded document has no lens accommodation model, so it stays relaxed (as the store derives it).
+    const res = handle(request({ params: loaded, accommodationD: 0, induced: { reference } }, 0));
+    const ind = res.eyes[0]!.induced!;
+    expect(Number.isFinite(ind.delta.cylinderD)).toBe(true);
+    expect(ind.delta.cylinderD).toBeLessThanOrEqual(0); // minus cylinder
+    expect(ind.delta.axisDeg).toBeGreaterThan(0);
+    expect(ind.delta.axisDeg).toBeLessThanOrEqual(180);
+    expect(handle(request({}, 0)).eyes[0]!.induced).toBeNull();
+  });
+});

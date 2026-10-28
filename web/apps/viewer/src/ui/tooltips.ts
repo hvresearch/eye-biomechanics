@@ -102,3 +102,13 @@ export function spectaclesTooltip(): string {
 export function decompositionTooltip(): string {
   return "Approximation: paraxial spherical equivalents; each part is the change from the schematic eye when only its cornea, its lens, or its axial length is taken from this eye; the residual is the interaction the split does not capture.";
 }
+
+/** Hover text for the induced refraction of a loaded biomechanics result. */
+export function inducedTooltip(): string {
+  return "Approximation: elastic FEM result (no remodeling). The change is the loaded eye minus the IOP-only eye, the document's geometry being taken as stress-free; muscle forces come from the length-proxy activation, torque-balanced, with the orbit taking their net pull; the lens follows the scleral spur and the retina the posterior pole. Both eyes are refracted relaxed, on the visual axis, at 555 nm, by the paraxial method (spherical aberration does not bias the difference). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.";
+}
+
+/** Hover text for the displacement heat map. */
+export function heatMapTooltip(exaggeration: number): string {
+  return `Displacement magnitude of the globe's outer surface, loaded minus IOP-only, drawn ×${exaggeration} for visibility (elastic). Without a .deformation.json file a loaded document shows its refraction but no map.`;
+}
