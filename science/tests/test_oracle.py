@@ -140,6 +140,10 @@ def test_committed_cases_and_expected_hits_match_a_fresh_run():
         json.dumps(CASES, default=str)
     )
     fresh = expected_for(CASES)
+    # The reference tracer's finite-difference Newton steps round differently on different CPUs
+    # (1.3e-9 mm seen on some CI runners); 1e-8 mm still catches any regeneration with changed
+    # code and is 100 times tighter than the 1e-6 mm TypeScript cross-check.
+    tol = 1e-8
     assert json.loads(json.dumps(fresh)).keys() == EXPECTED.keys()
     for a, b in zip(fresh["cases"], EXPECTED["cases"], strict=True):
         assert a["id"] == b["id"]
@@ -149,8 +153,8 @@ def test_committed_cases_and_expected_hits_match_a_fresh_run():
         ):
             assert (ha is None) == (hb is None) and (la is None) == (lb is None)
             if ha is not None:
-                assert np.max(np.abs(np.array(ha) - np.array(hb))) < 1e-9
-                assert abs(la - lb) < 1e-9
+                assert np.max(np.abs(np.array(ha) - np.array(hb))) < tol
+                assert abs(la - lb) < tol
 
 
 def test_reference_zernike_polynomials():
