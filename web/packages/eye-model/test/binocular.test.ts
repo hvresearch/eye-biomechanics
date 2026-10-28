@@ -58,7 +58,22 @@ describe("deriveBinocular", () => {
     expect(r.right.accommodationD).toBe(1.5);
     expect(r.left.accommodationD).toBe(1.25);
     expect(r.right.gazeDeg.xDeg).toBeCloseTo(dirs.right.xDeg, 12);
-    expect(r.vergenceDeg).toBeCloseTo(dyn.vergenceDeg, 12);
+    expect(r.vergenceDeg).toBeCloseTo(dirs.vergenceDeg, 12);
+  });
+
+  it("reports the same vergence (angle between the lines of sight) paused and settled at an elevated near target", () => {
+    for (const t of [
+      { distanceM: 0.33, directionDeg: { x: 0, y: 30 } },
+      { distanceM: 0.1, directionDeg: { x: 15, y: 40 } },
+    ]) {
+      const s = scene({ targetDistanceM: t.distanceM, targetDirectionDeg: t.directionDeg });
+      const paused = deriveBinocular(s, eyes);
+      const dirs = eyeDirections(t, s.ipdMm);
+      const dyn = initialDynamics(dynamicTargetsFromDirections(dirs, { left: 0, right: 0 }));
+      const playing = deriveBinocular(s, eyes, { dynamics: dyn });
+      expect(playing.vergenceDeg).toBeCloseTo(paused.vergenceDeg, 9);
+      expect(paused.vergenceDeg).toBeCloseTo(dirs.vergenceDeg, 12);
+    }
   });
 
   it("keeps the rest lengths at primary position and the paths consistent with the lengths", () => {

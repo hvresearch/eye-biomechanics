@@ -6,7 +6,7 @@ import { musclesFromDocument } from "../eom/geometry";
 import { musclePath } from "../eom/path";
 import { eyeGazes, type DynamicState, type PerEye } from "../gaze/dynamics";
 import { gazeQuaternion, type GazeDeg } from "../gaze/listing";
-import { eyeDirections } from "../gaze/vergence";
+import { eyeDirections, lineOfSightAngleDeg } from "../gaze/vergence";
 import { QUAT_IDENTITY } from "../math/quat";
 import type { EyeParameters } from "../schema/types";
 import { validateEyeParameters } from "../schema/validate";
@@ -123,8 +123,10 @@ export function deriveBinocular(
       ...(gazes ? { gaze: gazes[side] } : {}),
       ...(dyn ? { accommodationD: dyn.accommodationD[side] } : {}),
     });
-  const vergenceDeg = dyn
-    ? dyn.vergenceDeg
+  // The readout is the angle between the lines of sight in both modes; the dynamics' horizontal
+  // azimuth difference is only its internal state and differs from it off the horizontal plane.
+  const vergenceDeg = gazes
+    ? lineOfSightAngleDeg(gazes)
     : eyeDirections({ distanceM: scene.targetDistanceM, directionDeg: scene.targetDirectionDeg }, scene.ipdMm).vergenceDeg;
   return { left: one("left"), right: one("right"), vergenceDeg };
 }

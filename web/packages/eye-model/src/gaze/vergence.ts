@@ -35,6 +35,17 @@ function toLocal(v: Vec3, side: "left" | "right"): Vec3 {
 }
 
 /**
+ * Vergence as the angle between the two lines of sight, degrees, from each eye's gaze in its
+ * local frame (the definition `eyeDirections` uses for a fixated target).
+ */
+export function lineOfSightAngleDeg(gazes: { left: GazeDeg; right: GazeDeg }): number {
+  const r = gazeDirection(gazes.right);
+  const l = toLocal(gazeDirection(gazes.left), "left");
+  const cos = r[0] * l[0] + r[1] * l[1] + r[2] * l[2];
+  return Math.acos(Math.max(-1, Math.min(1, cos))) / DEG;
+}
+
+/**
  * Each eye's line of sight to a target (Hering: both eyes fixate it), vergence, and each
  * eye's distance to it. The right eye's center of rotation is at x = +ipd/2.
  */
