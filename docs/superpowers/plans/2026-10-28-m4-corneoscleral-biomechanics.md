@@ -238,7 +238,7 @@ Constants (numerical): quadrature order 4 for volume integrals of the 27-node el
 ### Task 4.6: Deformed-surface sampling and Zernike fit
 
 **Files:**
-- Create: `science/eyebiomech/zernike.py` (OSA/ANSI polynomials matching `web/packages/optics/src/math/zernike.ts`), `science/eyebiomech/fem/surfaces.py`, `science/tests/test_zernike.py`, `science/tests/test_fem_surfaces.py`
+- Create: `science/eyebiomech/zernike.py` (OSA/ANSI polynomials matching `web/packages/optics/src/math/zernike.ts`), `science/eyebiomech/fem/surfaces.py`, `science/tests/test_zernike.py`, `science/tests/test_fem_surfaces.py`, `data/oracle/zernike-values.json` (written by `web/packages/optics/test/zernike-values.test.ts`, which also checks the committed file against the TS polynomials)
 
 **Interfaces:**
 - Produces:
