@@ -14,7 +14,11 @@ export interface WavefrontInput {
 }
 
 export interface Psf {
-  /** Row-major n × n intensity, centered at (n/2, n/2), scaled so the diffraction-limited peak is 1 (its maximum is the Strehl ratio). */
+  /**
+   * Row-major n × n intensity, centered at (n/2, n/2), row 0 at the top (+y up, as perceived and
+   * as the targets are drawn), scaled so the diffraction-limited peak is 1 (its maximum is the
+   * Strehl ratio).
+   */
   intensity: Float32Array;
   n: number;
   pixelArcmin: number;
@@ -127,12 +131,17 @@ function combine(inputs: readonly WavefrontInput[], opts: PsfOptions): Psf {
   });
   let peakI = 0;
   for (let p = 0; p < n * n; p++) peakI = Math.max(peakI, sumI[p]!);
+  // Rows are written top-down (+y up), the orientation of the targets, so the PSF convolves
+  // and displays without a flip: FFT row r (angle +y) goes to row (n − r) mod n.
   const intensity = new Float32Array(n * n);
   let strehl = 0;
-  for (let p = 0; p < n * n; p++) {
-    const v = sumA[p]! / peakI;
-    intensity[p] = v;
-    strehl = Math.max(strehl, v);
+  for (let r = 0; r < n; r++) {
+    const dst = ((n - r) % n) * n;
+    for (let c = 0; c < n; c++) {
+      const v = sumA[r * n + c]! / peakI;
+      intensity[dst + c] = v;
+      strehl = Math.max(strehl, v);
+    }
   }
   const fieldRad = n * pixelRad;
   return {

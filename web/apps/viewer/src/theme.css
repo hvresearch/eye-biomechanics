@@ -64,13 +64,13 @@ body {
 .app {
   display: grid;
   grid-template-columns: 1fr 340px;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr) auto;
   height: 100%;
 }
 
 .stage {
   grid-column: 1;
-  grid-row: 1 / span 2;
+  grid-row: 1;
   position: relative;
   min-width: 0;
 }
@@ -131,19 +131,27 @@ body {
   font-size: var(--fs-xs);
 }
 
-.inspector {
+.side {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-left: 1px solid var(--line);
+}
+
+.inspector {
+  flex: 1 1 auto;
+  min-height: 0;
   overflow: auto;
   padding: var(--space-4) var(--space-4) var(--space-5);
-  border-left: 1px solid var(--line);
   background: var(--bg-elev);
 }
 
 .readout {
-  grid-column: 2;
-  grid-row: 2;
-  border-left: 1px solid var(--line);
+  flex: none;
+  max-height: 50%;
+  overflow: auto;
   border-top: 1px solid var(--line);
   background: var(--bg-elev);
   padding: var(--space-3) var(--space-4) var(--space-4);
@@ -220,7 +228,7 @@ body {
 .readout-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--space-2) var(--space-4);
 }
 
 .stat {
@@ -240,6 +248,10 @@ body {
   font-family: var(--font-mono);
   font-size: var(--fs-lg);
   font-variant-numeric: tabular-nums;
+}
+
+.readout .stat .v {
+  font-size: var(--fs-md);
 }
 
 .stat .v.big {
@@ -397,4 +409,244 @@ table.muscles .bar > span {
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: right;
+}
+
+/* Optics strip (spec §6.4): one row of figures under the stage; charts share one ink system. */
+.optics-strip {
+  grid-column: 1;
+  grid-row: 2;
+  min-width: 0;
+  overflow-x: auto;
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+  padding: var(--space-2) var(--space-4) var(--space-3);
+}
+
+.optics-strip.pending .optics-panels {
+  opacity: 0.85;
+}
+
+.optics-strip header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  margin-bottom: var(--space-2);
+}
+
+.optics-strip h2 {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.optics-strip .legend,
+.optics-strip .toggles {
+  display: flex;
+  gap: var(--space-4);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+.optics-strip .toggles {
+  margin-left: auto;
+}
+
+.optics-strip .toggles label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  cursor: pointer;
+}
+
+.optics-strip .toggles input {
+  accent-color: var(--accent);
+}
+
+.optics-strip i,
+table.figures i {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.optics-strip i.dashed {
+  background: repeating-linear-gradient(90deg, #898781 0 4px, transparent 4px 7px);
+}
+
+.optics-panels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3) var(--space-4);
+  align-items: flex-start;
+}
+
+.optics-panel {
+  margin: 0;
+  position: relative;
+  flex: none;
+}
+
+.optics-panel figcaption {
+  margin-bottom: var(--space-1);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.optics-panel .pair {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.optics-panel .pair-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.optics-panel .pair-label {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+.optics-image {
+  display: block;
+  border-radius: 4px;
+  background: var(--bg);
+  image-rendering: pixelated;
+}
+
+.optics-panel .scale {
+  display: block;
+  margin-top: var(--space-1);
+}
+
+.chart {
+  position: relative;
+}
+
+.chart .tooltip {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  z-index: 2;
+  max-width: 320px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg-panel);
+  color: var(--text);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+table.figures {
+  width: 100%;
+  margin-top: var(--space-3);
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+table.figures th,
+table.figures td {
+  padding: 2px 6px;
+  text-align: right;
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+table.figures th[scope="row"] {
+  text-align: left;
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+}
+
+table.figures thead th {
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}
+
+table.figures td {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  color: var(--text);
+}
+
+table.figures td.rx {
+  white-space: normal;
+}
+
+.note.warn {
+  color: var(--warn);
+}
+
+.button-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-3);
+}
+
+.button-row button {
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: var(--fs-sm);
+  cursor: pointer;
+}
+
+.button-row button:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.auto-rx {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+}
+
+.field input[type="checkbox"] {
+  justify-self: end;
+  accent-color: var(--accent);
+}
+
+.decomposition h3 {
+  margin: var(--space-2) 0 var(--space-1);
+  color: var(--text-faint);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.decomposition table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.decomposition th {
+  text-align: left;
+  font-weight: 400;
+  color: var(--text-dim);
+}
+
+.decomposition td {
+  text-align: right;
+  font-family: var(--font-mono);
 }

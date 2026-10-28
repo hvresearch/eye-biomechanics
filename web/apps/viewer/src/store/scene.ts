@@ -1,6 +1,11 @@
 import {
   MIN_TARGET_DISTANCE_M,
   PRESET_NAMES,
+  REFRACTIVE_PRESETS,
+  applyRefractivePreset,
+  decomposeRefraction,
+  mirrorEye,
+  type Decomposition,
   defaultScene,
   deriveBinocular,
   dynamicTargetsFromDirections,
@@ -16,9 +21,10 @@ import {
   type PresetName,
   type SceneState,
 } from "@eye/eye-model";
+import { SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
 import { create } from "zustand";
 import { OpticsClient, StaleRequestError } from "../worker/client";
-import type { EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
+import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
 import { throttle } from "./throttle";
 
 export const DEFAULT_PRESET: PresetName = "navarro-1985";
@@ -49,6 +55,28 @@ export interface HistorySample {
   accommodationD: PerEye;
 }
 
+/** Paraxial far point in one meridian, for presets and the decomposition (main thread; well under 1 ms per call). */
+export const farPointOf = (s: Surface[], meridianDeg = 0) => paraxialPower(s, 1, { meridianDeg }).farPointD;
+
+/** A plano lens with the default design, the starting point of the Spectacles panel. */
+export const DEFAULT_LENS: ClinicalLens = {
+  sphereD: 0,
+  cylinderD: 0,
+  axisDeg: 180,
+  vertexMm: SPECTACLE_DEFAULTS.vertexMm,
+  baseCurveD: SPECTACLE_DEFAULTS.baseCurveD,
+  index: SPECTACLE_DEFAULTS.index,
+  centerThicknessMm: SPECTACLE_DEFAULTS.centerThicknessMm,
+};
+
+/** The left eye's copy of a right-eye lens: the mirror image has its TABO axis at 180° minus the right's. */
+export function mirrorLens(lens: ClinicalLens): ClinicalLens {
+  const axis = 180 - lens.axisDeg;
+  return { ...lens, axisDeg: axis <= 0 ? axis + 180 : axis };
+}
+
+export type PsfScale = "linear" | "log";
+
 export type Hover = { kind: "structure"; label: string } | { kind: "muscle"; side: Side; index: number };
 
 export interface SceneStore {
@@ -78,6 +106,29 @@ export interface SceneStore {
   setAge: (years: number) => void;
   setIpd: (mm: number) => void;
   setPreset: (name: PresetName) => void;
+  /** Refractive-error preset applied to the schematic eye (right eye; the left is its mirror). */
+  refractivePreset: string;
+  setRefractivePreset: (name: string) => void;
+  /** Copy the right eye's document and lens to the left eye, mirrored. */
+  mirrorRightToLeft: () => void;
+  setLuminance: (cdM2: number) => void;
+  /** Corneal, lenticular, and axial parts of the right eye's refraction (paraxial). */
+  decomposition: Decomposition | null;
+  spectacles: { right: ClinicalLens; left: ClinicalLens } | null;
+  /** Set the right eye's lens (the left gets its mirror), or remove the spectacles. */
+  setSpectacles: (lens: ClinicalLens | null) => void;
+  /** Whether the spectacles are worn (they then drive the defocus, demand, and drawn rays). */
+  corrected: boolean;
+  setCorrected: (on: boolean) => void;
+  /** An auto-prescription has been asked for and not yet returned. */
+  autoPending: boolean;
+  requestAutoPrescribe: () => void;
+  /** Copy the right eye's auto-prescription into the spectacles. */
+  useAutoRx: () => void;
+  psfScale: PsfScale;
+  setPsfScale: (s: PsfScale) => void;
+  polychromatic: boolean;
+  setPolychromatic: (on: boolean) => void;
   setPlaying: (on: boolean) => void;
   tick: (dtS: number) => void;
   scrub: (timeS: number | null) => void;
@@ -106,6 +157,29 @@ function clampDistance(m: number): number {
 export function clampDirectionDeg(deg: { x: number; y: number }): { x: number; y: number } {
   const c = (v: number) => (Number.isNaN(v) ? 0 : Math.min(MAX_DIRECTION_DEG, Math.max(-MAX_DIRECTION_DEG, v)));
   return { x: c(deg.x), y: c(deg.y) };
+}
+
+/** Both eyes for a schematic eye and refractive preset: the right eye solved, the left its mirror. */
+function presetEyes(schematic: PresetName, refractive: string): Eyes {
+  const right = applyRefractivePreset(loadPreset(schematic), refractive, farPointOf, "right");
+  return { right, left: mirrorEye(right, "left") };
+}
+
+/** The decomposition readout relative to the schematic eye, or null when it cannot be computed. */
+function decompose(eye: EyeParameters, schematic: PresetName): Decomposition | null {
+  try {
+    return decomposeRefraction(eye, loadPreset(schematic), farPointOf);
+  } catch {
+    return null;
+  }
+}
+
+/** Keep the last auto-prescription visible on later responses (they do not recompute it). */
+function withAutoRx(res: OpticsResponse, autoRx: NonNullable<EyeOptics["wave"]>["autoRx"]): OpticsResponse {
+  return {
+    ...res,
+    eyes: res.eyes.map((e) => (e.side === "right" && e.wave ? { ...e, wave: { ...e.wave, autoRx } } : e)),
+  };
 }
 
 let sharedClient: OpticsClient | null = null;
@@ -142,7 +216,8 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
     const request = throttle(() => {
       const worker = getClient();
       if (!worker) return;
-      const { binocular: b, eyes } = get();
+      const { binocular: b, eyes, spectacles, corrected, polychromatic, autoPending } = get();
+      const wave: WaveRequest = { ...WAVE_REQUEST, polychromatic, autoPrescribe: autoPending };
       const body: Omit<OpticsRequest, "id"> = {
         eyes: (["right", "left"] as const).map((side) => ({
           side,
@@ -151,7 +226,9 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           objectDistanceM: b[side].targetDistanceM,
           pupilSemiDiamMm: b[side].pupilMm / 2,
           fanRays: side === "right" ? FAN_RAYS : 0,
-          wave: side === "right" ? WAVE_REQUEST : null,
+          spectacles: spectacles?.[side] ?? null,
+          corrected,
+          wave: side === "right" ? wave : null,
         })),
       };
       worker
@@ -194,6 +271,13 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
 
     return {
       scene: scene0,
+      refractivePreset: "emmetrope",
+      decomposition: decompose(eyes0.right, scene0.preset),
+      spectacles: null,
+      corrected: false,
+      autoPending: false,
+      psfScale: "log",
+      polychromatic: false,
       eyes: eyes0,
       farPointD: zero,
       staticBinocular: static0,
@@ -221,11 +305,53 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       setPreset: (name) => {
         if (!PRESET_NAMES.includes(name)) return;
         try {
-          const doc = loadPreset(name);
-          update({ ...get().scene, preset: name }, { left: doc, right: doc });
+          const eyes = presetEyes(name, get().refractivePreset);
+          set({ decomposition: decompose(eyes.right, name) });
+          update({ ...get().scene, preset: name }, eyes);
         } catch (e) {
           set({ paramError: message(e) });
         }
+      },
+      setRefractivePreset: (name) => {
+        const preset = REFRACTIVE_PRESETS.find((p) => p.name === name);
+        if (!preset) return;
+        try {
+          const scene = get().scene;
+          const eyes = presetEyes(scene.preset, name);
+          set({ refractivePreset: name, decomposition: decompose(eyes.right, scene.preset) });
+          update({ ...scene, ageYears: preset.ageYears ?? scene.ageYears }, eyes);
+        } catch (e) {
+          set({ paramError: message(e) });
+        }
+      },
+      mirrorRightToLeft: () => {
+        const { eyes, spectacles } = get();
+        if (spectacles) set({ spectacles: { right: spectacles.right, left: mirrorLens(spectacles.right) } });
+        update(get().scene, { right: eyes.right, left: mirrorEye(eyes.right, "left") });
+      },
+      setLuminance: (cdM2) => update({ ...get().scene, luminanceCdM2: Number.isFinite(cdM2) ? Math.max(0, cdM2) : get().scene.luminanceCdM2 }),
+      setSpectacles: (lens) => {
+        set({ spectacles: lens ? { right: lens, left: mirrorLens(lens) } : null, ...(lens ? {} : { corrected: false }) });
+        schedule();
+      },
+      setCorrected: (on) => {
+        set({ corrected: on && get().spectacles !== null });
+        schedule();
+      },
+      requestAutoPrescribe: () => {
+        set({ autoPending: true });
+        schedule();
+      },
+      useAutoRx: () => {
+        const auto = eyeOptics(get().optics, "right")?.wave?.autoRx;
+        if (!auto) return;
+        const { residualRmsMicrons: _r, ...lens } = auto;
+        get().setSpectacles(lens);
+      },
+      setPsfScale: (psfScale) => set({ psfScale }),
+      setPolychromatic: (on) => {
+        set({ polychromatic: on });
+        schedule();
       },
 
       setPlaying: (on) => {
@@ -293,7 +419,11 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           right: eyeOptics(res, "right")?.farPointD ?? s.farPointD.right,
         };
         // Worker success clears only worker errors; a parameter error stays until the parameters change.
-        set({ optics: res, pending: false, workerError: null });
+        // An auto-prescription keeps being asked for until a response carries it.
+        const auto = eyeOptics(res, "right")?.wave?.autoRx ?? null;
+        const prevAuto = eyeOptics(s.optics, "right")?.wave?.autoRx ?? null;
+        const keep = auto === null && prevAuto !== null && !s.autoPending ? withAutoRx(res, prevAuto) : res;
+        set({ optics: keep, pending: false, workerError: null, ...(auto ? { autoPending: false } : {}) });
         if (Math.abs(fp.left - s.farPointD.left) > 1e-9 || Math.abs(fp.right - s.farPointD.right) > 1e-9) {
           // The relaxed far point sets demand (spec §4.2); re-derive once it is known.
           set({ farPointD: fp });

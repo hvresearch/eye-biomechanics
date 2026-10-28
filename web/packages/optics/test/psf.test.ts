@@ -56,3 +56,17 @@ describe("psf", () => {
     expect(() => polychromaticPsf([inputs[0]!, { ...inputs[1]!, pupilRadiusMm: 1 }])).toThrow();
   });
 });
+
+describe("psf orientation", () => {
+  it("puts the image of a wavefront tilted up (phase advance at +y) above the center, row 0 at the top", () => {
+    const c = new Array(15).fill(0);
+    c[1] = 0.3; // Z(1,−1) = 2ρ sin θ: advance at +y
+    const p = psf({ coeffsMicrons: c, pupilRadiusMm: 2, wavelengthNm: 555 });
+    let best = 0;
+    for (let i = 1; i < p.intensity.length; i++) if (p.intensity[i]! > p.intensity[best]!) best = i;
+    const row = Math.floor(best / p.n);
+    const col = best % p.n;
+    expect(row).toBeLessThan(p.n / 2);
+    expect(col).toBe(p.n / 2);
+  });
+});

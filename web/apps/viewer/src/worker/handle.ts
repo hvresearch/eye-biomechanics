@@ -107,9 +107,16 @@ function stage(surfaces: Surface[], view: ViewSpec, w: WaveRequest): Stage {
 
 function result(st: Stage, transfer: Otf, retinal: Float32Array, w: WaveRequest, side: "left" | "right"): WaveResult {
   const { analysis: a, psf: p } = st;
+  // The map is shown without piston and tilt (they do not affect the image), as is conventional.
+  const [c0 = 0, c1 = 0, c2 = 0] = a.fit.coeffsMicrons;
+  const R = a.map.pupilRadiusMm;
   const opdGrid = new Float32Array(w.gridN * w.gridN).fill(Number.NaN);
   a.map.gridIndex.forEach((cell, i) => {
-    if (a.map.valid[i]) opdGrid[cell] = a.map.opdMicrons[i] ?? Number.NaN;
+    if (!a.map.valid[i]) return;
+    // Z0 = 1, Z1 = 2ρ sin θ = 2y/R, Z2 = 2ρ cos θ = 2x/R
+    const x = a.map.xs[i]!;
+    const y = a.map.ys[i]!;
+    opdGrid[cell] = a.map.opdMicrons[i]! - c0 - (2 * c1 * y) / R - (2 * c2 * x) / R;
   });
   return {
     refraction: toClinicalRefraction(a.refraction, side),

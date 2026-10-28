@@ -63,7 +63,7 @@ export interface WaveResult {
   mtf: { freqCpd: Float32Array; radial: Float32Array; diffraction: Float32Array };
   /** Retinal image of the Snellen E (psfN × psfN, 0 dark … 1 bright). */
   retinal: Float32Array;
-  /** OPD over the pupil grid (gridN × gridN, µm), NaN outside the pupil or where vignetted. */
+  /** OPD over the pupil grid (gridN × gridN, µm) without piston and tilt, NaN outside the pupil or where vignetted. */
   opdGrid: Float32Array;
   gridN: number;
   pupilRadiusMm: number;
