@@ -204,13 +204,13 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
   - `interface ZernikeFit { coeffsMicrons: number[]; maxOrder: number; rmsMicrons: number /* excluding piston and tilt */; hoRmsMicrons: number /* n ≥ 3 */; residualRmsMicrons: number; pupilRadiusMm: number }`.
   - `fitZernike(map: OpdMap, maxRadialOrder = 8): ZernikeFit` (normal equations with Cholesky; throws `InsufficientRaysError` below 60% valid).
   - `zernikeWavefront(coeffsMicrons, x, y, pupilRadiusMm): number` (reconstruction).
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - `aim.test.ts`: without front surfaces each ray passes through its pupil sample; with a −3 D thin spectacle (two spherical surfaces) in front, every aimed ray crosses the pupil plane within 1e-8 mm of its sample; the chief ray of an on-axis view is the axis.
   - `opd.test.ts`: a stigmatic single refracting ellipsoid (`k = −1/n²`, object at infinity, flat image plane at the far focus `nR/(n−1)`) gives RMS < 1e-4 µm; moving its image plane by Δz = +0.05 mm gives `c(2,0)` with the sign of a myopic eye (positive) and every other coefficient below 1% of it (Deviation 7); a vignetted chief ray throws.
   - `fit.test.ts`: a synthetic map built from `0.7·Z(2,0)` µm fits to `c4 = 0.7` with all others below 1e-9 (spec §5.6); a map with 50% valid samples throws `InsufficientRaysError`; random coefficient vectors up to order 6 are recovered within 1e-9; `rmsMicrons` equals `√Σ_{j≥3} c_j²`.
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): OPD map and Zernike fit`.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): OPD map and Zernike fit`.
 
 ### Task 3.4: Refraction and power vectors from the wavefront
 
