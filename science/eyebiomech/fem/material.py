@@ -50,16 +50,16 @@ class NeoHookean:
         lnJ = np.log(J)
         I1 = np.einsum("ij...,ij...->...", F, F)
         w = 0.5 * self.mu * (I1 - 3) - self.mu * lnJ + 0.5 * self.lam * lnJ**2
-        for E, _FH, _ in self._fiber_terms(F, x):
-            w = w + self._psi(E)
+        for E, _FH, _, share in self._fiber_terms(F, x):
+            w = w + share * self._psi(E)
         return w
 
     def first_pk(self, F: NDArray, x: NDArray | None = None) -> NDArray:
         Finv, J = _inv_det(F)
         FinvT = _mT(Finv)
         P = self.mu * F + (self.lam * np.log(J) - self.mu) * FinvT
-        for E, FH, _ in self._fiber_terms(F, x):
-            P = P + 2 * self._dpsi(E) * FH
+        for E, FH, _, share in self._fiber_terms(F, x):
+            P = P + 2 * share * self._dpsi(E) * FH
         return P
 
     def tangent(self, F: NDArray, dF: NDArray, x: NDArray | None = None) -> NDArray:
@@ -71,9 +71,9 @@ class NeoHookean:
             + self.lam * tr * FinvT
             + (self.mu - self.lam * np.log(J)) * _mm(_mm(FinvT, _mT(dF)), FinvT)
         )
-        for E, FH, Hm in self._fiber_terms(F, x):
+        for E, FH, Hm, share in self._fiber_terms(F, x):
             dE = 2 * np.einsum("ij...,ij...->...", FH, dF)
-            dP = dP + 2 * self._dpsi(E) * _mm(dF, Hm) + 2 * self._d2psi(E) * dE * FH
+            dP = dP + share * (2 * self._dpsi(E) * _mm(dF, Hm) + 2 * self._d2psi(E) * dE * FH)
         return dP
 
     def tangent_tensor(self, F: NDArray, x: NDArray | None = None) -> NDArray:
@@ -87,9 +87,9 @@ class NeoHookean:
             + self.lam * np.einsum("ij...,kl...->ijkl...", FiT, FiT)
             + (self.mu - self.lam * lnJ) * np.einsum("il...,kj...->ijkl...", FiT, FiT)
         )
-        for E, FH, Hm in self._fiber_terms(F, x):
-            A = A + 2 * self._dpsi(E) * np.einsum("ik...,lj...->ijkl...", eye, Hm)
-            A = A + 4 * self._d2psi(E) * np.einsum("ij...,kl...->ijkl...", FH, FH)
+        for E, FH, Hm, share in self._fiber_terms(F, x):
+            A = A + 2 * share * self._dpsi(E) * np.einsum("ik...,lj...->ijkl...", eye, Hm)
+            A = A + 4 * share * self._d2psi(E) * np.einsum("ij...,kl...->ijkl...", FH, FH)
         return A
 
     # Fiber energy pieces; overridden by HGO.
@@ -104,18 +104,31 @@ class NeoHookean:
 
 
 class HGO(NeoHookean):
+    """Neo-Hookean matrix plus fiber families; family f has stiffness k1 · shares[f] (all 1 by
+    default)."""
+
     def __init__(
-        self, mu: float, lam: float, k1: float, k2: float, kappa: float, fibers: FiberSource
+        self,
+        mu: float,
+        lam: float,
+        k1: float,
+        k2: float,
+        kappa: float,
+        fibers: FiberSource,
+        shares: Sequence[float] | None = None,
     ):
         super().__init__(mu, lam)
         if k1 <= 0 or k2 <= 0:
             raise ValueError("k1 and k2 must be positive")
         if not 0 <= kappa < 1 / 3:
             raise ValueError("kappa must lie in [0, 1/3)")
+        if shares is not None and any(s <= 0 for s in shares):
+            raise ValueError("fiber shares must be positive")
         self.k1 = float(k1)
         self.k2 = float(k2)
         self.kappa = float(kappa)
         self.fibers = fibers
+        self.shares = None if shares is None else [float(s) for s in shares]
 
     def _directions(self, x: NDArray | None) -> Sequence[NDArray]:
         if callable(self.fibers):
@@ -127,12 +140,16 @@ class HGO(NeoHookean):
     def _fiber_terms(self, F: NDArray, x: NDArray | None):
         out = []
         eye = np.eye(3).reshape((3, 3) + (1,) * (F.ndim - 2))
-        for a in self._directions(x):
+        directions = self._directions(x)
+        shares = self.shares or [1.0] * len(directions)
+        if len(shares) != len(directions):
+            raise ValueError("one share per fiber family")
+        for a, share in zip(directions, shares, strict=True):
             a = np.asarray(a, dtype=float)
             Hm = self.kappa * eye + (1 - 3 * self.kappa) * np.einsum("i...,j...->ij...", a, a)
             FH = _mm(F, Hm)
             E = np.einsum("ij...,ij...->...", FH, F) - 1.0  # H : C − 1
-            out.append((E, FH, Hm))
+            out.append((E, FH, Hm, share))
         return out
 
     def _psi(self, E):
@@ -149,7 +166,14 @@ class HGO(NeoHookean):
         return np.where(on, self.k1 * np.exp(self.k2 * Ep**2) * (1 + 2 * self.k2 * Ep**2), 0.0)
 
 
-_FAMILIES = ("nasalTemporal", "superiorInferior", "circumferential", "meridional")
+_FAMILIES = (
+    "nasalTemporal",
+    "superiorInferior",
+    "circumferential",
+    "meridional",
+    "diagonalPlus",
+    "diagonalMinus",
+)
 
 
 def _tangent_projection(v: NDArray, n: NDArray) -> NDArray:
@@ -181,6 +205,13 @@ def fiber_directions(x: NDArray, family: str, geometry) -> NDArray:
         a = _tangent_projection(e_phi, n)
     elif family == "meridional":
         a = _tangent_projection(np.cross(n, e_phi, axis=0), n)
+    elif family in ("diagonalPlus", "diagonalMinus"):
+        # ±45° to the local preferred pair: nasal-temporal/superior-inferior on the cornea,
+        # meridional/circumferential elsewhere (the two coincide up to rotation near the pole).
+        sign = 1.0 if family == "diagonalPlus" else -1.0
+        e_m = _tangent_projection(np.cross(n, e_phi, axis=0), n)
+        e_c = _tangent_projection(e_phi, n)
+        a = _tangent_projection(e_m + sign * e_c, n)
     else:
         raise ValueError(f"unknown fiber family {family!r}; expected one of {_FAMILIES}")
     return a.reshape(shape)
@@ -196,7 +227,8 @@ def region_materials(materials: dict, age_years: float, geometry=None) -> dict[s
         mu = region["matrix"]["muMPa"] * factor
         lam = lame_lambda(mu, region["matrix"]["poissonRatio"])
         fib = region["fibers"]
-        families = tuple(fib["families"])
+        families = tuple(f["direction"] for f in fib["families"])
+        shares = [float(f["share"]) for f in fib["families"]]
 
         def directions(x, families=families):
             return [fiber_directions(x, f, geometry) for f in families]
@@ -208,5 +240,6 @@ def region_materials(materials: dict, age_years: float, geometry=None) -> dict[s
             k2=fib["k2"],
             kappa=fib["kappa"],
             fibers=directions if geometry is not None else [],
+            shares=shares if geometry is not None else None,
         )
     return out

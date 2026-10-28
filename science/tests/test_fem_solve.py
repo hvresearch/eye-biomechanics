@@ -84,7 +84,7 @@ def test_solution_is_unique_and_path_independent(sphere):
 
 def test_divergence_raises_with_the_residual_history(sphere):
     with pytest.raises(NewtonDidNotConverge) as info:
-        _solve_sphere(sphere, 5e4, steps=1, max_iter=3)
+        _solve_sphere(sphere, 5e4, steps=1, max_iter=3, max_cuts=1)
     assert len(info.value.residual_history) >= 1
 
 

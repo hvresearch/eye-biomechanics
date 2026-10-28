@@ -21,7 +21,8 @@ Europe PMC, CORE, and vendor-hosted PDFs are denied by the session's network pol
   by region (Vurgese 2012); the age stiffening between 50 and 95 years (Elsheikh 2007, via a
   secondary summary); the optic nerve sheath diameter; the scleral spur position; one donor
   inflation fit (units questioned by the excerpt itself; not used as an acceptance target); the in-vivo ocular rigidity coefficient (Pallikaris et al. 2005), the acceptance reference.
-- Assumed: every Poisson ratio, the convention mu = 2 c1, fiber dispersion, fiber families and
+- Assumed: every Poisson ratio, the convention mu = 2 c1, fiber dispersion (four in-plane
+  families at half k1 each standing in for a dispersed distribution), fiber families and
   directions, the limbal and scleral fiber constants (the corneal ones are reused), the limbal
   corneal thickness (a weak source), the limbal band width, stiffening below 50 years (none),
   and the ciliary tension.

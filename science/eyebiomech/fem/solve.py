@@ -30,6 +30,8 @@ LOAD_INTORDER = 10
 # pattern and a small diagonal pivot threshold. The stiffness is symmetric positive definite
 # except for the small follower-pressure term; SuperLU's default (COLAMD, partial pivoting)
 # is five to ten times slower on these shells.
+# Halvings of a failed load increment before giving up (numerical).
+MAX_STEP_CUTS = 6
 LU_OPTIONS = {
     "permc_spec": "MMD_AT_PLUS_A",
     "diag_pivot_thresh": 0.01,
@@ -172,48 +174,83 @@ def solve(
     tol: float = 1e-8,
     max_iter: int = 25,
     context: Context | None = None,
+    initial_u: NDArray | None = None,
+    ramp: str = "all",
+    max_cuts: int = MAX_STEP_CUTS,
 ) -> Solution:
-    """Displacement under `loads` with load stepping and Newton's method. Raises
-    `NewtonDidNotConverge` (with the residual history) when an increment does not reach `tol`
-    within `max_iter` iterations or produces non-finite values."""
+    """Displacement under `loads` by incremental loading and Newton's method.
+
+    `ramp="all"` raises every load together from zero; `ramp="dead"` holds the IOP at its full
+    value and raises only the dead loads, starting from `initial_u` (normally the IOP-only
+    equilibrium, so the other loads act on the pressurized globe). An increment that fails
+    (non-finite values, an inverted element, or no convergence in `max_iter`) is retried at half
+    the size, at most `max_cuts` times in a row; then `NewtonDidNotConverge` is raised with the
+    residual history."""
     if steps < 1:
         raise ValueError("steps must be at least 1")
+    if ramp not in ("all", "dead"):
+        raise ValueError(f"unknown ramp {ramp!r}; expected 'all' or 'dead'")
     ctx = context or make_context(shell)
     fixed = support_dofs(ctx, support, optic_nerve_radius_mm)
     free = np.setdiff1d(np.arange(ctx.n), fixed)
-    u = np.zeros(ctx.n)
-    f_full, _ = loads.assemble(ctx, u, 1.0)
+    u = np.zeros(ctx.n) if initial_u is None else np.array(initial_u, dtype=float)
+    u[fixed] = 0.0
+    f_full, _ = loads.assemble(ctx, np.zeros(ctx.n), 1.0)
     ref = max(np.linalg.norm(f_full[free]), 1e-300)
     history: list[float] = []
-    for step in range(1, steps + 1):
-        scale = step / steps
+
+    def scales(lam: float) -> tuple[float, float]:
+        return (lam, lam) if ramp == "all" else (1.0, lam)
+
+    def increment(lam: float, u_start: NDArray) -> NDArray:
+        s_iop, s_dead = scales(lam)
+        v = u_start.copy()
         for _ in range(max_iter):
-            f_int, K_int = internal(ctx, materials, u)
-            f_ext, K_ext = loads.assemble(ctx, u, scale)
+            try:
+                with np.errstate(all="ignore"):
+                    f_int, K_int = internal(ctx, materials, v)
+                    f_ext, K_ext = loads.assemble(ctx, v, s_iop, s_dead)
+            except np.linalg.LinAlgError:
+                raise _IncrementFailed("a singular deformation gradient") from None
             r = f_int - f_ext
             rel = float(np.linalg.norm(r[free]) / ref)
             history.append(rel)
             if not np.isfinite(rel):
-                raise NewtonDidNotConverge(f"non-finite residual in load step {step}", history)
+                raise _IncrementFailed("non-finite residual (an element inverted)")
             if rel < tol:
-                break
+                return v
             K = K_int if K_ext is None else K_int - K_ext
             lu = splu(K[free][:, free].tocsc(), **LU_OPTIONS)
             du = lu.solve(-r[free])
             if not np.all(np.isfinite(du)):
-                raise NewtonDidNotConverge(f"singular tangent in load step {step}", history)
-            u[free] += du
-        else:
-            raise NewtonDidNotConverge(
-                f"load step {step}/{steps} did not reach a relative residual of {tol:g} in "
-                f"{max_iter} iterations (last {history[-1]:.3g})",
-                history,
-            )
+                raise _IncrementFailed("singular tangent")
+            v[free] += du
+        raise _IncrementFailed(f"no convergence in {max_iter} iterations (last {history[-1]:.3g})")
+
+    lam, dlam, cuts, done = 0.0, 1.0 / steps, 0, 0
+    while lam < 1.0 - 1e-12:
+        target = min(1.0, lam + dlam)
+        try:
+            u = increment(target, u)
+        except _IncrementFailed as exc:
+            cuts += 1
+            if cuts > max_cuts:
+                raise NewtonDidNotConverge(
+                    f"load increment to {target:.4g} failed after {max_cuts} step cuts: {exc}",
+                    history,
+                ) from None
+            dlam /= 2
+            continue
+        lam, cuts, done = target, 0, done + 1
     return Solution(
         u=u,
         context=ctx,
         residual_history=history,
         converged=True,
-        load_steps=steps,
+        load_steps=done,
         fixed_dofs=fixed,
     )
+
+
+class _IncrementFailed(RuntimeError):
+    pass

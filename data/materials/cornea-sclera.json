@@ -16,8 +16,13 @@
         "k1MPa": 2.9211,
         "k2": 20.7395,
         "kappa": 0,
-        "families": ["nasalTemporal", "superiorInferior"],
-        "citation": "k1 and k2: the same Pandolfi-attributed HGO row in Gonzalez-Cabrero et al. 2025 (excerpt). kappa = 0 (no dispersion) and the two orthogonal in-plane families: assumption (the preferred nasal-temporal and superior-inferior lamellar directions of the central cornea; Pandolfi & Holzapfel use a dispersed distribution whose parameters were not reachable).",
+        "families": [
+          { "direction": "nasalTemporal", "share": 0.5 },
+          { "direction": "superiorInferior", "share": 0.5 },
+          { "direction": "diagonalPlus", "share": 0.5 },
+          { "direction": "diagonalMinus", "share": 0.5 }
+        ],
+        "citation": "k1 and k2: the same Pandolfi-attributed HGO row in Gonzalez-Cabrero et al. 2025 (excerpt). Families and shares: assumption. The preferred nasal-temporal and superior-inferior lamellar directions plus the two diagonals, each with half of k1 (k1 x share), approximate an in-plane dispersed distribution (Pandolfi & Holzapfel use a dispersed distribution whose parameters were not reachable): equibiaxial stiffness equals that of the two preferred families at full k1, and the diagonals give in-plane shear stiffness, which two orthogonal families alone leave to the matrix (M4 plan, Deviation 11). kappa = 0 within each family.",
         "verified": false
       },
       "thicknessMm": {
@@ -39,8 +44,13 @@
         "k1MPa": 2.9211,
         "k2": 20.7395,
         "kappa": 0,
-        "families": ["circumferential"],
-        "citation": "assumption: the corneal fiber constants with one circumferential family (the limbal annulus of circumferential collagen); halfWidthMm (half the arc length of the limbal transition band on the scleral sphere) is an assumption.",
+        "families": [
+          { "direction": "circumferential", "share": 1.0 },
+          { "direction": "meridional", "share": 0.5 },
+          { "direction": "diagonalPlus", "share": 0.5 },
+          { "direction": "diagonalMinus", "share": 0.5 }
+        ],
+        "citation": "assumption: the corneal fiber constants with a full circumferential family (the limbal annulus of circumferential collagen) on top of the dispersed in-plane set (meridional and diagonals at half k1, as in the cornea and sclera); halfWidthMm (half the arc length of the limbal transition band on the scleral sphere) is an assumption.",
         "verified": false
       }
     },
@@ -55,8 +65,13 @@
         "k1MPa": 2.9211,
         "k2": 20.7395,
         "kappa": 0,
-        "families": ["meridional", "circumferential"],
-        "citation": "assumption: no excerpt gave HGO fiber constants for human sclera (the search found Mooney-Rivlin fiber fits only), so the corneal constants are used with meridional and circumferential families. Candidate source: Grytz et al. 2014 (age- and race-related human scleral properties) or Coudrillier et al. 2012.",
+        "families": [
+          { "direction": "meridional", "share": 0.5 },
+          { "direction": "circumferential", "share": 0.5 },
+          { "direction": "diagonalPlus", "share": 0.5 },
+          { "direction": "diagonalMinus", "share": 0.5 }
+        ],
+        "citation": "assumption: no excerpt gave HGO fiber constants for human sclera (the search found Mooney-Rivlin fiber fits only), so the corneal constants are used, with meridional, circumferential, and the two diagonal families at half k1 each (in-plane dispersion, as for the cornea). Candidate source: Grytz et al. 2014 (age- and race-related human scleral properties) or Coudrillier et al. 2012.",
         "verified": false
       },
       "thicknessMm": {

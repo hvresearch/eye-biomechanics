@@ -156,3 +156,55 @@ def test_symmetric_loads_give_a_mirror_symmetric_displacement():
 def test_iop_follower_pressure_in_mpa():
     assert Loads().iop(15).summary() == [{"kind": "iop", "pressureMmHg": 15.0}]
     assert mmhg_to_mpa(15) > 0
+
+
+def _moment(ctx, loads):
+    f, _ = loads.assemble(ctx, np.zeros(ctx.n), 1.0)
+    F = f[ctx.vector_dofs]  # (3, nscalar)
+    X = ctx.sb.doflocs
+    return F.sum(axis=1), np.cross(X.T, F.T).sum(axis=0)
+
+
+def test_orbital_support_balances_the_dead_loads(eye_ctx):
+    g = TABLE.at(0, 0)
+    unbalanced = Loads().from_force_table(TABLE, g, EOM).eyelid(1.0, 1.0, 10.1, 0.6, 0.6)
+    F0, M0 = _moment(eye_ctx, unbalanced)
+    assert np.linalg.norm(M0) > 1e-3  # the length-proxy muscles alone do not balance
+    balanced = (
+        Loads().from_force_table(TABLE, g, EOM).eyelid(1.0, 1.0, 10.1, 0.6, 0.6).orbital_support()
+    )
+    F, M = _moment(eye_ctx, balanced)
+    assert np.linalg.norm(F) < 1e-9 * np.linalg.norm(F0) + 1e-12
+    assert np.linalg.norm(M) < 1e-9 * np.linalg.norm(M0)
+    assert balanced.summary()[-1]["kind"] == "orbitalSupport"
+
+
+def test_orbital_support_leaves_iop_alone(eye_ctx):
+    a = Loads().iop(15)
+    b = Loads().iop(15).orbital_support()
+    fa, _ = a.assemble(eye_ctx, np.zeros(eye_ctx.n), 1.0)
+    fb, _ = b.assemble(eye_ctx, np.zeros(eye_ctx.n), 1.0)
+    assert np.allclose(fa, fb)
+
+
+def test_force_table_loads_are_torque_balanced():
+    """The six muscle moments about the globe center sum to zero after the smallest weighted
+    force change that keeps the total tension (the v1 stand-in for the v2 static equilibrium)."""
+    for gaze in ((0, 0), (15, 0), (30, 30)):
+        g = TABLE.at(*gaze)
+        loads = Loads().from_force_table(TABLE, g, EOM)
+        items = [i for i in loads.summary() if i["kind"] == "insertion"]
+        M = sum(i["forceN"] * np.cross(i["centerMm"], i["insertionDir"]) for i in items)
+        assert np.linalg.norm(M) < 1e-12
+        assert all(i["forceN"] >= 0 for i in items)
+        total = sum(i["forceN"] for i in items)
+        assert total == pytest.approx(sum(i["tableForceN"] for i in items), rel=1e-9)
+    raw = Loads().from_force_table(TABLE, TABLE.at(0, 0), EOM, balance_moments=False)
+    items = [i for i in raw.summary() if i["kind"] == "insertion"]
+    assert all(i["forceN"] == i["tableForceN"] for i in items)
+
+
+def test_nasal_gaze_has_no_non_negative_torque_balance():
+    """Without passive orbital torques the length-proxy model cannot hold a nasal gaze."""
+    with pytest.raises(ValueError, match="torque-balanced"):
+        Loads().from_force_table(TABLE, TABLE.at(-30, 0), EOM)

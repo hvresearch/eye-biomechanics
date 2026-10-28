@@ -15,6 +15,11 @@ the current step, and the load stiffness of the follower loads (or None).
   `tension × accommodation` per mm of circumference (Deviation 12).
 - Eyelid: normal pressure on the outer surface over a horizontal band at each lid margin,
   anterior half only.
+- Orbital support: the globe is held by the orbit (Tenon's capsule, orbital fat), not by the
+  optic nerve; a traction a + ω × x on the posterior hemisphere of the outer surface, with a and
+  ω solved so that the dead loads above have zero net force and moment about the globe center.
+  Without it, the unbalanced pull of the length-proxy muscles pivots the globe about the small
+  optic-nerve support (approximation: the reaction's distribution is assumed).
 
 Dead loads act in the reference configuration.
 """
@@ -144,15 +149,26 @@ class Loads:
         )
         return self._changed()
 
-    def from_force_table(self, table, gaze_index: int, eom: dict) -> Loads:
-        """One insertion per muscle of the force table's gaze, in the globe's frame."""
+    def from_force_table(
+        self, table, gaze_index: int, eom: dict, balance_moments: bool = True
+    ) -> Loads:
+        """One insertion per muscle of the force table's gaze, in the globe's frame.
+
+        With `balance_moments` (the default) the forces are first changed by the smallest
+        relative amount that makes the six muscle moments about the globe center sum to zero:
+        the length-proxy activations of spec §4.4 v1 do not balance torque, and an unbalanced
+        moment would twist the globe about the optic-nerve support. This stands in for the v2
+        static equilibrium (approximation); each insertion records its table force."""
         body = table.body_frame(gaze_index)
         tendons = {m["name"]: m["tendon"] for m in eom["muscles"]}
+        forces = np.asarray(table.force_n[gaze_index], dtype=float)
+        if balance_moments:
+            forces = _torque_balanced(forces, body["insertion_mm"], body["insertion_dir"])
         for i, name in enumerate(table.muscles):
             wraps = table.arc_mm[gaze_index, i] > 0
             self.insertion(
                 muscle=name,
-                force_n=float(table.force_n[gaze_index, i]),
+                force_n=float(forces[i]),
                 pull_dir=body["pull_dir"][i],
                 center_mm=body["insertion_mm"][i],
                 footprint_width_mm=float(table.width_mm[gaze_index, i]),
@@ -160,7 +176,17 @@ class Loads:
                 insertion_dir=body["insertion_dir"][i],
                 tangent_point_mm=body["tangent_mm"][i] if wraps else None,
             )
+            self.items[-1]["tableForceN"] = float(table.force_n[gaze_index, i])
         return self
+
+    def orbital_support(self) -> Loads:
+        """Balance the dead loads with a distributed orbital reaction (see the module notes).
+        Applied once, after the loads it balances are added; IOP needs none (it is
+        self-equilibrated)."""
+        if any(item["kind"] == "orbitalSupport" for item in self.items):
+            raise ValueError("orbital support is already applied")
+        self.items.append({"kind": "orbitalSupport", "region": "outer surface, z > 0"})
+        return self._changed()
 
     def summary(self) -> list[dict]:
         """JSON-serializable list of the loads (for provenance)."""
@@ -172,12 +198,13 @@ class Loads:
 
     # -- assembly ------------------------------------------------------------------------------
 
-    def assemble(self, ctx, u: NDArray, scale: float):
-        """External force vector and load stiffness ∂f_ext/∂u (or None) at displacement u."""
+    def assemble(self, ctx, u: NDArray, scale: float, dead_scale: float | None = None):
+        """External force vector and load stiffness ∂f_ext/∂u (or None) at displacement u, with
+        the IOP scaled by `scale` and the dead loads by `dead_scale` (default `scale`)."""
         key = id(ctx)
         if key not in self._cache:
             self._cache[key] = self._dead(ctx)
-        f = scale * self._cache[key]
+        f = (scale if dead_scale is None else dead_scale) * self._cache[key]
         K = None
         for item in self.items:
             if item["kind"] == "iop":
@@ -202,6 +229,8 @@ class Loads:
                 total += _ciliary_traction(item, ctx.shell, x, dx)
             elif kind == "eyelid":
                 total += _eyelid_traction(item, x, N)
+        if any(item["kind"] == "orbitalSupport" for item in self.items):
+            total += _orbital_reaction(total, x, dx)
         return _surface_vector(ctx, fb, total)
 
 
@@ -285,6 +314,74 @@ def _eyelid_traction(item: dict, x: NDArray, N: NDArray) -> NDArray:
     lower = front & (y <= -half) & (y >= -half - item["lowerHeightMm"])
     p = upper * kpa_to_mpa(item["upperKPa"]) + lower * kpa_to_mpa(item["lowerKPa"])
     return -p * N
+
+
+def _torque_balanced(forces: NDArray, centers: NDArray, directions: NDArray) -> NDArray:
+    """Non-negative forces f' with Σ f'_i (c_i × d_i) = 0 and Σ f'_i = Σ f_i (the overall tension
+    is kept, so the trivial all-zero set is excluded) closest to f in the weighted norm
+    Σ ((f'_i − f_i) / s_i)², s_i = max(f_i, mean f / 4) (a small quadratic program; the floor on
+    s_i lets a relaxed muscle take up tension when the others cannot balance alone). Raises
+    when no non-negative balanced set exists."""
+    from scipy.optimize import minimize
+
+    arms = np.cross(centers, directions)  # (6, 3): moment per newton
+    A = arms.T  # (3, 6)
+    if np.linalg.norm(A @ forces) == 0:
+        return forces.copy()
+    s = np.maximum(forces, max(forces.mean(), 1e-12) / 4)
+    res = minimize(
+        lambda f: np.sum(((f - forces) / s) ** 2),
+        forces,
+        jac=lambda f: 2 * (f - forces) / s**2,
+        constraints=[
+            {"type": "eq", "fun": lambda f: A @ f, "jac": lambda f: A},
+            {
+                "type": "eq",
+                "fun": lambda f: np.array([f.sum() - forces.sum()]),
+                "jac": lambda f: np.ones((1, f.size)),
+            },
+        ],
+        bounds=[(0, None)] * len(forces),
+        method="SLSQP",
+        options={"ftol": 1e-15, "maxiter": 200},
+    )
+    scale = np.linalg.norm(arms, axis=1).max() * forces.max()
+    if not res.success or np.linalg.norm(A @ res.x) > 1e-10 * scale:
+        raise ValueError(f"no non-negative torque-balanced muscle forces ({res.message})")
+    out = res.x.copy()
+    # Remove the last round-off of the moment along the least-norm direction, then clip the
+    # round-off below zero.
+    out += A.T @ np.linalg.lstsq(A @ A.T, -(A @ out), rcond=None)[0]
+    return np.where(np.abs(out) < 1e-12 * forces.max(), 0.0, out)
+
+
+def _orbital_reaction(t: NDArray, x: NDArray, dx: NDArray) -> NDArray:
+    """Traction a + ω × x on the posterior hemisphere (z > 0) whose net force and moment about
+    the origin cancel those of the traction field t."""
+    F = np.einsum("ieq,eq->i", t, dx)
+    M = np.einsum("ieq,eq->i", np.cross(x, t, axis=0), dx)
+    region = (x[2] > 0).astype(float)
+    if not np.any(region):
+        raise ValueError("no posterior surface to carry the orbital reaction")
+    cols = []
+    for k in range(6):
+        basis = np.zeros(3)
+        basis[k % 3] = 1.0
+        if k < 3:
+            field_k = region * basis[:, None, None]
+        else:
+            field_k = region * np.cross(basis[:, None, None], x, axis=0)
+        cols.append(
+            np.concatenate(
+                [
+                    np.einsum("ieq,eq->i", field_k, dx),
+                    np.einsum("ieq,eq->i", np.cross(x, field_k, axis=0), dx),
+                ]
+            )
+        )
+    coef = np.linalg.solve(np.stack(cols, axis=1), -np.concatenate([F, M]))
+    a, w = coef[:3], coef[3:]
+    return region * (a[:, None, None] + np.cross(w[:, None, None], x, axis=0))
 
 
 def _follower_pressure(ctx, fb, u: NDArray, p: float):

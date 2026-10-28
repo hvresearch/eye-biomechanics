@@ -29,10 +29,13 @@ def _materials(n: int):
         NeoHookean(mu=0.3, lam=2.0),
         HGO(mu=0.3, lam=2.0, k1=2.9, k2=20.0, kappa=0.0, fibers=[_unit(n), _unit(n)]),
         HGO(mu=0.2, lam=9.0, k1=1.0, k2=5.0, kappa=0.1, fibers=[_unit(n)]),
+        HGO(
+            mu=0.2, lam=9.0, k1=1.0, k2=5.0, kappa=0.0, fibers=[_unit(n), _unit(n)], shares=[0.5, 2]
+        ),
     ]
 
 
-@pytest.mark.parametrize("index", [0, 1, 2])
+@pytest.mark.parametrize("index", [0, 1, 2, 3])
 def test_zero_energy_and_stress_in_the_reference_state(index):
     n = 5
     m = _materials(n)[index]
@@ -42,7 +45,7 @@ def test_zero_energy_and_stress_in_the_reference_state(index):
     assert np.allclose(m.first_pk(F), 0, atol=1e-13)
 
 
-@pytest.mark.parametrize("index", [0, 1, 2])
+@pytest.mark.parametrize("index", [0, 1, 2, 3])
 def test_stress_is_the_derivative_of_the_energy(index):
     n = 20
     m = _materials(n)[index]
@@ -56,7 +59,7 @@ def test_stress_is_the_derivative_of_the_energy(index):
             assert np.allclose(P[i, j], num, rtol=1e-6, atol=1e-9)
 
 
-@pytest.mark.parametrize("index", [0, 1, 2])
+@pytest.mark.parametrize("index", [0, 1, 2, 3])
 def test_tangent_is_the_derivative_of_the_stress(index):
     n = 20
     m = _materials(n)[index]
@@ -107,9 +110,32 @@ def test_fiber_directions_are_unit_and_tangent_to_the_shell():
     d = np.stack([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), -np.cos(theta)])
     x = d * g.r_out(theta)
     n = g.outer_normal(x)
-    for family in ("nasalTemporal", "superiorInferior", "circumferential", "meridional"):
+    for family in (
+        "nasalTemporal",
+        "superiorInferior",
+        "circumferential",
+        "meridional",
+        "diagonalPlus",
+        "diagonalMinus",
+    ):
         a = fiber_directions(x, family, g)
         assert np.allclose(np.linalg.norm(a, axis=0), 1)
         assert np.allclose(np.sum(a * n, axis=0), 0, atol=1e-12)
     with pytest.raises(ValueError):
         fiber_directions(x, "radial", g)
+
+
+def test_half_share_families_double_up_to_the_same_equibiaxial_response():
+    """Four families at half k1 (0°, 90°, ±45°) give the same equibiaxial stress as two at full
+    k1 (0°, 90°), and add in-plane shear stiffness."""
+    e1, e2 = np.array([[1.0], [0.0], [0.0]]), np.array([[0.0], [1.0], [0.0]])
+    d1, d2 = (e1 + e2) / np.sqrt(2), (e1 - e2) / np.sqrt(2)
+    two = HGO(mu=0.2, lam=9.0, k1=2.9, k2=20.0, kappa=0.0, fibers=[e1, e2])
+    four = HGO(
+        mu=0.2, lam=9.0, k1=2.9, k2=20.0, kappa=0.0, fibers=[e1, e2, d1, d2], shares=[0.5] * 4
+    )
+    F = np.diag([1.02, 1.02, 1 / 1.02**2])[:, :, None]
+    assert np.allclose(four.first_pk(F), two.first_pk(F), rtol=1e-3)
+    shear = np.eye(3)[:, :, None].copy()
+    shear[0, 1, 0] = 0.02
+    assert four.first_pk(shear)[0, 1, 0] > 1.5 * two.first_pk(shear)[0, 1, 0]
