@@ -102,8 +102,9 @@ Run `gh pr checks <n> -R $REPO`.
   (`gh api repos/$REPO/issues/<n>/comments --paginate`) and look for a review
   marker whose `sha` equals `headRefOid`.
   - **No marker for this sha → review** (Step 1c).
-  - Marker with `verdict=APPROVE` → **merge** (Step 1d). This path also
-    recovers from a run that approved but failed to merge.
+  - Marker with `verdict=APPROVE`, for this sha or for its first parent when
+    the head is an update-from-main merge commit → **merge** (Step 1d). This
+    path also recovers from a run that approved but failed to merge.
   - Marker with `verdict=CHANGES` → a previous run posted findings but did not
     push fixes. Fix them now (Step 1c, fixing part). **Exit.**
 
@@ -132,17 +133,40 @@ Then:
   file for the milestone), run the gate, commit as `fix(review): ...`, push.
   **Exit.** The next run re-reviews the new head.
 
+**Round cap.** Count the `driver-review` markers already on the PR before
+posting a new one. A review is **round R = count + 1**. From round 4 on, the
+reviewer must confine itself to Critical findings and to Important findings
+that are regressions introduced since the previous reviewed head; everything
+else is Minor and goes to the followups file. A round-4 or later review with
+no Critical findings is an APPROVE. This mirrors the fix-round breaker in
+subagent-driven development: each fresh reviewer finds new things to say, and
+without a cap a PR never merges. Note the round number in the report header.
+
 ### 1d. Merge
 
+Run each GitHub write as its own plain command, starting with `gh api` or
+`gh pr`, with the repository name and PR number spelled out literally and no
+shell variables, `&&` chains or subshells in front of it. The repository's
+`.claude/settings.json` allows exactly these command prefixes, and the
+permission check matches on the literal text of the command.
+
 ```sh
-gh api -X PUT repos/$REPO/pulls/<n>/merge \
+gh api -X PUT repos/hvresearch/eye-biomechanics/pulls/<n>/merge \
   -f merge_method=squash \
   -f commit_title="<PR title> (#<n>)" \
   -f commit_message="<first paragraph of the PR body>
 
 Co-Authored-By: Claude <model name> <noreply@anthropic.com>"
-gh api -X DELETE repos/$REPO/git/refs/heads/<branch>
+gh api -X DELETE repos/hvresearch/eye-biomechanics/git/refs/heads/<branch>
 ```
+
+**Approval carries over an update from main.** If the branch is behind
+`main`, run `gh api -X PUT repos/hvresearch/eye-biomechanics/pulls/<n>/update-branch`
+and **exit**. The new head is a merge commit whose parents are the approved
+head and a commit on `main`; it changes nothing in the PR's own diff. A later
+run treats an `APPROVE` marker for the first parent of such a merge commit as
+valid for the new head (verify with `git rev-parse <head>^1`), so once CI is
+green on it the run merges without another review round.
 
 If the merge is rejected because checks are not green or the branch is behind
 `main` with `strict` protection, update the branch
