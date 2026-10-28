@@ -133,7 +133,11 @@ export interface SceneStore {
   tick: (dtS: number) => void;
   scrub: (timeS: number | null) => void;
   setHovered: (h: Hover | null) => void;
-  applyOptics: (res: OpticsResponse) => void;
+  /**
+   * Show a worker response. `key` is `autoRxKey` of the state the request was made from; an
+   * auto-prescription computed for inputs that have changed since is dropped.
+   */
+  applyOptics: (res: OpticsResponse, key?: string) => void;
 }
 
 /** The optics of one eye from a response, if present. */
@@ -172,6 +176,16 @@ function decompose(eye: EyeParameters, schematic: PresetName): Decomposition | n
   } catch {
     return null;
   }
+}
+
+/**
+ * What an auto-prescription depends on: the right eye's document, the scene (target, pupil
+ * inputs, age), and the lens design (not its powers). A kept auto-prescription is shown only
+ * while this is unchanged.
+ */
+export function autoRxKey(s: Pick<SceneStore, "eyes" | "scene" | "spectacles">): string {
+  const lens = s.spectacles?.right ?? DEFAULT_LENS;
+  return JSON.stringify([s.eyes.right, s.scene, lens.vertexMm, lens.baseCurveD, lens.index, lens.centerThicknessMm]);
 }
 
 /** Keep the last auto-prescription visible on later responses (they do not recompute it). */
@@ -217,6 +231,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       const worker = getClient();
       if (!worker) return;
       const { binocular: b, eyes, spectacles, corrected, polychromatic, autoPending } = get();
+      const key = autoRxKey(get());
       const wave: WaveRequest = { ...WAVE_REQUEST, polychromatic, autoPrescribe: autoPending };
       const body: Omit<OpticsRequest, "id"> = {
         eyes: (["right", "left"] as const).map((side) => ({
@@ -234,7 +249,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       };
       worker
         .request(body)
-        .then((res) => get().applyOptics(res))
+        .then((res) => get().applyOptics(res, key))
         .catch((e: unknown) => {
           if (e instanceof StaleRequestError) return;
           set({ pending: false, workerError: message(e) });
@@ -244,6 +259,16 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
     const schedule = () => {
       set({ pending: true });
       request();
+    };
+
+    /** `autoRxKey` of the auto-prescription shown, or null when none is. */
+    let shownAutoKey: string | null = null;
+    /** Hide the shown auto-prescription once the inputs it was computed for have changed. */
+    const dropStaleAutoRx = () => {
+      const s = get();
+      if (shownAutoKey === null || shownAutoKey === autoRxKey(s)) return;
+      shownAutoKey = null;
+      if (s.optics) set({ optics: withAutoRx(s.optics, null) });
     };
 
     /** Re-derive after a scene or document change; the shown state snaps to the new targets. */
@@ -262,6 +287,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           scrubS: null,
           paramError: null,
         });
+        dropStaleAutoRx();
         schedule();
       } catch (e) {
         set({ paramError: message(e) });
@@ -333,6 +359,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       setLuminance: (cdM2) => update({ ...get().scene, luminanceCdM2: Number.isFinite(cdM2) ? Math.max(0, cdM2) : get().scene.luminanceCdM2 }),
       setSpectacles: (lens) => {
         set({ spectacles: lens ? { right: lens, left: mirrorLens(lens) } : null, ...(lens ? {} : { corrected: false }) });
+        dropStaleAutoRx();
         schedule();
       },
       setCorrected: (on) => {
@@ -413,18 +440,30 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
 
       setHovered: (h) => set({ hovered: h }),
 
-      applyOptics: (res) => {
+      applyOptics: (res, key) => {
         const s = get();
         const fp: PerEye = {
           left: eyeOptics(res, "left")?.farPointD ?? s.farPointD.left,
           right: eyeOptics(res, "right")?.farPointD ?? s.farPointD.right,
         };
         // Worker success clears only worker errors; a parameter error stays until the parameters change.
-        // An auto-prescription keeps being asked for until a response carries it.
+        // An auto-prescription keeps being asked for until a response carries one for the current
+        // inputs; a kept one stays only while those inputs are unchanged.
+        const current = autoRxKey(s);
         const auto = eyeOptics(res, "right")?.wave?.autoRx ?? null;
-        const prevAuto = eyeOptics(s.optics, "right")?.wave?.autoRx ?? null;
-        const keep = auto === null && prevAuto !== null && !s.autoPending ? withAutoRx(res, prevAuto) : res;
-        set({ optics: keep, pending: false, workerError: null, ...(auto ? { autoPending: false } : {}) });
+        const fresh = auto !== null && (key === undefined || key === current);
+        const prevAuto = shownAutoKey === current ? (eyeOptics(s.optics, "right")?.wave?.autoRx ?? null) : null;
+        let keep: OpticsResponse;
+        if (fresh) {
+          keep = res;
+          shownAutoKey = current;
+        } else if (prevAuto !== null && !s.autoPending) {
+          keep = withAutoRx(res, prevAuto);
+        } else {
+          keep = auto === null ? res : withAutoRx(res, null);
+          shownAutoKey = null;
+        }
+        set({ optics: keep, pending: false, workerError: null, ...(fresh ? { autoPending: false } : {}) });
         if (Math.abs(fp.left - s.farPointD.left) > 1e-9 || Math.abs(fp.right - s.farPointD.right) > 1e-9) {
           // The relaxed far point sets demand (spec §4.2); re-derive once it is known.
           set({ farPointD: fp });

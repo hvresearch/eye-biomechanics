@@ -1,6 +1,6 @@
 import { MIN_TARGET_DISTANCE_M, loadPreset } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LENS, MAX_DIRECTION_DEG, clampDirectionDeg, createSceneStore, mirrorLens } from "../src/store/scene";
+import { DEFAULT_LENS, MAX_DIRECTION_DEG, autoRxKey, clampDirectionDeg, createSceneStore, eyeOptics, mirrorLens } from "../src/store/scene";
 import { handle } from "../src/worker/handle";
 
 describe("scene store", () => {
@@ -70,6 +70,59 @@ describe("scene store", () => {
     store.getState().applyOptics(res);
     store.getState().useAutoRx();
     expect(store.getState().spectacles?.right).toEqual({ ...DEFAULT_LENS, sphereD: -2.25, cylinderD: -0.5, axisDeg: 90 });
+  });
+
+  describe("a kept auto-prescription belongs to the eye, scene, and lens design it was computed for", () => {
+    const eye = loadPreset("navarro-1985");
+    const autoRx = { ...DEFAULT_LENS, sphereD: -2.25, cylinderD: -0.5, axisDeg: 90, residualRmsMicrons: 0.02 };
+    const res = handle({
+      id: 1,
+      eyes: [{ side: "right", params: eye, accommodationD: 0, objectDistanceM: 6, pupilSemiDiamMm: 1.5, fanRays: 0, wave: { gridN: 16, psfN: 64, polychromatic: false, letterArcmin: 5, autoPrescribe: false } }],
+    });
+    const withAuto = { ...res, eyes: res.eyes.map((e) => ({ ...e, wave: e.wave ? { ...e.wave, autoRx } : null })) };
+    const shown = (store: ReturnType<typeof createSceneStore>) => eyeOptics(store.getState().optics, "right")?.wave?.autoRx ?? null;
+    const prescribed = () => {
+      const store = createSceneStore();
+      store.getState().requestAutoPrescribe();
+      store.getState().applyOptics(withAuto);
+      expect(shown(store)).not.toBeNull();
+      return store;
+    };
+
+    it("is dropped when the eye changes and cannot be applied to the new eye", () => {
+      const store = prescribed();
+      store.getState().setRefractivePreset("myope-3-axial");
+      expect(shown(store)).toBeNull();
+      store.getState().applyOptics(res);
+      expect(shown(store)).toBeNull();
+      store.getState().useAutoRx();
+      expect(store.getState().spectacles).toBeNull();
+    });
+
+    it("is dropped when the scene changes", () => {
+      const store = prescribed();
+      store.getState().setTargetDistance(0.5);
+      expect(shown(store)).toBeNull();
+    });
+
+    it("is dropped when the lens design changes, but not when only its powers change", () => {
+      const store = prescribed();
+      store.getState().setSpectacles({ ...DEFAULT_LENS, sphereD: -1 });
+      expect(shown(store)).not.toBeNull();
+      store.getState().setSpectacles({ ...DEFAULT_LENS, sphereD: -1, vertexMm: DEFAULT_LENS.vertexMm + 2 });
+      expect(shown(store)).toBeNull();
+    });
+
+    it("ignores an auto-prescription that arrives for inputs that have since changed", () => {
+      const store = createSceneStore();
+      store.getState().requestAutoPrescribe();
+      const key = autoRxKey(store.getState());
+      store.getState().setRefractivePreset("myope-3-axial");
+      store.getState().applyOptics(withAuto, key);
+      expect(shown(store)).toBeNull();
+      // Still owed: the next request asks again for the new eye.
+      expect(store.getState().autoPending).toBe(true);
+    });
   });
 
   it("reports an unsupported schema version in the parameter error, keeping a working eye", () => {
