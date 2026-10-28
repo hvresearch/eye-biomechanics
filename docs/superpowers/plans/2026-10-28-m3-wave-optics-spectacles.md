@@ -225,15 +225,15 @@ Constants (numerical): Newton tolerance 1e-9 mm in z, at most 20 iterations, see
   - `refractionFromZernike(coeffsMicrons, pupilRadiusMm, method: "minimumRms" | "paraxial" = "minimumRms"): Refraction` (Deviation 9).
   - `analyzeWavefront(surfaces, view: ViewSpec, opts: { gridN?: number; wavelengthNm?: number; maxRadialOrder?: number } = {}): { map: OpdMap; fit: ZernikeFit; refraction: Refraction }` (front surfaces are those with `vertexZMm < view.pupilPlaneZMm`).
 - Produces (eye-model): `clinicalAxisDeg(localDeg: number, side: "left" | "right"): number` and `localAxisDeg(taboDeg, side)` (Deviation 3, (0, 180]); `type ClinicalPrescription = { sphereD; cylinderD; axisDeg /* TABO */ }`; `toClinicalRefraction(r: Refraction, side): Refraction` (axis converted).
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - round trip `(S, C, axis) → (M, J0, J45) → (S, C, axis)` for 50 random prescriptions (seeded) within 1e-9 D and 1e-6°, including axes 0.5° and 179.5°;
   - a pure `c(2,0) = 1 µm` at r = 2 mm gives `M = −√3` D and zero cylinder; `c(2,2)` gives cylinder with axis 90 or 180 by sign; `c(2,−2)` gives axis 45 or 135;
   - the paraxial method adds `12√5·c(4,0)/r²` to M for a pure `c(4,0)` (derived from `zernikeRho2Coefficient`);
   - the Navarro eye with a toric anterior cornea carrying 1.5 D of corneal cylinder with its flat meridian along the optics-frame x axis yields `cylinderD = −1.5 ± 0.1` and `axisDeg = 180 ± 2` (master plan Task 3.3) at a 3 mm pupil;
   - `clinicalAxisDeg(30, "right") = 150`, `clinicalAxisDeg(30, "left") = 30`, round trips for both sides, values in (0, 180].
-- [ ] **Step 2:** Run; FAIL.
-- [ ] **Step 3:** Implement.
-- [ ] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): refraction and power vectors from wavefront`.
+- [x] **Step 2:** Run; FAIL.
+- [x] **Step 3:** Implement.
+- [x] **Step 4:** Run; PASS. Full gate. Commit: `feat(optics): refraction and power vectors from wavefront`.
 
 ### Task 3.5: FFT, PSF, MTF, retinal image
 

@@ -38,3 +38,7 @@ export { ChiefRayError, opdMap } from "./wavefront/opd";
 export type { OpdMap } from "./wavefront/opd";
 export { fitZernike, zernikeWavefront } from "./wavefront/fit";
 export type { ZernikeFit } from "./wavefront/fit";
+export { powerVectors, refractionFromZernike, sphereCylFromPowerVectors, wrapAxisDeg } from "./wavefront/refraction";
+export type { Refraction } from "./wavefront/refraction";
+export { analyzeWavefront } from "./wavefront/analyze";
+export type { WavefrontAnalysis, WavefrontOptions } from "./wavefront/analyze";
