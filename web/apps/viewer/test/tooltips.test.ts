@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { muscleTooltip, readoutTooltips, vergenceTooltip } from "../src/ui/tooltips";
+import { presetTable } from "@eye/eye-model";
+import { decompositionTooltip, gazeTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, vergenceTooltip } from "../src/ui/tooltips";
 
 describe("readoutTooltips", () => {
   const t = readoutTooltips(3.5, "fixed");
@@ -34,6 +35,15 @@ describe("readoutTooltips", () => {
   it("names the document's pupil model", () => {
     expect(t.pupil).toContain("fixed");
   });
+
+  it("lists the document's unverified lens-model coefficients in the defocus tooltip", () => {
+    const unverified = presetTable("navarro-1985").accommodation?.unverified ?? [];
+    expect(unverified).toEqual(["anteriorConicPerLn", "posteriorConicPerLn"]);
+    const tips = readoutTooltips(3.5, "fixed", unverified);
+    for (const key of unverified) expect(tips.defocus).toContain(key);
+    expect(tips.defocus).toMatch(/unverified/);
+    expect(t.defocus).not.toMatch(/unverified/);
+  });
 });
 
 describe("muscle and vergence tooltips", () => {
@@ -41,5 +51,28 @@ describe("muscle and vergence tooltips", () => {
     expect(muscleTooltip()).toMatch(/^Approximation: length-proxy activation/);
     expect(muscleTooltip()).toMatch(/pulley/);
     expect(vergenceTooltip()).toMatch(/^Approximation: /);
+  });
+
+  it("label the gaze readout's center of rotation", () => {
+    expect(gazeTooltip()).toMatch(/^Approximation: /);
+    expect(gazeTooltip()).toMatch(/globe center/);
+  });
+});
+
+describe("optics tooltips", () => {
+  const t = opticsTooltips();
+  it("label every wave-optics readout as an approximation and name what it rests on", () => {
+    for (const [key, text] of Object.entries(t)) expect(text, key).toMatch(/^Approximation: /);
+    for (const key of ["wavefront", "zernike", "refraction", "rms", "figures"] as const) expect(t[key], key).toMatch(/1 mm in front of the cornea/);
+    for (const key of ["zernike", "psf", "rms", "strehl"] as const) expect(t[key], key).toMatch(/order-8|order 8/);
+    for (const key of ["wavefront", "psf", "mtf", "strehl", "refraction"] as const) expect(t[key], key).toMatch(/homogeneous lens index/i);
+    expect(spectaclesTooltip()).toMatch(/^Approximation: /);
+    expect(decompositionTooltip()).toMatch(/^Approximation: /);
+  });
+
+  it("names the pupil formula and its unverified coefficients", () => {
+    const p = readoutTooltips(3, "watsonYellott2012").pupil;
+    expect(p).toMatch(/^Approximation: Watson & Yellott 2012/);
+    expect(p).toMatch(/unverified/);
   });
 });

@@ -98,16 +98,12 @@ function bestRmsFocusZ(rays: readonly ImageRay[]): number {
   return -num / den;
 }
 
-/** Split the surface list into refracting surfaces and the image (retina) surface. */
-export function splitImageSurface(surfaces: readonly Surface[], indexBefore = 1): { refracting: Surface[]; image: Surface } {
-  let n = indexBefore;
-  for (let i = 0; i < surfaces.length; i++) {
-    const s = surfaces[i];
-    if (!s) continue;
-    if (i > 0 && s.mediumAfter.index555 === n) return { refracting: surfaces.slice(0, i), image: s };
-    n = s.mediumAfter.index555;
-  }
-  throw new Error("No image surface: expected a final surface whose medium index equals the preceding one");
+/** Split the surface list into the surfaces before the image surface and the image (retina) surface. */
+export function splitImageSurface(surfaces: readonly Surface[]): { refracting: Surface[]; image: Surface } {
+  const i = surfaces.findIndex((s) => s.image === true);
+  const image = surfaces[i];
+  if (i <= 0 || !image) throw new Error("No image surface: mark the retina with image: true (after at least one refracting surface)");
+  return { refracting: surfaces.slice(0, i), image };
 }
 
 /**

@@ -1,0 +1,14 @@
+{
+  "name": "spectacle-lens-defaults",
+  "citation": "Design defaults named in the master plan (docs/superpowers/plans/2026-10-26-master-plan.md, Task 3.5); not physiological constants.",
+  "verified": false,
+  "vertexMm": 12,
+  "vertexNote": "Back vertex of the lens to the anterior corneal vertex; a common fitting distance.",
+  "baseCurveD": 6,
+  "baseCurveNote": "Front surface power in air, (n − 1)/R1.",
+  "index": 1.5,
+  "indexNote": "Crown-glass/CR-39-class index; the material is modeled without dispersion (approximation).",
+  "centerThicknessMm": 2,
+  "semiDiameterMm": 25,
+  "semiDiameterNote": "Lens aperture radius, large enough for any eye pupil and gaze used here."
+}

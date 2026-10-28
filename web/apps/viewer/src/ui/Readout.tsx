@@ -1,6 +1,7 @@
 import { eyeOptics, useScene } from "../store/scene";
 import { formatSigned } from "./format";
-import { readoutTooltips, vergenceTooltip } from "./tooltips";
+import { WaveFigures, refractionText } from "./optics/WaveFigures";
+import { gazeTooltip, opticsTooltips, readoutTooltips, vergenceTooltip } from "./tooltips";
 
 function Stat({
   k,
@@ -39,9 +40,14 @@ export function Readout() {
   const pending = useScene((s) => s.pending);
   const vergenceDeg = useScene((s) => s.binocular.vergenceDeg);
   const pupilModel = useScene((s) => s.eyes.right.pupil.model);
+  const unverified = useScene((s) => s.eyes.right.lensAccommodationModel?.unverified);
   const powerD = optics?.paraxialPowerD ?? Number.NaN;
   const focusOffsetMm = optics ? optics.bestFocusZMm - optics.retinaZMm : Number.NaN;
-  const tips = readoutTooltips(eye.pupilMm, pupilModel);
+  const corrected = useScene((s) => s.corrected);
+  const wave = optics?.wave ?? null;
+  const active = wave ? (corrected && wave.corrected ? wave.corrected : wave.uncorrected) : null;
+  const otips = opticsTooltips();
+  const tips = readoutTooltips(eye.pupilMm, pupilModel, Array.isArray(unverified) ? unverified.map(String) : []);
 
   return (
     <section className="readout" aria-label="Readout">
@@ -94,15 +100,25 @@ export function Readout() {
           title={tips.paraxialPower}
         />
         <Stat k="Vergence" v={vergenceDeg.toFixed(2)} u="°" testId="vergence" title={vergenceTooltip()} />
-        <Stat k="Gaze" v={`${formatSigned(eye.gazeDeg.xDeg, 1)}, ${formatSigned(eye.gazeDeg.yDeg, 1)}`} u="° (temporal, up)" testId="gaze" />
+        <Stat k="Gaze" v={`${formatSigned(eye.gazeDeg.xDeg, 1)}, ${formatSigned(eye.gazeDeg.yDeg, 1)}`} u="° (temporal, up)" testId="gaze" title={gazeTooltip()} />
         <Stat
           k="Pupil"
           v={eye.pupilMm.toFixed(1)}
           u="mm"
           testId="pupil"
-          title={tips.pupil}
+          title={`${tips.pupil} Light-adapted ${eye.pupilBaseMm.toFixed(2)} mm, near miosis ${(eye.pupilBaseMm - eye.pupilMm).toFixed(2)} mm.`}
         />
+        <Stat
+          k={corrected && wave?.corrected ? "Refraction (worn)" : "Refraction"}
+          v={active ? refractionText(active.refraction) : "…"}
+          u={active && !refractionText(active.refraction).endsWith("DS") ? "D" : ""}
+          pending={pending}
+          testId="refraction"
+          title={active ? `${otips.refraction} M ${active.refraction.M.toFixed(2)}, J0 ${active.refraction.J0.toFixed(2)}, J45 ${active.refraction.J45.toFixed(2)} D.` : otips.refraction}
+        />
+
       </div>
+      <WaveFigures />
       {optics && (
         <p className="note">
           Worker: {elapsedMs.toFixed(1)} ms for both eyes, {optics.fan.length} rays drawn

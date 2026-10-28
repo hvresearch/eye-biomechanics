@@ -73,6 +73,14 @@ describe("traceRay through the Navarro eye", () => {
     expect(["cornea.posterior", "lens.anterior"]).toContain(r.vignettedAt);
   });
 
+  it("reports a miss when the ray never reaches a surface and an aperture clip otherwise", () => {
+    const miss = traceRay({ origin: [0, -20, -1], dir: [0, 1, 0], wavelengthNm: 555 }, surfaces, 1);
+    expect(miss.vignetted).toBe(true);
+    expect(miss.reason).toBe("miss");
+    const clipped = traceRay({ origin: [6.5, 0, -10], dir: [0, 0, 1], wavelengthNm: 555 }, surfaces, 1);
+    expect(clipped.reason).toBe("aperture");
+  });
+
   it("flags total internal reflection", () => {
     const glass = { name: "glass", index555: 1.8 };
     const air = { name: "air", index555: 1 };
@@ -120,5 +128,30 @@ describe("bundles", () => {
 
   it("collimated bundle with a single ray is the chief ray", () => {
     expect(collimatedBundle({ x: 0, y: 0 }, 2, 1, 0)).toHaveLength(1);
+  });
+});
+
+describe("traceToEnd", () => {
+  it("matches traceRay's last hit, direction, and optical path through conic and toric surfaces", async () => {
+    const { traceToEnd } = await import("../src/trace/sequential");
+    const { toricNavarro } = await import("./helpers/eyes");
+    for (const surfaces of [navarroSurfaces(), navarroSurfaces(3), toricNavarro(1.5)]) {
+      for (const [x, y, ax] of [[0, 0, 0], [1.2, -0.7, 0.05], [-2, 1.5, -0.08], [0.3, 2.4, 0.1]] as const) {
+        const dir = [Math.sin(ax), 0, Math.cos(ax)] as const;
+        const ray = { origin: [x, y, -5] as const, dir, wavelengthNm: 555 };
+        const full = traceRay(ray, surfaces, 1);
+        const end = traceToEnd(ray, surfaces, 1);
+        expect(full.vignetted).toBe(false);
+        if (!end) throw new Error("lean trace vignetted");
+        const last = full.hits[full.hits.length - 1]!;
+        for (let i = 0; i < 3; i++) {
+          expect(end.point[i]).toBeCloseTo(last.point[i]!, 10);
+          expect(end.dir[i]).toBeCloseTo(last.dirAfter[i]!, 10);
+        }
+        expect(end.opticalPathMm).toBeCloseTo(full.opticalPathMm, 8); // Newton tolerances: 1e-9 mm in z
+      }
+    }
+    // Vignetting agrees: a ray outside the corneal aperture.
+    expect(traceToEnd({ origin: [6.5, 0, -10], dir: [0, 0, 1], wavelengthNm: 555 }, navarroSurfaces(), 1)).toBeNull();
   });
 });

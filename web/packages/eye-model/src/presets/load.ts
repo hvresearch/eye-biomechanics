@@ -4,6 +4,8 @@ import type { EyeParameters, Surface } from "../schema/types";
 import { validateEyeParameters } from "../schema/validate";
 import { toDocumentMuscles } from "../eom/geometry";
 import { SCENE_DEFAULTS } from "../scene/defaults";
+import { DEFAULT_PUPIL } from "../pupil/model";
+import visualAxis from "../../../../../data/visual-axis/defaults.json";
 
 export const PRESET_NAMES = ["navarro-1985", "zapata-diaz-2019"] as const;
 export type PresetName = (typeof PRESET_NAMES)[number];
@@ -63,7 +65,6 @@ export function loadPreset(name: PresetName): EyeParameters {
     table.relaxed === undefined ||
     table.retina === undefined ||
     table.axialLengthMm === undefined ||
-    table.pupil === undefined ||
     table.referenceAgeYears === undefined
   ) {
     throw new Error(`Preset "${name}" is marked transcribed but is missing required fields`);
@@ -81,12 +82,16 @@ export function loadPreset(name: PresetName): EyeParameters {
       verified: table.verified,
     },
     surfaces: clone(table.relaxed),
-    pupil: clone(table.pupil),
+    // A schematic eye without its own pupil model uses the project default (spec §4.3).
+    pupil: clone(table.pupil ?? DEFAULT_PUPIL),
     axialLengthMm: table.axialLengthMm,
     retina: { ...table.retina },
     age: table.referenceAgeYears,
     interpupillaryDistanceMm: SCENE_DEFAULTS.ipdMm,
     extraocularMuscles: toDocumentMuscles(),
+    // Angle alpha and pupil decentration defaults (data/visual-axis; unverified, see its note).
+    visualAxis: { alphaDeg: visualAxis.alphaDeg, kappaDeg: visualAxis.kappaDeg },
+    pupilDecenterMm: { ...visualAxis.pupilDecenterMm },
   };
   if (table.accommodation !== undefined) {
     doc.lensAccommodationModel = clone(table.accommodation);

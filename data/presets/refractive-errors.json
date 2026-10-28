@@ -1,0 +1,16 @@
+{
+  "name": "refractive-error-presets",
+  "citation": "Spec §6.3 (preset list and magnitudes) and §4.1 (axial, corneal, and lenticular mechanisms exposed separately). Each preset changes one part of the base schematic eye so its paraxial refraction moves by the nominal amount relative to the base.",
+  "verified": true,
+  "verifiedNote": "Definitions, not measurements: test refractive.test.ts checks each preset's traced refraction against its nominal values.",
+  "presets": [
+    { "name": "emmetrope", "label": "Emmetrope", "mechanism": "none", "sphereD": 0, "cylinderD": 0, "axisDegTabo": 180 },
+    { "name": "myope-3-axial", "label": "Myope −3 D (axial)", "mechanism": "axial", "sphereD": -3, "cylinderD": 0, "axisDegTabo": 180 },
+    { "name": "myope-3-corneal", "label": "Myope −3 D (corneal)", "mechanism": "corneal", "sphereD": -3, "cylinderD": 0, "axisDegTabo": 180 },
+    { "name": "hyperope+2-axial", "label": "Hyperope +2 D (axial)", "mechanism": "axial", "sphereD": 2, "cylinderD": 0, "axisDegTabo": 180 },
+    { "name": "astigmat-1.5-atr-corneal", "label": "Astigmat 1.5 D against-the-rule (corneal)", "mechanism": "corneal", "sphereD": 0, "cylinderD": -1.5, "axisDegTabo": 90 },
+    { "name": "astigmat-1.5-lenticular", "label": "Astigmat 1.5 D against-the-rule (lenticular)", "mechanism": "lenticular", "sphereD": 0, "cylinderD": -1.5, "axisDegTabo": 90 },
+    { "name": "presbyope-55", "label": "Presbyope, age 55", "mechanism": "none", "sphereD": 0, "cylinderD": 0, "axisDegTabo": 180, "ageYears": 55 }
+  ],
+  "axisNote": "Minus-cylinder axes in TABO degrees for the right eye. Against-the-rule: the horizontal meridian is steepest, so the minus-cylinder axis is 90° (the master plan's '-1.5 at axis 180' describes with-the-rule astigmatism; the spec's preset name wins)."
+}

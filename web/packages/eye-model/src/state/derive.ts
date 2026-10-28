@@ -7,6 +7,8 @@ import { musclePath } from "../eom/path";
 import { eyeGazes, type DynamicState, type PerEye } from "../gaze/dynamics";
 import { gazeQuaternion, type GazeDeg } from "../gaze/listing";
 import { eyeDirections, lineOfSightAngleDeg } from "../gaze/vergence";
+import { pupilBaseMm, pupilDiameterMm } from "../pupil/model";
+import { vergenceDemandMA } from "../pupil/nearResponse";
 import { QUAT_IDENTITY } from "../math/quat";
 import type { EyeParameters } from "../schema/types";
 import { validateEyeParameters } from "../schema/validate";
@@ -28,21 +30,12 @@ export function assertSupported(params: EyeParameters): void {
   throw new Error(`EyeParameters "${String(params.id)}" is invalid: ${r.errors.join("; ")}`);
 }
 
-/** Pupil diameter from the document's pupil model. Milestone 1 supports only `fixed`. */
-export function pupilDiameterMm(params: EyeParameters): number {
-  const { model, params: p } = params.pupil;
-  if (model === "fixed") {
-    const d = p.diameterMm;
-    if (typeof d !== "number" || !(d > 0)) throw new Error(`pupil.params.diameterMm must be a positive number`);
-    return d;
-  }
-  throw new Error(`Unsupported pupil model "${model}" (Milestone 1 supports "fixed")`);
-}
-
 /** Overrides from the dynamics stepper: where the eye is now rather than where it is headed. */
 export interface EyeStateOverrides {
   gaze?: GazeDeg;
   accommodationD?: number;
+  /** Current angle between the lines of sight, degrees (drives the near miosis). */
+  vergenceDeg?: number;
 }
 
 /**
@@ -51,7 +44,9 @@ export interface EyeStateOverrides {
  * Accommodation: demand from this eye's distance to the target and its far point, response
  * with lag and amplitude clip (or `overrides.accommodationD` from the dynamics). Gaze:
  * Listing's law toward the target (or `overrides.gaze`). Muscles: paths, lengths, and
- * length-proxy activations for the document's muscles (or the default table).
+ * length-proxy activations for the document's muscles (or the default table). Pupil: the
+ * document's pupil model at the scene's luminance and age, with near miosis for the vergence
+ * demand of the static fixation (or `overrides.vergenceDeg`).
  *
  * `farPointD` is the eye's refractive error in clinical sign (0 for the presets, which
  * are emmetropic by construction); the composer passes the paraxial far point when it has
@@ -85,11 +80,18 @@ export function deriveEyeState(
   const eomPaths = muscles.map((m) => musclePath(m, gaze));
   const eomLengthMm = eomPaths.map((p) => p.lengthMm);
 
+  const pupilInputs = {
+    luminanceCdM2: scene.luminanceCdM2,
+    ageYears: scene.ageYears,
+    vergenceMA: vergenceDemandMA(overrides.vergenceDeg ?? dirs.vergenceDeg, scene.ipdMm),
+  };
+
   return {
     accommodationD,
     demandD,
     amplitudeD,
-    pupilMm: pupilDiameterMm(params),
+    pupilMm: pupilDiameterMm(params, pupilInputs),
+    pupilBaseMm: pupilBaseMm(params, pupilInputs),
     gaze,
     gazeDeg,
     targetDistanceM,
@@ -118,15 +120,15 @@ export function deriveBinocular(
 ): BinocularState {
   const dyn = opts.dynamics;
   const gazes = dyn ? eyeGazes(dyn) : undefined;
-  const one = (side: "left" | "right") =>
-    deriveEyeState(scene, eyes[side], side, opts.farPointD?.[side] ?? 0, opts.farPointOf, {
-      ...(gazes ? { gaze: gazes[side] } : {}),
-      ...(dyn ? { accommodationD: dyn.accommodationD[side] } : {}),
-    });
   // The readout is the angle between the lines of sight in both modes; the dynamics' horizontal
   // azimuth difference is only its internal state and differs from it off the horizontal plane.
   const vergenceDeg = gazes
     ? lineOfSightAngleDeg(gazes)
     : eyeDirections({ distanceM: scene.targetDistanceM, directionDeg: scene.targetDirectionDeg }, scene.ipdMm).vergenceDeg;
+  const one = (side: "left" | "right") =>
+    deriveEyeState(scene, eyes[side], side, opts.farPointD?.[side] ?? 0, opts.farPointOf, {
+      ...(gazes ? { gaze: gazes[side], vergenceDeg } : {}),
+      ...(dyn ? { accommodationD: dyn.accommodationD[side] } : {}),
+    });
   return { left: one("left"), right: one("right"), vergenceDeg };
 }

@@ -1,14 +1,18 @@
-import { AMPLITUDE_TABLE, PRESET_NAMES, presetTable, type PresetName } from "@eye/eye-model";
-import { useScene } from "../store/scene";
+import { AMPLITUDE_TABLE, PRESET_NAMES, REFRACTIVE_PRESETS, presetTable, type PresetName } from "@eye/eye-model";
+import { MAX_DIRECTION_DEG, useScene } from "../store/scene";
+import { Decomposition } from "./Decomposition";
 import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
+import { Spectacles } from "./Spectacles";
 
 const MIN_M = 0.1;
 const MAX_M = 6;
-/** Direction fields span the comfortable oculomotor range (UI bounds, not physiology). */
-const MAX_DIRECTION_DEG = 40;
 /** IPD field bounds (UI bounds spanning children to large adults). */
 const IPD_RANGE_MM = [45, 80] as const;
+/** Luminance field bounds, cd/m² (UI bounds from dim interiors to bright daylight). */
+const LUMINANCE_RANGE = [0.01, 10000] as const;
+const toLogSlider = (v: number) => Math.log10(Math.min(LUMINANCE_RANGE[1], Math.max(LUMINANCE_RANGE[0], v)));
+const formatLuminance = (v: number) => String(Number(v.toPrecision(3)));
 const toSlider = (m: number) => Math.log10(Math.min(MAX_M, Math.max(MIN_M, m)));
 const fromSlider = (v: number) => 10 ** v;
 const formatDistance = (m: number) => String(Number(m.toFixed(2)));
@@ -24,6 +28,10 @@ export function Inspector() {
   const setAge = useScene((s) => s.setAge);
   const setIpd = useScene((s) => s.setIpd);
   const setPreset = useScene((s) => s.setPreset);
+  const setLuminance = useScene((s) => s.setLuminance);
+  const refractivePreset = useScene((s) => s.refractivePreset);
+  const setRefractivePreset = useScene((s) => s.setRefractivePreset);
+  const mirrorRightToLeft = useScene((s) => s.mirrorRightToLeft);
   const { minAgeYears, maxAgeYears } = AMPLITUDE_TABLE.domain;
   const dir = scene.targetDirectionDeg;
 
@@ -111,8 +119,31 @@ export function Inspector() {
             onChange={(e) => setTargetDirection({ x: dir.x, y: Number(e.target.value) })}
           />
         </div>
+        <div className="field">
+          <label htmlFor="luminance">Field luminance (cd/m²)</label>
+          <NumberField
+            id="luminance"
+            testId="luminance"
+            min={LUMINANCE_RANGE[0]}
+            max={LUMINANCE_RANGE[1]}
+            step={1}
+            value={scene.luminanceCdM2}
+            format={formatLuminance}
+            onCommit={setLuminance}
+          />
+          <input
+            aria-label="Luminance slider"
+            data-testid="luminance-slider"
+            type="range"
+            min={toLogSlider(LUMINANCE_RANGE[0])}
+            max={toLogSlider(LUMINANCE_RANGE[1])}
+            step={0.01}
+            value={toLogSlider(scene.luminanceCdM2)}
+            onChange={(e) => setLuminance(Number((10 ** Number(e.target.value)).toPrecision(3)))}
+          />
+        </div>
         <p className="note">
-          Distance from the midpoint between the eyes; 6 m is 0.17 D of demand. Drag the target in the stage, or set it here.
+          Distance from the midpoint between the eyes; 6 m is 0.17 D of demand. Drag the target in the stage, or set it here. Luminance sets the pupil (Watson & Yellott 2012).
         </p>
       </section>
 
@@ -168,10 +199,33 @@ export function Inspector() {
             })}
           </select>
         </div>
+        <div className="field">
+          <label htmlFor="refractive-preset">Refractive error</label>
+          <select
+            id="refractive-preset"
+            data-testid="refractive-preset"
+            value={refractivePreset}
+            onChange={(e) => setRefractivePreset(e.target.value)}
+          >
+            {REFRACTIVE_PRESETS.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="button-row">
+          <button type="button" onClick={mirrorRightToLeft} data-testid="mirror">
+            Mirror right → left
+          </button>
+        </div>
+        <Decomposition />
         <p className="note">
-          Navarro 1985 is the regression fixture (verified paraxial power 60.42 D). The Zapata-Díaz 2019 default awaits transcription.
+          Navarro 1985 is the regression fixture (verified paraxial power 60.42 D). The Zapata-Díaz 2019 default awaits transcription. Presets change the right eye; the left eye is its mirror image.
         </p>
       </section>
+
+      <Spectacles />
 
       <MuscleTable />
     </aside>

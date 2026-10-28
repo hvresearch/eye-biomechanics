@@ -1,0 +1,9 @@
+{
+  "name": "cie-1924-photopic-V",
+  "citation": "CIE 1924 photopic luminous efficiency function V(λ), equal to the ȳ(λ) of the CIE 1931 2° standard observer; values from the CVRL table (cvrl.org) as packaged in luxpy 1.12.5 (luxpy/data/cmfs/ciexyz_1931_2.dat).",
+  "source": "CVRL CIE 1931 2° colour matching functions, column ȳ, read 2026-10-28",
+  "verified": true,
+  "wavelengthsNm": [450, 500, 555, 600, 650],
+  "V": [0.038, 0.323, 1.0, 0.631, 0.107],
+  "use": "Weights of the five-wavelength polychromatic PSF (spec §5.4), for an equal-energy spectrum; normalized to sum 1 in eye-model's PHOTOPIC."
+}

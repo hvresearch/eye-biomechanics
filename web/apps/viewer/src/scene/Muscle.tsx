@@ -51,7 +51,9 @@ export function taperedTube(path: MusclePath, tendonMm: number, mirror = false):
 export function Muscle({ side, index }: { side: Side; index: number }) {
   const path = useScene((s) => s.binocular[side].eomPaths[index]);
   const activation = useScene((s) => s.binocular[side].eomActivation[index] ?? 0);
-  const tendonMm = useScene((s) => s.eyes[side].extraocularMuscles?.[index]?.tendon.slackLengthMm ?? 0);
+  const tendonMm = useScene(
+    (s) => s.eyes[side].extraocularMuscles?.find((m) => m.name === MUSCLE_NAMES[index])?.tendon.slackLengthMm ?? 0,
+  );
   const hovered = useScene((s) => s.hovered?.kind === "muscle" && s.hovered.side === side && s.hovered.index === index);
   const setHovered = useScene((s) => s.setHovered);
   const isSO = MUSCLE_NAMES[index] === "superiorOblique";

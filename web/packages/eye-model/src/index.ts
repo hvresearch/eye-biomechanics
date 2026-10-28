@@ -26,7 +26,11 @@ export {
 } from "./accommodation/controller";
 export type { LagModel, LagTable } from "./accommodation/controller";
 export type { BinocularState, EyeState, SceneState } from "./state/types";
-export { SchemaVersionError, assertSupported, deriveBinocular, deriveEyeState, pupilDiameterMm } from "./state/derive";
+export { SchemaVersionError, assertSupported, deriveBinocular, deriveEyeState } from "./state/derive";
+export { DEFAULT_PUPIL, pupilBaseMm, pupilDiameterMm } from "./pupil/model";
+export type { PupilInputs } from "./pupil/model";
+export { WATSON_YELLOTT, stanleyDaviesMm, watsonYellottMm } from "./pupil/watsonYellott";
+export { NEAR_RESPONSE, nearMiosisMm, vergenceDemandMA } from "./pupil/nearResponse";
 export type { BinocularOptions, EyeStateOverrides } from "./state/derive";
 export { SCENE_DEFAULTS, defaultScene } from "./scene/defaults";
 export type { SceneDefaults } from "./scene/defaults";
@@ -68,3 +72,17 @@ export {
   stepDynamics,
 } from "./gaze/dynamics";
 export type { DynamicState, DynamicTargets, DynamicsTable, PerEye } from "./gaze/dynamics";
+export { DISPERSION_TABLE, MEDIA_DISPERSION, PHOTOPIC, withDispersion } from "./optics/dispersion";
+export type { MediumName } from "./optics/dispersion";
+export { clinicalAxisDeg, localAxisDeg, toClinicalRefraction } from "./optics/clinical";
+export type { ClinicalPrescription, Side } from "./optics/clinical";
+export { PUPIL_PLANE_OFFSET_MM, VISUAL_AXIS_DEFAULTS, eyeView, onAxisView } from "./optics/view";
+export {
+  REFRACTIVE_PRESETS,
+  REFRACTIVE_PRESET_NAMES,
+  applyRefraction,
+  applyRefractivePreset,
+  decomposeRefraction,
+  mirrorEye,
+} from "./presets/refractive";
+export type { Decomposition, FarPointFn, Mechanism, RefractionSpec, RefractivePreset, RefractivePresetName } from "./presets/refractive";

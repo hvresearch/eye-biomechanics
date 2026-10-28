@@ -1,7 +1,6 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import { DoubleSide, Plane, Vector3, type Group } from "three";
-import { pupilDiameterMm } from "@eye/eye-model";
 import { eyeOptics, useScene, type Side } from "../store/scene";
 import { lathe } from "./lathe";
 import { globeProfiles, type ProfilePoint } from "./profiles";
@@ -78,6 +77,9 @@ function Structure({
   );
 }
 
+/** Resolution of the drawn pupil, mm (a drawing choice). */
+const PUPIL_DRAW_STEP_MM = 0.05;
+
 /**
  * One eye's anterior segment and globe, drawn in the optical frame (corneal vertex at z = 0)
  * from the accommodated surfaces the optics worker returned. With `cut`, the eye is sliced
@@ -86,10 +88,11 @@ function Structure({
 export function EyeCutaway({ side, cut }: { side: Side; cut: boolean }) {
   const surfaces = useScene((s) => eyeOptics(s.optics, side)?.surfaces ?? null);
   const params = useScene((s) => s.eyes[side]);
+  // Rounded so the near miosis during an animation does not regenerate the eye every frame (drawing only).
+  const pupilMm = useScene((s) => Math.round(s.binocular[side].pupilMm / PUPIL_DRAW_STEP_MM) * PUPIL_DRAW_STEP_MM);
   const profiles = useMemo(
-    () =>
-      surfaces ? globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm, pupilDiameterMm(params)) : null,
-    [surfaces, params],
+    () => (surfaces ? globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm, pupilMm) : null),
+    [surfaces, params, pupilMm],
   );
   const group = useRef<Group>(null);
   const clip = useMemo(() => (cut ? LOCAL_CUT.clone() : null), [cut]);

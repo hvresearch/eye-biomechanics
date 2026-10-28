@@ -3,8 +3,10 @@ import { resolve } from "node:path";
 import { surfacesFromSequential } from "../../src/surfaces/sequential";
 import type { SequentialSurface, Surface } from "../../src/surfaces/types";
 
+type ConicSequential = Extract<SequentialSurface, { radiusMm: number }> & { kind?: "conic" };
+
 interface Table {
-  relaxed: SequentialSurface[];
+  relaxed: ConicSequential[];
   retina: { radiusMm: number; conic: number };
   axialLengthMm: number;
   accommodation: { coefficients: Record<string, number> };
@@ -52,6 +54,7 @@ export function navarroSurfaces(accommodationD = 0): Surface[] {
     thicknessToNextMm: 0,
     mediumAfter: { ...last.mediumAfter },
     apertureSemiDiamMm: 12,
+    image: true,
   });
   return surfacesFromSequential(seq);
 }

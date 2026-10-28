@@ -1,0 +1,33 @@
+{
+  "name": "watson-yellott-2012-unified",
+  "citation": "Watson AB, Yellott JI. A unified formula for light-adapted pupil size. J Vis 12(10):12, 1-16, 2012.",
+  "doi": "10.1167/12.10.12",
+  "verified": false,
+  "equation": "F = L·a·M(e); D_SD = maxMm − rangeMm·(F/fluxScale)^exponent / ((F/fluxScale)^exponent + halfConstant); D_U = D_SD + (y − referenceYears)·(slopeIntercept + slopePerMm·D_SD), with L in cd/m², a in deg², y in years, D in mm",
+  "note": "The paper was unreachable from the cloud session (2026-10-28). Each block names its source; set verified: true after checking every constant against the paper's equations.",
+  "stanleyDavies": {
+    "maxMm": 7.75,
+    "rangeMm": 5.75,
+    "fluxScale": 846,
+    "exponent": 0.41,
+    "halfConstant": 2,
+    "source": "Search-engine excerpts quoting the Stanley & Davies base function as adopted by Watson & Yellott (e.g. arXiv 2412.00831 Eq. 15) and luxpy 1.12.5 get_pupil_diameter_watson2012; they agree."
+  },
+  "age": {
+    "referenceYears": 28.58,
+    "slopeIntercept": 0.021323,
+    "slopePerMm": -0.0095623,
+    "domainYears": [20, 83],
+    "source": "Reference age 28.58 y and the 20–83 y validity range confirmed by search excerpts of the paper. The slope constants are from luxpy 1.12.5 get_pupil_diameter_watson2012 (a secondary, open-source implementation); luxpy's simplified closed form agrees with them to 2e-5 mm. Ages outside the domain are clamped (the paper's appendix extension below 20 y is not used)."
+  },
+  "monocular": {
+    "oneEye": 0.1,
+    "twoEyes": 1,
+    "source": "luxpy 1.12.5 get_pupil_diameter_watson2012 (M(e) = 0.1 for one eye, 1 for two); not confirmed against the paper."
+  },
+  "defaults": {
+    "fieldAreaDeg2": 3600,
+    "eyes": 2,
+    "note": "Viewer defaults, assumptions: binocular viewing of a 60° × 60° adapting field (a room-sized scene)."
+  }
+}

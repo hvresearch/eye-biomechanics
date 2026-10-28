@@ -1,4 +1,4 @@
-import { buildSurfaces, deriveEyeState, loadPreset, pupilDiameterMm, type SceneState } from "@eye/eye-model";
+import { buildSurfaces, deriveEyeState, loadPreset, type SceneState } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
 import { LATHE_SEGMENTS, lathe } from "../src/scene/lathe";
 import { globeProfiles } from "../src/scene/profiles";
@@ -15,7 +15,7 @@ const scene: SceneState = {
 
 const profiles = () => {
   const eye = loadPreset("navarro-1985");
-  return globeProfiles(buildSurfaces(eye, deriveEyeState(scene, eye, "right")), eye.axialLengthMm, eye.retina.radiusMm, pupilDiameterMm(eye));
+  return globeProfiles(buildSurfaces(eye, deriveEyeState(scene, eye, "right")), eye.axialLengthMm, eye.retina.radiusMm, deriveEyeState(scene, eye, "right").pupilMm);
 };
 
 describe("lathe", () => {

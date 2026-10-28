@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { loadPreset } from "../src/presets/load";
+import { vergenceDemandMA } from "../src/pupil/nearResponse";
+import { watsonYellottMm } from "../src/pupil/watsonYellott";
 import { SchemaVersionError, deriveEyeState } from "../src/state/derive";
 import type { SceneState } from "../src/state/types";
 
@@ -22,7 +24,9 @@ describe("deriveEyeState", () => {
     expect(s.accommodationD).toBeGreaterThanOrEqual(1.5);
     expect(s.accommodationD).toBeLessThanOrEqual(2);
     expect(s.amplitudeD).toBeGreaterThan(5);
-    expect(s.pupilMm).toBe(4);
+    // Watson & Yellott at the scene's luminance and age, less the near miosis at 0.5 m (2 MA).
+    expect(s.pupilBaseMm).toBeCloseTo(watsonYellottMm(100, 3600, 30, 2), 12);
+    expect(s.pupilMm).toBeCloseTo(Math.max(2, s.pupilBaseMm - 0.305 * vergenceDemandMA(2 * Math.atan(0.0315 / 0.5) * (180 / Math.PI), 63)), 9);
     expect(s.gazeDeg.xDeg).toBeLessThan(0); // converged: the right eye turns nasally
     expect(s.eomActivation).toHaveLength(6);
     expect(s.ciliaryActivation).toBeCloseTo(s.accommodationD / s.amplitudeD, 12);
@@ -50,6 +54,14 @@ describe("deriveEyeState", () => {
     const eye = { ...loadPreset("navarro-1985"), schemaVersion: "2.0.0" };
     expect(() => deriveEyeState(scene(), eye, "right")).toThrow(SchemaVersionError);
     expect(() => deriveEyeState(scene(), eye, "right")).toThrow(/2\.0\.0/);
+  });
+
+  it("keeps a fixed pupil fixed (fixtures)", () => {
+    const eye = loadPreset("navarro-1985");
+    eye.pupil = { model: "fixed", params: { diameterMm: 4 } };
+    const s = deriveEyeState(scene({ targetDistanceM: 0.25 }), eye, "right");
+    expect(s.pupilMm).toBe(4);
+    expect(s.pupilBaseMm).toBe(4);
   });
 
   it("throws a plain Error for an unknown pupil model", () => {

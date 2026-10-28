@@ -18,4 +18,8 @@ describe("data provenance", () => {
     expect(navarro.accommodation.description).not.toContain("axial length grows");
     expect(navarro.accommodation.description).toContain("vitreous absorbs");
   });
+
+  it("labels the Navarro aperture semi-diameters as modeling choices", () => {
+    expect(navarro.apertureNote).toMatch(/modeling choice/);
+  });
 });

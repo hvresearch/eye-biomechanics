@@ -14,6 +14,42 @@ describe("paraxialPower", () => {
     expect(Math.abs(p.farPointD)).toBeLessThan(0.05);
   });
 
+  it("does not end the system at an index-matched surface that is not flagged as the image", () => {
+    const surfaces = navarroSurfaces();
+    const p0 = paraxialPower(surfaces);
+    const aqueous = surfaces[1];
+    if (!aqueous) throw new Error("no aqueous");
+    const stop = { ...aqueous, name: "stop", kind: "conic" as const, radiusMm: Infinity, conic: 0, vertexZMm: aqueous.vertexZMm + 2 };
+    const withStop = [...surfaces.slice(0, 2), stop, ...surfaces.slice(2)];
+    const p1 = paraxialPower(withStop);
+    expect(p1.powerD).toBeCloseTo(p0.powerD, 12);
+    expect(p1.farPointD).toBeCloseTo(p0.farPointD, 12);
+  });
+
+  it("uses each meridian's curvature for a toric cornea", () => {
+    const surfaces = navarroSurfaces();
+    const c = surfaces[0];
+    if (!c || c.kind !== "conic") throw new Error("no cornea");
+    const n = c.mediumAfter.index555;
+    const toric = { ...c, kind: "toric" as const, rxMm: 7.6, ryMm: 7.8, axisDeg: 0, conicX: c.conic, conicY: c.conic };
+    const t = [toric, ...surfaces.slice(1)];
+    const px = paraxialPower(t, 1, { meridianDeg: 0 });
+    const py = paraxialPower(t, 1, { meridianDeg: 90 });
+    // Each meridian is the rotationally symmetric eye with that section's radius.
+    const sx = paraxialPower([{ ...c, radiusMm: 7.6 }, ...surfaces.slice(1)]);
+    const sy = paraxialPower([{ ...c, radiusMm: 7.8 }, ...surfaces.slice(1)]);
+    expect(px.powerD).toBeCloseTo(sx.powerD, 12);
+    expect(py.farPointD).toBeCloseTo(sy.farPointD, 12);
+    // To first order the difference is that of the anterior surface powers, (n − 1)(1/rx − 1/ry).
+    const expected = 1000 * (n - 1) * (1 / 7.6 - 1 / 7.8);
+    expect(Math.abs(px.powerD - py.powerD - expected)).toBeLessThan(0.15 * expected);
+    expect(px.farPointD).toBeLessThan(py.farPointD); // steeper meridian is more myopic
+    // An oblique meridian sees the mean curvature at 45°.
+    const p45 = paraxialPower(t, 1, { meridianDeg: 45 });
+    expect(p45.powerD).toBeGreaterThan(py.powerD);
+    expect(p45.powerD).toBeLessThan(px.powerD);
+  });
+
   it("matches the thin-lens formula for a thin glass lens in air", () => {
     const n = 1.5;
     const s = surfacesFromSequential([
