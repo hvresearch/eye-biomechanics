@@ -336,38 +336,40 @@ def _torque_balanced(forces: NDArray, centers: NDArray, directions: NDArray) -> 
     is kept, so the trivial all-zero set is excluded) closest to f in the weighted norm
     Σ ((f'_i − f_i) / s_i)², s_i = max(f_i, mean f / 4) (a small quadratic program; the floor on
     s_i lets a relaxed muscle take up tension when the others cannot balance alone). Raises
-    when no non-negative balanced set exists."""
-    from scipy.optimize import minimize
+    when no non-negative balanced set exists.
 
+    The program is convex with six unknowns, so it is solved exactly by enumerating which
+    muscles are held at zero: each choice is an equality-constrained least-squares problem with
+    a closed-form solution, and the optimum is the cheapest one that is non-negative. Unlike an
+    iterative solver this gives the same answer, to round-off, on every CPU."""
     arms = np.cross(centers, directions)  # (6, 3): moment per newton
     A = arms.T  # (3, 6)
     if np.linalg.norm(A @ forces) == 0:
         return forces.copy()
+    n = len(forces)
     s = np.maximum(forces, max(forces.mean(), 1e-12) / 4)
-    res = minimize(
-        lambda f: np.sum(((f - forces) / s) ** 2),
-        forces,
-        jac=lambda f: 2 * (f - forces) / s**2,
-        constraints=[
-            {"type": "eq", "fun": lambda f: A @ f, "jac": lambda f: A},
-            {
-                "type": "eq",
-                "fun": lambda f: np.array([f.sum() - forces.sum()]),
-                "jac": lambda f: np.ones((1, f.size)),
-            },
-        ],
-        bounds=[(0, None)] * len(forces),
-        method="SLSQP",
-        options={"ftol": 1e-15, "maxiter": 200},
-    )
+    B = np.vstack([A, np.ones((1, n))])  # (4, 6)
+    b = np.concatenate([np.zeros(3), [forces.sum()]])
     scale = np.linalg.norm(arms, axis=1).max() * forces.max()
-    if not res.success or np.linalg.norm(A @ res.x) > 1e-10 * scale:
-        raise ValueError(f"no non-negative torque-balanced muscle forces ({res.message})")
-    out = res.x.copy()
-    # Remove the last round-off of the moment along the least-norm direction, then clip the
-    # round-off below zero.
-    out += A.T @ np.linalg.lstsq(A @ A.T, -(A @ out), rcond=None)[0]
-    return np.where(np.abs(out) < 1e-12 * forces.max(), 0.0, out)
+    tol = 1e-10 * scale
+    best, best_cost = None, np.inf
+    for mask in range(1, 2**n):
+        free = np.array([(mask >> i) & 1 == 1 for i in range(n)])
+        # With the zeroed muscles fixed, f = f0 + s g on the free ones and g is the least-norm
+        # solution of (B s) g = b − B f0 (an SVD solve, so the moment is zero to round-off).
+        f = np.zeros(n)
+        Bs = B[:, free] * s[free]
+        g = np.linalg.lstsq(Bs, b - B[:, free] @ forces[free], rcond=None)[0]
+        f[free] = forces[free] + s[free] * g
+        if np.linalg.norm(B @ f - b) > tol or f.min() < -1e-12 * forces.max():
+            continue
+        f = np.maximum(f, 0.0)
+        cost = np.sum(((f - forces) / s) ** 2)
+        if cost < best_cost:
+            best, best_cost = f, cost
+    if best is None:
+        raise ValueError("no non-negative torque-balanced muscle forces")
+    return np.where(best < 1e-12 * forces.max(), 0.0, best)
 
 
 def _orbital_reaction(t: NDArray, x: NDArray, dx: NDArray) -> NDArray:

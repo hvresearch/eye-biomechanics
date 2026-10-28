@@ -7,7 +7,7 @@ import pytest
 from scipy.spatial import cKDTree
 
 from eyebiomech.fem.data import DATA_DIR, load_eom_table, load_materials
-from eyebiomech.fem.loads import Loads
+from eyebiomech.fem.loads import Loads, _torque_balanced
 from eyebiomech.fem.material import region_materials
 from eyebiomech.fem.mesh import make_shell_mesh, make_sphere_shell
 from eyebiomech.fem.solve import make_context, solve
@@ -204,10 +204,45 @@ def test_force_table_loads_are_torque_balanced():
     assert all(i["forceN"] == i["tableForceN"] for i in items)
 
 
-def test_nasal_gaze_has_no_non_negative_torque_balance():
-    """Without passive orbital torques the length-proxy model cannot hold a nasal gaze."""
-    with pytest.raises(ValueError, match="torque-balanced"):
-        Loads().from_force_table(TABLE, TABLE.at(-30, 0), EOM)
+def test_torque_balance_is_the_exact_optimum_at_every_lattice_gaze():
+    """KKT conditions of the balancing program at every gaze of the table that has a balanced
+    set: the weighted-change gradient is a combination of the constraint rows on the loaded
+    muscles and exceeds it on the unloaded ones. An iterative solver failed this on some CPUs."""
+    solved = 0
+    for g in range(TABLE.force_n.shape[0]):
+        body = TABLE.body_frame(g)
+        f0 = np.asarray(TABLE.force_n[g], dtype=float)
+        try:
+            f = _torque_balanced(f0, body["insertion_mm"], body["insertion_dir"])
+        except ValueError:
+            continue
+        solved += 1
+        A = np.cross(body["insertion_mm"], body["insertion_dir"]).T
+        B = np.vstack([A, np.ones(f.size)])
+        s = np.maximum(f0, f0.mean() / 4)
+        grad = 2 * (f - f0) / s**2
+        free = f > 0
+        lam = np.linalg.lstsq(B[:, free].T, grad[free], rcond=None)[0]
+        nu = grad - B.T @ lam
+        assert np.abs(nu[free]).max() < 1e-9 * np.abs(grad).max()
+        assert np.all(nu[~free] >= -1e-9 * np.abs(grad).max())
+        assert np.linalg.norm(A @ f) < 1e-12
+    assert solved >= 17
+
+
+@pytest.mark.parametrize(
+    "gaze, message",
+    [
+        ((-30, 0), "unloads medialRectus"),
+        ((-15, 0), "unloads medialRectus"),
+        ((-30, 30), "no non-negative torque-balanced"),
+    ],
+)
+def test_nasal_gaze_is_rejected(gaze, message):
+    """Without passive orbital torques the length-proxy model cannot hold a nasal gaze: the
+    balanced set switches off the medial rectus, or none exists."""
+    with pytest.raises(ValueError, match=message):
+        Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)
 
 
 @pytest.mark.parametrize("gaze", [(30, 0), (0, 15), (0, -15), (0, 30)])

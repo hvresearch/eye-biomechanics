@@ -67,7 +67,7 @@ numbers. All move to M5.
   tissue stiffness a calibration parameter). (M5)
 - `science/eyebiomech/fem/loads.py` (`from_force_table`): the length-proxy muscle forces are not
   torque-balanced. The smallest balancing change moves the primary-gaze lateral and medial recti
-  by +57% and −47%, has no non-negative solution in nasal gazes, and switches off the agonist in
+  by +57% and −47%, and switches off the agonist (or has no non-negative solution) in nasal,
   vertical and far temporal gazes, so the CLI accepts primary gaze only. The induced astigmatism
   is about five times larger when the orbit carries the moment instead (Deviation 15). Model
   passive orbital torques or the v2 static equilibrium (spec §4.4), rerun the committed result,
