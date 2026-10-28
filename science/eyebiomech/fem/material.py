@@ -173,6 +173,8 @@ _FAMILIES = (
     "meridional",
     "diagonalPlus",
     "diagonalMinus",
+    "obliquePlus",
+    "obliqueMinus",
 )
 
 
@@ -206,12 +208,16 @@ def fiber_directions(x: NDArray, family: str, geometry) -> NDArray:
     elif family == "meridional":
         a = _tangent_projection(np.cross(n, e_phi, axis=0), n)
     elif family in ("diagonalPlus", "diagonalMinus"):
-        # ±45° to the local preferred pair: nasal-temporal/superior-inferior on the cornea,
-        # meridional/circumferential elsewhere (the two coincide up to rotation near the pole).
+        # ±45° to the meridional/circumferential pair (limbus and sclera).
         sign = 1.0 if family == "diagonalPlus" else -1.0
         e_m = _tangent_projection(np.cross(n, e_phi, axis=0), n)
         e_c = _tangent_projection(e_phi, n)
         a = _tangent_projection(e_m + sign * e_c, n)
+    elif family in ("obliquePlus", "obliqueMinus"):
+        # ±45° to the nasal-temporal/superior-inferior pair (cornea): the projections of
+        # (1, ±1, 0)/√2, fixed in the frame rather than turning with the azimuth.
+        sign = 1.0 if family == "obliquePlus" else -1.0
+        a = _tangent_projection(np.stack([ones, sign * ones, zeros]) / np.sqrt(2.0), n)
     else:
         raise ValueError(f"unknown fiber family {family!r}; expected one of {_FAMILIES}")
     return a.reshape(shape)

@@ -16,14 +16,21 @@ corners the antagonists relax to zero force.
 ## The elastic FEM result (2026-10-28)
 
 Mesh `n_face = 16`, `layers = 1` (55 314 degrees of freedom), two load steps for the IOP-only
-reference and two for the other loads from it; Newton took 10 + 14 iterations; 226 s on the
-cloud session's 4 cores. Refining from `n_face = 12` to 16 changed the lid- and muscle-induced
-corneal astigmatism by about 5%; `n_face = 8` is too coarse (the lid effect doubled).
+reference and two for the other loads from it; about 4.5 min on the cloud session's 4 cores.
+Refining from `n_face = 12` to 16 changed the lid- and muscle-induced corneal astigmatism by
+about 5%; `n_face = 8` is too coarse (the lid effect doubled). That refinement study, and the
+lids-alone and muscles-alone split below, were run before the review fixes of edd021b and have
+not been repeated.
 
-Anterior height change (µm, normalized to 4 mm): c(2,−2) −0.089, c(2,0) +0.074, c(2,2) −0.267.
-The cornea and the lens move back 42.9 and 43.0 µm relative to the retina, a 43 µm shorter
-eye: in this model the muscles' pull, taken by the orbit behind the globe, squeezes the globe
-axially. Separately, the lids alone give about +0.11 D of J0 and the muscles alone about
-−0.08 D (paraxial estimates from the anterior surface; the viewer reports the traced
-refraction). Everything here is elastic, uncalibrated, and built on unverified data (see
-`data/materials/README.md`): it shows what the model does, not what eyes do.
+Regenerated after the review of edd021b, which found that the cornea's diagonal fiber families
+followed the meridians instead of sitting at ±45° to nasal-temporal/superior-inferior, and that
+the height change dropped the second-order effect of the anterior segment's ~117 µm lateral
+shift. Anterior height change (µm, normalized to 4 mm): c(2,−2) +0.025, c(2,0) +0.224,
+c(2,2) −0.269 (before the fixes −0.089, +0.074, −0.267). Traced against the IOP-only state:
+ΔM +0.11 D, ΔJ0 +0.018 D, ΔJ45 +0.003 D (ΔS +0.13, ΔC −0.04 × 4); before the fixes ΔJ0 was
++0.05 D and ΔJ45 −0.04 D, so most of the earlier oblique astigmatism came from the misplaced
+fibers. The cornea and the lens move back 43.3 and 43.0 µm relative to the retina, a 43 µm
+shorter eye: in this model the muscles' pull, taken by the orbit behind the globe, squeezes the
+globe axially. Before the fixes, the lids alone gave about +0.11 D of J0 and the muscles alone
+about −0.08 D (paraxial estimates from the anterior surface). Everything here is elastic,
+uncalibrated, and built on unverified data (see `data/materials/README.md`): it shows what the model does, not what eyes do.

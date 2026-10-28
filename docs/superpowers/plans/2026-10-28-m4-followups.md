@@ -89,3 +89,38 @@ numbers. All move to M5.
 - `web/apps/viewer/test/bench.test.ts`: in this cloud container the worker benchmark varies
   between 50 and 140 ms per run (median near the 100 ms budget) with or without the M4 changes;
   watch CI and implement the planned performance work if it flakes. (M6)
+
+## From the driver review of edd021b (2026-10-28, Minor findings not fixed in M4)
+
+- `science/eyebiomech/fem/export.py` (`axial_shifts`): the retina shift is always 0 because the
+  inner posterior-pole node lies in the clamped optic-nerve support, so axial changes are relative
+  to the clamp. Measure the retina elsewhere or say so in Deviation 9, the tooltip, and
+  `data/results/README.md`. (M5)
+- `science/eyebiomech/fem/export.py`: the anterior segment's bulk lateral shift (about 117 µm
+  nasal in the committed result) appears as a Z(1,1) term on the cornea while the lens only
+  follows axially, an artificial cornea-to-lens decentration that also dominates the heat map.
+  Remove the rigid motion (or carry it to the lens as decenter) and document it. (M5)
+- `science/eyebiomech/fem/cli.py`: the CLI ignores the input document's `extraocularMuscles` and
+  globe size and always uses `data/eom/geometry-default.json` and the default force table; warn
+  or reject until the force table is generated from the document. (M5)
+- `science/eyebiomech/fem/loads.py`: the lid bands and the orbital support are placed in the
+  globe frame and are not counter-rotated for off-primary gazes (for example 30,30, which the
+  CLI accepts); rotate them by the inverse gaze or reject non-primary gazes. (M5, blocking for
+  the duty cycle)
+- `web/apps/viewer/src/ui/tooltips.ts`: the induced-refraction tooltip omits "fixed optic-nerve
+  cap", and the heat-map tooltip has no "Approximation:" label (displacements are relative to the
+  clamp and the assumed orbital reaction). (M5)
+- `science/tests/test_fem_export.py`: add the Task 4.7 test that a non-converged solve
+  (`NewtonDidNotConverge`) exits with code 2 and writes no files. (M5)
+- `science/eyebiomech/fem/cli.py`: a missing `--eye`/`--forces` file or a malformed force table
+  ends in a traceback instead of exit code 2 with a message. (M5)
+- `science/eyebiomech/fem/data.py`: `DATA_DIR` points into the repository, so the installed
+  wheel's `eyebiomech fem` cannot find its tables; ship them as package data or take a data
+  root option. (M5)
+- `web/apps/viewer/src/results/load.ts` (`parseFiles`): check that the sidecar's `id` matches the
+  EyeParameters document. (M6)
+- `data/results/forces/default.json`: add a drift test against a fresh `buildForceTable` run, as
+  the oracle has. (M5)
+- Spec §7 / master plan Task 4.2: the corneal inflation check within 15% is replaced by the
+  ocular-rigidity plausibility check (Deviation 1); the owner should accept this gap explicitly
+  or keep it open for M5 calibration. (owner, M5)

@@ -117,12 +117,41 @@ def test_fiber_directions_are_unit_and_tangent_to_the_shell():
         "meridional",
         "diagonalPlus",
         "diagonalMinus",
+        "obliquePlus",
+        "obliqueMinus",
     ):
         a = fiber_directions(x, family, g)
         assert np.allclose(np.linalg.norm(a, axis=0), 1)
         assert np.allclose(np.sum(a * n, axis=0), 0, atol=1e-12)
     with pytest.raises(ValueError):
         fiber_directions(x, "radial", g)
+
+
+def test_corneal_diagonals_sit_at_45_degrees_to_the_preferred_pair_at_every_azimuth():
+    """The cornea's diagonal families are ±45° to nasal-temporal/superior-inferior wherever the
+    point lies; built from meridional ± circumferential (the review of edd021b) they fall onto
+    superior-inferior and nasal-temporal at 45° azimuth."""
+    doc = json.loads((DATA_DIR / "fixtures" / "emmetrope-right.eye.json").read_text())
+    g = eye_geometry(doc)
+    families = [f["direction"] for f in load_materials()["regions"]["cornea"]["fibers"]["families"]]
+    assert families == ["nasalTemporal", "superiorInferior", "obliquePlus", "obliqueMinus"]
+    phi = np.radians(np.arange(0, 360, 15))
+    # Projecting frame-fixed directions onto the curved cap bends their angles a little away
+    # from the axes (about 6° at 4 mm); the meridional-based diagonals miss by 45° at 45° azimuth.
+    for rho, tol in ((0.5, 0.5), (2.0, 2.0), (4.0, 7.0)):
+        theta = np.full(phi.shape, np.arcsin(rho / g.r_out(np.array([0.3]))[0]))
+        d = np.stack([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), -np.cos(theta)])
+        x = d * g.r_out(theta)
+        nt = fiber_directions(x, "nasalTemporal", g)
+        si = fiber_directions(x, "superiorInferior", g)
+        for family in ("obliquePlus", "obliqueMinus"):
+            a = fiber_directions(x, family, g)
+            for ref in (nt, si):
+                angle = np.degrees(np.arccos(np.abs(np.sum(a * ref, axis=0))))
+                assert np.all(np.abs(angle - 45) < tol), (rho, family, angle)
+        plus, minus = fiber_directions(x, "obliquePlus", g), fiber_directions(x, "obliqueMinus", g)
+        between = np.degrees(np.arccos(np.abs(np.sum(plus * minus, axis=0))))
+        assert np.all(90 - between < 2 * tol)
 
 
 def test_half_share_families_double_up_to_the_same_equibiaxial_response():
