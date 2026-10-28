@@ -1,14 +1,31 @@
-"""Validation of EyeParameters JSON documents against the shared schema."""
+"""Validation of EyeParameters and deformation documents against the shared schemas.
+
+The schemas ship as package data (`eyebiomech/schemas/`, byte-identical copies of the
+repository's `schemas/`, checked by tests/test_packaging.py), so the package validates
+documents outside the repository checkout.
+"""
 
 import json
 import re
-from pathlib import Path
+from importlib.resources import files
 
 from jsonschema import Draft202012Validator
+from referencing import Registry, Resource
 
-_SCHEMA_PATH = Path(__file__).resolve().parents[2] / "schemas" / "eye-parameters.schema.json"
 _SUPPORTED_MAJOR = 1
-_VALIDATOR = Draft202012Validator(json.loads(_SCHEMA_PATH.read_text()))
+
+
+def _load(name: str) -> dict:
+    return json.loads(files("eyebiomech").joinpath("schemas", name).read_text())
+
+
+_EYE_SCHEMA = _load("eye-parameters.schema.json")
+_DEFORMATION_SCHEMA = _load("deformation.schema.json")
+_REGISTRY = Registry().with_resources(
+    (s["$id"], Resource.from_contents(s)) for s in (_EYE_SCHEMA, _DEFORMATION_SCHEMA)
+)
+_VALIDATOR = Draft202012Validator(_EYE_SCHEMA, registry=_REGISTRY)
+_DEFORMATION_VALIDATOR = Draft202012Validator(_DEFORMATION_SCHEMA, registry=_REGISTRY)
 
 
 class SchemaError(ValueError):
@@ -33,11 +50,21 @@ def _check_major(doc: object) -> None:
         )
 
 
-def validate_eye_parameters(doc: dict) -> None:
+def _validate(validator: Draft202012Validator, doc: dict) -> None:
     _check_major(doc)
     errors = [
         f"/{'/'.join(str(p) for p in e.absolute_path)} {e.message}"
-        for e in sorted(_VALIDATOR.iter_errors(doc), key=lambda e: list(map(str, e.absolute_path)))
+        for e in sorted(validator.iter_errors(doc), key=lambda e: list(map(str, e.absolute_path)))
     ]
     if errors:
         raise SchemaError(errors)
+
+
+def validate_eye_parameters(doc: dict) -> None:
+    _validate(_VALIDATOR, doc)
+
+
+def validate_deformation(doc: dict) -> None:
+    """Validate a `*.deformation.json` sidecar (and its embedded reference EyeParameters)."""
+    _validate(_DEFORMATION_VALIDATOR, doc)
+    validate_eye_parameters(doc["reference"])

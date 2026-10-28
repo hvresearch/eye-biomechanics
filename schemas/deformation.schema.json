@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/deformation.schema.json",
+  "title": "Deformation",
+  "description": "Displacement field of the corneoscleral shell's outer surface written by `eyebiomech fem` next to its EyeParameters result (M4 plan, Deviation 7). Positions and displacements are in the FEM frame named by `frame` (mm); `displacementMm` is the loaded state minus the IOP-only reference state.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "id": { "type": "string" },
+    "provenance": { "$ref": "eye-parameters.schema.json#/$defs/Provenance" },
+    "frame": { "type": "string" },
+    "elastic": { "const": true },
+    "apexZMm": { "type": "number" },
+    "loads": { "type": "array", "items": { "type": "object" } },
+    "vertices": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 },
+      "minItems": 3
+    },
+    "triangles": {
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": { "type": "integer", "minimum": 0 },
+        "minItems": 3,
+        "maxItems": 3
+      },
+      "minItems": 1
+    },
+    "displacementMm": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+    },
+    "region": { "type": "array", "items": { "enum": ["cornea", "limbus", "sclera"] } },
+    "reference": { "$ref": "eye-parameters.schema.json" }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "provenance",
+    "frame",
+    "elastic",
+    "apexZMm",
+    "loads",
+    "vertices",
+    "triangles",
+    "displacementMm",
+    "region",
+    "reference"
+  ],
+  "additionalProperties": false
+}
