@@ -33,7 +33,7 @@ from eyebiomech.forces.from_viewer import load_force_table
 from eyebiomech.schema import SchemaError, validate_eye_parameters
 
 # Production mesh (numerical): mesh refinement from 12 to 16 changed the induced corneal
-# astigmatism by about 5% (data/results/README.md).
+# astigmatism by about 3-8% (data/results/README.md).
 DEFAULT_N_FACE = 16
 DEFAULT_LAYERS = 1
 DEFAULT_STEPS = 2
@@ -69,7 +69,7 @@ def _parser() -> argparse.ArgumentParser:
     sub = p.add_subparsers(dest="command", required=True)
     f = sub.add_parser("fem", help="elastic corneoscleral FEM result for an EyeParameters file")
     f.add_argument("--eye", required=True, type=Path)
-    f.add_argument("--gaze", default="0,0", help="Fick x,y in degrees on the force-table lattice")
+    f.add_argument("--gaze", default="0,0", help="Fick x,y in degrees; only 0,0 is supported")
     f.add_argument("--iop", type=float, default=15.0, help="intraocular pressure, mmHg")
     f.add_argument("--accommodation", type=float, default=0.0, help="diopters (ciliary load)")
     f.add_argument("--forces", type=Path, default=DATA_DIR / "results" / "forces" / "default.json")
@@ -103,6 +103,11 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
     materials, eom = load_materials(), load_eom_table()
     loads = Loads().iop(args.iop)
     if args.loads == "all":
+        if (gx, gy) != (0.0, 0.0):
+            raise ValueError(
+                f"gaze {args.gaze}: only primary gaze (0,0) is supported; eccentric gazes need "
+                "passive orbital torques and lid bands that follow the gaze (M5 follow-up)"
+            )
         table = load_force_table(args.forces)
         try:
             gaze = table.at(gx, gy)

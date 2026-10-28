@@ -208,3 +208,11 @@ def test_nasal_gaze_has_no_non_negative_torque_balance():
     """Without passive orbital torques the length-proxy model cannot hold a nasal gaze."""
     with pytest.raises(ValueError, match="torque-balanced"):
         Loads().from_force_table(TABLE, TABLE.at(-30, 0), EOM)
+
+
+@pytest.mark.parametrize("gaze", [(30, 0), (0, 15), (0, -15), (0, 30)])
+def test_balancing_that_unloads_a_loaded_muscle_is_rejected(gaze):
+    """In these gazes the smallest balancing change switches off a muscle the table loads (the
+    agonist), which is not a stand-in for equilibrium; refuse it rather than solve it."""
+    with pytest.raises(ValueError, match="unloads"):
+        Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)

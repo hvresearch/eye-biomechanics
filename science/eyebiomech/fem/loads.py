@@ -158,12 +158,27 @@ class Loads:
         relative amount that makes the six muscle moments about the globe center sum to zero:
         the length-proxy activations of spec §4.4 v1 do not balance torque, and an unbalanced
         moment would twist the globe about the optic-nerve support. This stands in for the v2
-        static equilibrium (approximation); each insertion records its table force."""
+        static equilibrium (approximation); each insertion records its table force. The change
+        is not small: in primary gaze it moves the lateral rectus from 0.116 to 0.182 N and the
+        medial rectus from 0.147 to 0.078 N. A balanced set that switches off a muscle the table
+        loads (the agonist in vertical and far temporal gazes) is rejected."""
         body = table.body_frame(gaze_index)
         tendons = {m["name"]: m["tendon"] for m in eom["muscles"]}
-        forces = np.asarray(table.force_n[gaze_index], dtype=float)
+        table_forces = np.asarray(table.force_n[gaze_index], dtype=float)
+        forces = table_forces
         if balance_moments:
             forces = _torque_balanced(forces, body["insertion_mm"], body["insertion_dir"])
+            unloaded = [
+                name
+                for name, f0, f in zip(table.muscles, table_forces, forces, strict=True)
+                if f0 > 0 and f == 0
+            ]
+            if unloaded:
+                raise ValueError(
+                    "torque balancing unloads " + ", ".join(unloaded) + ", which the force "
+                    "table loads at this gaze; eccentric gazes need passive orbital torques "
+                    "(M5 follow-up)"
+                )
         for i, name in enumerate(table.muscles):
             wraps = table.arc_mm[gaze_index, i] > 0
             self.insertion(

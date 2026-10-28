@@ -138,6 +138,18 @@ def test_cli_rejects_a_future_schema_version(tmp_path, capsys):
     assert "2.0.0" in capsys.readouterr().err
 
 
+@pytest.mark.parametrize("gaze", ["15,0", "30,30", "0,-15"])
+def test_cli_rejects_eccentric_gazes(tmp_path, capsys, gaze):
+    """Until passive orbital torques exist and the lid bands follow the gaze, only primary gaze
+    has a defensible load set."""
+    fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
+    out = tmp_path / "e.eye.json"
+    code = main(["fem", "--eye", str(fixture), "--gaze", gaze, "--out", str(out)])
+    assert code == 2
+    assert "primary gaze" in capsys.readouterr().err
+    assert not out.exists()
+
+
 def test_cli_rejects_a_gaze_off_the_lattice(tmp_path, capsys):
     fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
     code = main(
