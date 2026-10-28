@@ -1,7 +1,7 @@
 # Milestone 3: Wave optics, pupil, visual axis, spectacles
 
 Date: 2026-10-28
-Status: in progress (draft PR "Milestone 3: Wave optics, pupil, visual axis, spectacles")
+Status: complete 2026-10-28 (PR #11 "Milestone 3: Wave optics, pupil, visual axis, spectacles")
 Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 3 section)
 
 **Goal:** The right eye's optics strip shows the wavefront map, a Zernike bar chart, the PSF, the MTF with its diffraction limit, Strehl, and the retinal image of a Snellen E, for the uncorrected and the spectacle-corrected eye side by side. A spectacles panel edits sphere, cylinder, axis, vertex, base curve, and index, and an auto-prescribe button finds the prescription that minimizes RMS wavefront error. Refractive-error presets expose axial, corneal, and lenticular mechanisms with a decomposition readout. The pupil follows luminance, age, and vergence. The fovea sits at angle alpha off the optical axis. The Milestone 0–2 follow-ups assigned to M3 are closed or re-filed with a reason.
@@ -31,6 +31,17 @@ Master plan: `docs/superpowers/plans/2026-10-26-master-plan.md` (Milestone 3 sec
 9. **Two refraction methods.** `refractionFromZernike` implements the Thibos 1997 minimum-RMS (second-order) conversion, which the readouts show, and a "paraxial" variant that adds the ρ² terms of the higher radial orders (derived from the OSA polynomials, not transcribed). The preset accuracy test uses the paraxial variant so the comparison with the paraxial nominal is not biased by spherical aberration.
 10. **Wave optics for the right eye only.** The left eye keeps the M2 defocus pipeline; the strip and spectacles readouts are for the right eye, which is the cutaway eye. The spectacles apply to both eyes (each eye's own prescription, right copied mirrored to left by default).
 11. **Vergence demand in meter angles.** `nearMiosisMm` takes the vergence demand in meter angles (the reciprocal of the fixation distance in meters, computed from the vergence angle and IPD), not degrees; meter angles are what the coefficient's source reports.
+
+## Outcome notes (post-execution)
+
+- Worker budget: both eyes with right-eye wave optics for the eye alone and with spectacles (64 × 64 pupil grid, 256 PSF grid, 555 nm) run in about 70 ms median in Node (`test/bench.test.ts`, limit 100 ms); the first version took 130 ms. What got it there: chord-method ray aiming through the lens with one Jacobian from the chief ray, a trace without per-surface records for OPD and aiming, a trig-free Zernike basis, the PSF pupil function from a Cartesian expansion of the fit, cached diffraction-limited PSFs and target spectra, and paired real FFTs for the two configurations' OTFs and retinal images. Auto-prescribe takes about 0.8 s (about 85 Nelder–Mead evaluations on a 24 × 24 grid) and runs only on demand.
+- Cross-check: the independent NumPy tracer agrees with Optiland within 1e-6 mm on all 20 conic systems, and the TypeScript tracer agrees with it within 1e-6 mm on all 40 (conic, toric, Zernike).
+- The Navarro eye with Escudero-Sanz dispersion has 1.35 D of chromatic difference between 450 and 650 nm.
+- At the fovea (angle alpha 5°) the Navarro emmetrope reads about −0.1 D sphere and −0.18 D cylinder × 90 (oblique astigmatism) by the paraxial method, and minimum-RMS refraction adds the spherical-aberration bias (about −0.14 D at a 3 mm pupil, −0.26 D at 4 mm). Presets and corrections are therefore compared with the emmetrope seen the same way, in the unit and e2e tests.
+- Wearing an auto-prescribed lens moves the paraxial far point (the minimum-RMS prescription over-minuses by the spherical-aberration bias, about +0.2 D at the paraxial far point), so the accommodation controller, which uses the paraxial far point, accommodates a little more and the worn RMS reduction is about 77% rather than the 90% through the lens at the unchanged accommodation. Recorded as a follow-up (demand from the same refraction measure as the prescription).
+- PSF orientation: rows are written top-down with +y up (perceived orientation), so the PSF convolves the targets and displays without a flip; a test checks a vertical tilt.
+- The OPD map shown in the strip has piston and tilt removed; the fit keeps all terms.
+- Still unverified (`verified: false`): the Watson & Yellott coefficients (partly from luxpy), the near-miosis coefficient, angle alpha and pupil decentration, the Escudero-Sanz dispersion table, the optotype geometry note, the spectacle design defaults (design choices), and everything already listed in the M2 notes; see `2026-10-28-m3-followups.md`.
 
 ## Global Constraints
 
@@ -382,9 +393,9 @@ Load the dataviz skill before writing chart code (spec §6.6).
 
 ### Task 3.12: Finish
 
-- [ ] Update this plan's Status and add Outcome notes (measured worker time, the pupil and alpha provenance, what stays unverified).
-- [ ] Move any skipped Minor items into `docs/superpowers/plans/2026-10-28-m3-followups.md`.
-- [ ] Update the PR body with the summary and verification; mark the PR ready.
+- [x] Update this plan's Status and add Outcome notes (measured worker time, the pupil and alpha provenance, what stays unverified).
+- [x] Move any skipped Minor items into `docs/superpowers/plans/2026-10-28-m3-followups.md`.
+- [x] Update the PR body with the summary and verification; mark the PR ready.
 
 ## Follow-ups absorbed from earlier milestones
 

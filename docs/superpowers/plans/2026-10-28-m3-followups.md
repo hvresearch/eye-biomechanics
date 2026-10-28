@@ -32,3 +32,23 @@ numbers, so they move to M4 unchanged.
   lateral rectus arc of contact is 15.4 mm against 10-12 mm; tighten the
   `path.test.ts` tolerance once pulleys land. (M4, or any session with document
   access)
+
+## Modeling (from implementation)
+
+- `web/apps/viewer/src/store/scene.ts` / `worker/handle.ts`: accommodation demand uses
+  the paraxial far point of the worn configuration, while auto-prescribe minimizes the
+  RMS wavefront error; wearing the auto lens therefore adds about 0.2 D of accommodation
+  and some defocus. Drive demand (or the far point it uses) by the same refraction
+  measure as the prescription, or prescribe with the controller in the loop. (M4 or M6)
+- `data/visual-axis/defaults.json`: angle alpha 5° on the centered Navarro eye gives the
+  emmetrope about −0.18 D of oblique astigmatism at the fovea; Polans 2015's tilted and
+  decentered lens compensates this. Transcribe Polans 2015 (with lens tilt, which needs
+  tilted-surface support in `optics`) in a session with document access. (M4, or any
+  session with document access)
+- `data/pupil/watson-yellott-2012.json`: confirm the age-slope constants and the
+  monocular factor against the paper; consider the paper's appendix extension below 20
+  years instead of clamping. `data/pupil/near-response.json`: replace the derived
+  coefficient with a transcribed one. (any session with document access)
+- `web/packages/optics/src/image/psf.ts`: the PSF is built from the order-8 Zernike fit,
+  so vignetting enters only through the pupil disk and orders above 8 are dropped; if a
+  case needs them, build the pupil function from the raw OPD map. (M6, if needed)
