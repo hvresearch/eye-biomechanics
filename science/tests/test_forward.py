@@ -14,12 +14,14 @@ from eyebiomech.calib.forward import (
     make_cohort,
     mean_j0_slope,
     predict_targets,
+    state_trajectories,
     stiffness_function,
     subject_vectors,
     targets,
 )
 from eyebiomech.fem.data import load_materials
-from eyebiomech.remodel.history import GROUPS
+from eyebiomech.remodel.growth import load_growth_table
+from eyebiomech.remodel.history import GROUPS, SubjectProfile, history_loads
 from eyebiomech.remodel.library import LevelResponse, Library
 
 FIXTURE = Path(__file__).parent / "fixtures" / "library-coarse.json"
@@ -48,6 +50,28 @@ def test_stronger_lids_give_more_with_the_rule_astigmatism():
     weak = subject_vectors({**p, "lid_pressure_scale": 0.5}, LIBRARY, COHORT)
     strong = subject_vectors({**p, "lid_pressure_scale": 2.0}, LIBRARY, COHORT)
     assert np.all(strong[:, 20:, 1].mean(axis=0) > weak[:, 20:, 1].mean(axis=0))
+
+
+def test_growth_runs_from_the_growth_start_age():
+    """The trajectories carry the growth since the growth start age (birth): at the baseline
+    age the remodeled change already differs from the elastic one, and it equals a library
+    run with that history (M5 review, round 1)."""
+    p = {**start_params(PRIORS), "rate_per_year": 0.05}
+    dist, _ = state_trajectories(p, LIBRARY)
+    start = load_growth_table()["growthStartAgeYears"]["value"]
+    assert start < AGES[0]
+    profile = SubjectProfile(age_years=float(AGES[0]), near_hours=0.0)
+    scales = {k: p[k] for k in ("eom_tone_scale", "lid_pressure_scale")}
+    run = LIBRARY.simulate(
+        lambda a: history_loads(profile, a, **scales).as_vector(),
+        AGES,
+        rate_per_year=p["rate_per_year"],
+        ratio=1.0,
+        stiffness=stiffness_function(p["stiffness_age_slope"]),
+        history_years=AGES[0] - start,
+    )
+    assert np.allclose(dist, run[:, 1])
+    assert np.abs(run[0, 1] - run[0, 0]).max() > 1e-3
 
 
 @pytest.mark.parametrize("j0, cls", [(0.5, 0), (-0.5, 1)])

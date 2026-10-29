@@ -23,6 +23,10 @@
     "value": 0.5,
     "citation": "numerical: an explicit growth step is refused (FEM) or sub-stepped (reduced model) when r dt lambda exceeds this, lambda the largest local feedback estimate (in-plane tangent modulus over s_IOP), so no trajectory oscillates or diverges from the step size."
   },
+  "growthStartAgeYears": {
+    "value": 0.0,
+    "citation": "assumption (approximation): the lid, muscle, and ciliary loads drive growth from birth, so a trajectory that starts at a later baseline age (the calibration's 6 years) begins with the growth amplitudes that this history leaves, not with zero amplitudes; between birth and the baseline age the intensities and the stiffness are held at their baseline-age values, because the loading of infancy is not modeled. Starting from zero at the baseline age instead makes the fast growth modes settle in the first year after it, a transient of the starting state rather than of the mechanism (M5 review, round 1)."
+  },
   "fiberReorientation": "none (approximation: fiber directions do not turn with growth; small strains)",
   "citation": "Rodriguez EK, Hoger A, McCulloch AD, Stress-dependent finite growth in soft elastic tissues, J Biomech 27:455-467, 1994 (the multiplicative decomposition; search excerpt). In-plane tensorial growth with the tissue's in-plane fiber dispersion stands in for the fiber-aligned growth of Grytz & Meschke 2010 (approximation).",
   "verified": false

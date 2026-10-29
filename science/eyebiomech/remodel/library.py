@@ -248,12 +248,18 @@ class Library:
         rate_per_year: float,
         ratio: float,
         stiffness: Callable[[float], float],
+        history_years: float = 0.0,
     ) -> NDArray:
         """Elastic and remodeled (M, J0, J45) changes at each age, (ages, 2, 3), D. The growth
-        amplitudes start at zero at the first age and follow da/dt = r (L + F a), integrated
+        amplitudes start at zero `history_years` before the first age, grow over that history
+        under the first age's intensities and stiffness (approximation: the loads before the
+        first age are not modeled in detail), and then follow da/dt = r (L + F a), integrated
         exactly over each interval with the mid-interval L, F (through F's eigendecomposition,
-        so no step-size instability; Review Focus 3). The homeostatic intensity is multiplied by
-        1 − h."""
+        so no step-size instability; Review Focus 3). With no history the amplitudes start at
+        zero at the first age, and fast modes settle in the first interval from that state, not
+        from the loads. The homeostatic intensity is multiplied by 1 − h."""
+        if not history_years >= 0:
+            raise ValueError(f"the growth history must be non-negative, got {history_years}")
         ages = np.asarray(ages, dtype=float)
         n = len(self.groups)
         h_index = self.groups.index("homeostatic")
@@ -266,6 +272,10 @@ class Library:
         a = np.zeros(n)
         out = np.zeros((ages.size, 2, 3))
         eig_cache: dict[float, tuple[NDArray, NDArray, NDArray]] = {}
+        if history_years > 0:
+            a = self._step(
+                a, L(ages[0]), rate_per_year * history_years, stiffness(ages[0]), eig_cache
+            )
         for i, age in enumerate(ages):
             if i > 0:
                 mid = 0.5 * (ages[i - 1] + age)

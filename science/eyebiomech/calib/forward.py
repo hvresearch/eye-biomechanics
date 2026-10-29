@@ -4,10 +4,13 @@ A synthetic cohort starts at the baseline age (6 years) with power vectors (M, J
 SyntEyes stand-in, whose J0 mean and astigmatic spread are nuisance parameters, and with daily
 near-work hours from `data/calibration/priors.json`. Each subject's refraction then changes by
 the response library's remodeled trajectory (`eyebiomech.remodel.library`) under the duty
-cycle's load intensities (`eyebiomech.remodel.history`). Because the library's dynamics are
-linear in the intensities and the intensities are affine in the near-work fraction f, a subject's
-change is Δ_distance(age) + f·(Δ_near(age) − Δ_distance(age)): two simulations per parameter set
-serve the whole cohort.
+cycle's load intensities (`eyebiomech.remodel.history`). Growth runs from the growth start age
+(birth) under the baseline age's intensities, so the cohort's eyes at the baseline age already
+carry the growth their loads have caused, and the trajectory after it has no transient from a
+zero starting state. Because the library's dynamics are linear in the intensities and the
+intensities are affine in the near-work fraction f, a subject's change is
+Δ_distance(age) + f·(Δ_near(age) − Δ_distance(age)): two simulations per parameter set serve
+the whole cohort.
 
 The stiffness follows the age stiffening of data/materials with the fitted slope, anchored at
 the rigidity calibration's age (the calibrated stiffness there is kept).
@@ -30,6 +33,7 @@ from numpy.typing import NDArray
 
 from eyebiomech.calib.data import CLASSES, load_axis_shift, load_j0_slopes
 from eyebiomech.fem.data import _load, load_materials
+from eyebiomech.remodel.growth import load_growth_table
 from eyebiomech.remodel.history import (
     SubjectProfile,
     history_loads,
@@ -104,7 +108,9 @@ def stiffness_function(slope: float, materials: dict | None = None):
 
 def state_trajectories(params: dict, library, ages: NDArray = AGES, ratio: float = 1.0):
     """Remodeled (M, J0, J45) changes at the distance-only and near-only duty cycles, each
-    (ages, 3), from the first age."""
+    (ages, 3): the elastic response plus the growth since the growth start age of
+    data/remodeling/growth.json (approximation: intensities before the first age held at the
+    first age's values)."""
     duty = load_duty_cycle()
     waking = duty["wakingHours"]["value"]
     scales = {
@@ -112,6 +118,7 @@ def state_trajectories(params: dict, library, ages: NDArray = AGES, ratio: float
         "lid_pressure_scale": params["lid_pressure_scale"],
     }
     stiffness = stiffness_function(params["stiffness_age_slope"])
+    history = max(0.0, float(ages[0]) - load_growth_table()["growthStartAgeYears"]["value"])
     out = []
     for hours in (0.0, waking):
         profile = SubjectProfile(age_years=float(ages[0]), near_hours=hours)
@@ -125,6 +132,7 @@ def state_trajectories(params: dict, library, ages: NDArray = AGES, ratio: float
             rate_per_year=params["rate_per_year"],
             ratio=ratio,
             stiffness=stiffness,
+            history_years=history,
         )
         out.append(traj[:, 1])
     return out[0], out[1]

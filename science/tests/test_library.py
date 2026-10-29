@@ -1,6 +1,7 @@
 """Reduced-order response library (M5 plan, Task 5.8; Review Focus 2, 3, 4)."""
 
 import json
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -140,6 +141,48 @@ def test_constant_loads_approach_the_remodeled_steady_state(library):
     steady = L @ library.elastic(1.0) + a_inf @ library.growth_refraction(1.0)
     long = library.simulate(lambda a: L, np.array([0.0, 1e5]), **kw)
     assert np.allclose(long[-1, 1], steady, rtol=1e-6)
+
+
+COARSE_JSON = Path(__file__).parent / "fixtures" / "library-coarse.json"
+
+
+def _constant_loads(ages, history_years=0.0):
+    """The coarse fixture library under constant distance-gaze muscle and lid loads."""
+    lib = Library.from_json(json.loads(COARSE_JSON.read_text()))
+    L = np.zeros(len(GROUPS))
+    L[[GROUPS.index("lids@distance"), GROUPS.index("muscles@distance")]] = 1.0
+    return lib.simulate(
+        lambda a: L,
+        ages,
+        rate_per_year=0.05,
+        ratio=1.0,
+        stiffness=lambda a: 1.0,
+        history_years=history_years,
+    )
+
+
+def test_a_growth_history_equals_an_earlier_start():
+    """Growth over a history before the first age under the first age's intensities is the
+    same as starting the trajectory that much earlier with constant intensities."""
+    later = _constant_loads(np.arange(6.0, 13.0), history_years=6.0)
+    earlier = _constant_loads(np.arange(0.0, 13.0))
+    assert np.allclose(later, earlier[6:], rtol=1e-9, atol=1e-12)
+
+
+def test_a_growth_history_removes_the_starting_transient():
+    """With constant intensities, the astigmatic change over the first year after the first age
+    shows no step from the starting state once growth has run since birth (M5 review, round 1):
+    without the history the fast modes settle in that year."""
+    zero = _constant_loads(np.arange(6.0, 8.0))[:, 1]
+    hist = _constant_loads(np.arange(6.0, 8.0), history_years=6.0)[:, 1]
+    for k in (1, 2):  # J0, J45
+        assert abs(zero[1, k] - zero[0, k]) > 0.05
+        assert abs(hist[1, k] - hist[0, k]) < 0.05 * abs(zero[1, k] - zero[0, k])
+
+
+def test_a_negative_growth_history_is_refused():
+    with pytest.raises(ValueError, match="history"):
+        _constant_loads(np.arange(6.0, 8.0), history_years=-1.0)
 
 
 def test_stiffness_interpolation_is_linear_in_log_scale():
