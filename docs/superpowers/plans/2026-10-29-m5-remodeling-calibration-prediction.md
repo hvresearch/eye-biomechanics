@@ -384,6 +384,35 @@ Master plan Task 5.6.
 - [x] Full gate including `-m slow` and e2e. Commit: `docs: M5 outcome notes and follow-ups`.
 - [x] Update the PR body with a summary and the verification run, then mark the PR ready.
 
+### Task 5.14: Review round 1 (PR #16, head 2d355a1): growth start, reduced growth against the FEM, recalibration
+
+Findings of the round-1 driver review (PR #16, comment "driver-review sha=2d355a1… verdict=CHANGES"). Steps 1–3 landed in the fix round; the rest is open.
+
+**Files:** `science/eyebiomech/remodel/library.py`, `science/eyebiomech/calib/forward.py`, `data/remodeling/growth.json`, `science/tests/test_library.py`, `science/tests/test_forward.py`, `web/apps/viewer/src/{data/predictions.ts,ui/Timeline.tsx,ui/tooltips.ts}`, then `data/results/calibration/posterior-v1.json`, `data/results/predictions/v1.json`, `data/results/README.md`, this plan's Outcome notes.
+
+**Interfaces:**
+- Produces: `Library.simulate(intensities, ages, *, rate_per_year, ratio, stiffness, history_years: float = 0.0) -> NDArray` (growth runs `history_years` before the first age under the first age's intensities and stiffness); `growth.json` `growthStartAgeYears` (0, birth; assumption, approximation); `onsetCriteria(thresholds: Record<string, unknown> | undefined) -> string[]` in `predictions.ts`.
+
+- [x] **Step 1 (Critical 1, code):** growth starts at birth: `history_years` in `Library.simulate`, `state_trajectories` passes the baseline age minus `growthStartAgeYears`. Tests: a history equals an earlier start; with constant intensities the first year's J0/J45 change after the first age has no step (under 5% of the zero-start step); a negative history is refused; the forward model's trajectories equal a library run with the history. Commit: `fix(review): growth runs from birth, not from the baseline age`.
+- [x] **Step 2 (Important 3, viewer):** the stance line and the timeline tooltip say the calibration fits the astigmatism axis shift only and that its spherical drift is far larger than population spherical-equivalent data show; the onset criteria come from the grid's `thresholds` with the spec's strict sphere criterion (Minor 9). Unit and e2e tests. Commit: `fix(review): timeline states the calibration's scope and the grid's onset criteria`.
+- [x] **Step 3 (Important 2, test):** `test_reduced_growth_follows_the_fem_growth` compares the growth increments (remodeled minus elastic) with the FEM's, with steps as long as `maxStepFraction` allows (r dt λ = 0.45), on M and J0 within 25%. **It fails**: the reduced model does not follow the FEM's growth in J0 (below). Commit: `test(review): compare reduced and FEM growth increments`.
+- [ ] **Step 4 (new, blocking for the recalibration): make the reduced growth model follow the FEM's growth in J0, or bound where it does.** Coarse mesh (`n_face 6`), half near-gaze load, r = 1/yr, growth increments (remodeled minus elastic, D):
+
+  | r·t | FEM M | reduced M | FEM J0 | reduced J0 | FEM steps (r dt λ) |
+  |---|---|---|---|---|---|
+  | 8.8e-6 | +0.00025 | +0.00025 | −0.000060 | −0.000058 | 1 (0.02) |
+  | 8.8e-5 | +0.0025 | +0.0025 | −0.00060 | −0.00057 | 1 (0.2) |
+  | 1.8e-4 | +0.0049 | +0.0049 | −0.0013 | −0.0011 | 4 (0.1) |
+  | 4.0e-4 | +0.0108 | +0.0109 | −0.0035 | −0.0023 | 8 (0.11) |
+  | 8.0e-4 | +0.0207 | +0.0209 | −0.0081 | −0.0041 | 16 (0.11) |
+  | 1.6e-3 | +0.0392 | +0.0388 | −0.0187 | −0.0063 | 8 (0.45) |
+  | 2.0e-3 | +0.0478 | +0.0468 | −0.0243 | −0.0068 | 10 (0.45) |
+
+  The FEM side is step-converged: 32 steps at r dt λ = 0.11 reach r·t = 1.6e-3 with J0 −0.01875 D, against −0.0187 D for 8 steps at 0.45. M agrees within 2% throughout. J0 agrees at first (the drive), but the FEM's J0 rate per unit r·t increases (8.7, 10.1, 11.8, 12.2) while the reduced model's falls (5.9, 5.2, 4.0, 3.4): the FEM has an astigmatic growth mode that the Galerkin feedback, restricted to the span of the load-group stress patterns, restores instead. The calibration runs at r·t of order 0.05 per year, far beyond this range, so its J0 trajectories are not validated. Investigate first (enrich the reduced basis with the stress patterns growth itself produces, e.g. a Krylov sequence F·drive; or check the FEM for a growth instability of the shell at this load), then make the test above pass or restrict it, with a documented reason, to the r·t range where the reduced model is valid, and constrain the calibration to that range.
+- [ ] **Step 5 (Critical 1, data):** with the reduced model validated, recalibrate (`eyebiomech calibrate --out ../data/results/calibration/posterior-v1.json --method mcmc`), regenerate the grid (`eyebiomech grid --out ../data/results/predictions/v1.json`), and rewrite the calibration and grid sections of `data/results/README.md` and the Outcome notes (the first-year transient no longer exists; the README's "the lids' elastic load supplies the children's with-the-rule astigmatism" and "the onsets come from the spherical drift" need re-checking). In the same pass: write the MCMC result's `converged` as the least-squares flag under its own name and report an autocorrelation time (Minor 4); correct the README's cohort size, 1 000 not 300 (Minor 5); check the posterior's `schema` in `predict` (Minor 14).
+- [ ] **Step 6 (Important 3, target):** add the adult spherical-equivalent change (`data/population/refraction-by-age.json`) as a bounding target, fit with it, and report that fit alongside the axis-shift-only one in `data/results/README.md` (the posterior used by the grid stays the axis-shift fit unless the owner decides otherwise); update the stance line if the answer changes.
+- [ ] **Step 7:** full gate including `-m slow` and e2e; update the PR body; mark the PR ready.
+
 ## Follow-ups absorbed from earlier milestones
 
 All items of `2026-10-28-m4-followups.md` that name M5 are absorbed here and removed from that file in the plan's commit.

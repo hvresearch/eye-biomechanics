@@ -86,3 +86,33 @@ gave bibliographic records but not these numbers.
   calibration). Add the adult spherical-equivalent change as a bounding target (or an envelope
   on the mechanical change) and refit; start the sampler from several modes (the likelihood is
   multimodal in the rate). (M6)
+
+## Review round 1 (PR #16, head 2d355a1), Minor findings not fixed in the fix round
+
+Minor 4, 5, 9, and 14 (posterior schema check) are steps of plan Task 5.14 or fixed there.
+
+- `reanchor` keeps the grid's onsets instead of recomputing them on the re-anchored median with
+  `grid.thresholds`, and `test/predictions.test.ts` asserts the kept value (unused in the UI
+  today: the anchor is always the grid's baseline age). (M6)
+- The timeline's onset comes from the nearest grid node and the median power vector, while the
+  plotted curves are interpolated per-component medians, so the marker can sit off the displayed
+  crossing; the grid's 5–95% onset range is not shown. Compute the onset in the viewer from the
+  displayed median and `grid.thresholds`. (M6)
+- Applying a prediction, loading a result, then clearing the result restores the predicted eyes
+  with `prediction.applied` false (`store/scene.ts` `showResult`/`clearLoadedResult`): capture
+  `beforePrediction` into `beforeResult`, or clear both. (M6)
+- `forces/equilibrium.py`: the infeasible-equilibrium error does not name the gaze, and no test
+  covers the CLI's exit 2 on an infeasible gaze (wrap the call in `fem/loads.py` with the gaze
+  label). (M6)
+- The prediction-grid validators (`science/eyebiomech/schema.py`,
+  `web/packages/eye-model/src/schema/predictions.ts`) check only the first element at each
+  depth: ragged arrays pass, and Python raises `IndexError` instead of `SchemaError` on an empty
+  inner array; check every row and the `axisDeg`/`logMAR` shapes. (M6)
+- `predict/acuity.py` clips |M| at 4 D while the grid's median sphere reaches −10 D, so logMAR
+  saturates; extend the table or document the clip in the grid metadata. (M6)
+- `Library._interp` clamps the stiffness silently to the tabled 0.5–4×, while the prior's slope
+  bound allows 0.46× below 50 years: warn or refuse outside the table, or tighten the bound. (M6)
+- `calib/forward.py` hard-codes the axis-class boundaries cos 2α = ±0.5 (the 30° comes from the
+  data file's definition text); read them from data. The two J0-slope targets cover the same
+  window with assumed SEs, which double-weights the slope; state it or merge them. (M6)
+
