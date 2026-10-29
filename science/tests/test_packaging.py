@@ -57,6 +57,18 @@ def test_the_installed_wheel_finds_its_bundled_tables(tmp_path):
         "materials/cornea-sclera.json",
         "eom/geometry-default.json",
         "results/forces/default.json",
+        # M5: what `eyebiomech library`, `calibrate`, `predict`, and `grid` read
+        "results/forces/duty-cycle.json",
+        "results/response/library-v1.json",
+        "results/calibration/posterior-v1.json",
+        "calibration/priors.json",
+        "calibration/duty-cycle.json",
+        "accommodation/anderson-2008-amplitude.json",
+        "remodeling/growth.json",
+        "population/axis-shift-by-age.json",
+        "synteyes/rozema-2016-params.json",
+        "acuity/standin-table.json",
+        "pupil/watson-yellott-2012.json",
     ):
         assert f"eyebiomech/data/{rel}" in names
     code = (

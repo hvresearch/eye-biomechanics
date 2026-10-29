@@ -120,3 +120,15 @@ Used for: animation constants for saccades, vergence, and accommodation.
 Read SA, Collins MJ, Carney LG. A review of astigmatism and its possible genesis. *Clin Exp Optom* 90:5-19, 2007 (as summarized in Beesley & Elliott 2024, doi 10.1111/opo.13234); Hoffmann PC, Hütz WW. Analysis of biometry and prevalence data for corneal astigmatism in 23,239 eyes. *J Cataract Refract Surg* 36:1479-1485, 2010; the Zibo City school-children study (PMC12657078), the northern-China cataract study (PMC7542495), the corneal-geometry study PMC6221551, a Hong Kong Polytechnic University study (handle 10397/25994), the Guangzhou six-year study, and NHANES 1999–2004 (PMC2772054). All by search excerpt, 2026-10-29.
 DOI: as in each file entry where the excerpt gave one
 Used for: the calibration targets of M5 (`data/population/`): the with-the-rule, against-the-rule, and oblique proportions among astigmatic eyes by age band, and the mean J0 slope of −0.014 to −0.015 D per year between 30 and 80; the cataract-population corneal bands and the spherical-equivalent changes are kept for comparison only. `verified: false`.
+
+## Passive orbital stiffness
+
+Collins CC, et al., 1981 (passive force–length of the human orbit, by forced duction in strabismus surgery), as summarized in a search excerpt (2026-10-29); Robinson DA, 1975 (the orbit's passive elasticity in oculomotor models).
+DOI: to be added (not in the excerpts)
+Used for: `data/eom/passive-orbit.json` (M5 Task 5.2): the linear passive orbital moment, about 0.118 N·mm per degree horizontally, against which the muscle forces are brought into static equilibrium. `verified: false`.
+
+## Ensemble sampler
+
+Goodman J, Weare J. Ensemble samplers with affine invariance, 2010 (the algorithm `emcee` implements; bibliographic details not looked up in this session).
+DOI: to be added (not looked up in this session)
+Used for: `science/eyebiomech/calib/mcmc.py` (M5 Task 5.10): the stretch move of the affine-invariant ensemble sampler, written in NumPy (M5 plan Deviation 4).
