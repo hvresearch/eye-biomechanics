@@ -76,3 +76,8 @@ gave bibliographic records but not these numbers.
   +0.102, +0.132 D at `n_face` 12, 16, 20). Integrate the lid bands exactly (or normalize their
   resultant, as the muscle contact bands are), refine the cornea locally, and repeat the study;
   rebuild the library at the converged mesh. (M6)
+- The growth law's spherical mode is barely restored at the calibrated stiffness (least stable
+  feedback eigenvalue −0.42) and grows at half of it (+0.31; `data/results/README.md`, the
+  response library): in-plane growth enlarges and thins the pressurized shell, which raises its
+  stress. Add growth in thickness (or a volumetric or isochoric constraint) to the law, rebuild
+  the library, and recalibrate. (M6)

@@ -30,6 +30,7 @@ packages = ["eyebiomech"]
 "../data/eom" = "eyebiomech/data/eom"
 "../data/fixtures" = "eyebiomech/data/fixtures"
 "../data/results/forces" = "eyebiomech/data/results/forces"
+"../data/results/response" = "eyebiomech/data/results/response"
 "../data/accommodation" = "eyebiomech/data/accommodation"
 "../data/calibration" = "eyebiomech/data/calibration"
 "../data/remodeling" = "eyebiomech/data/remodeling"

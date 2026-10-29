@@ -273,8 +273,8 @@ Deviation 2. Also writes the paraxial refraction used by the forward model and i
   - `test_paraxial.py`: the committed FEM result's induced refraction from `induced_refraction` agrees with `data/oracle/induced-refraction.json` (the TS worker's value) within 0.01 D in M, J0, J45; a pure c(2,0) height change gives the analytic power change `Δn · 4√3 c / r²`; zero change gives zero.
   - `test_library.py` (coarse mesh, `n_face = 4`, `layers = 1`, two stiffness scales): the sum of the elastic group responses at unit intensities agrees with a direct nonlinear solve of the combined loads within 10% in J0 and M (Review Focus 2); three reduced growth steps agree with three `grow` steps of the FEM within 20% in J0; doubling the stiffness scale reduces the elastic response (monotone) and the interpolation at a tabled scale returns the tabled value; `simulate` with zero intensities and `ratio = 1` returns zeros; the JSON round-trips and says `elastic` and `remodeled`.
 - [x] **Step 2:** Run; FAIL. Implement. Run; PASS.
-- [ ] **Step 3:** Build the committed library at the mesh chosen in Task 5.5 with scales {0.5, 1, 2, 4} × the calibrated scale; record time and responses in `data/results/README.md`.
-- [ ] **Step 4:** Full gate. Commit: `feat(remodel): response library from the FEM with a reduced growth model`.
+- [x] **Step 3:** Build the committed library at the mesh chosen in Task 5.5 with scales {0.5, 1, 2, 4} × the calibrated scale; record time and responses in `data/results/README.md`.
+- [x] **Step 4:** Full gate. Commit: `feat(remodel): response library from the FEM with a reduced growth model`.
 
 ### Task 5.9: Population data and SyntEyes sampler
 
