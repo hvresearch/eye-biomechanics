@@ -1,0 +1,25 @@
+name: Nightly slow tests
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+jobs:
+  python-slow:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - name: Install Python
+        working-directory: science
+        run: uv python install
+      - name: Sync
+        working-directory: science
+        run: uv sync --locked --all-groups
+      - name: Slow tests
+        working-directory: science
+        run: uv run pytest -q -m slow
