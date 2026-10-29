@@ -21,7 +21,10 @@ the rigidity calibration's age (the calibrated stiffness there is kept).
 Targets (`targets`):
 - axis-class proportions among astigmatic eyes in an age band (subjects at every whole age of
   the band), with soft class boundaries for the fit;
-- the slope of the cohort's mean J0 against age over an age window.
+- the slope of the cohort's mean J0 against age over an age window;
+- optionally (`bound_sphere`), envelopes on the six-year change of the mean spherical
+  equivalent in adult bands, which cost only when the mechanical change exceeds the observed
+  one in magnitude (the lens, not modeled, accounts for the rest).
 Either may be restricted to a near-work stratum (`near_hours`), which only the synthetic
 identifiability test uses (Deviation 8).
 """
@@ -34,7 +37,7 @@ from dataclasses import dataclass
 import numpy as np
 from numpy.typing import NDArray
 
-from eyebiomech.calib.data import CLASSES, load_axis_shift, load_j0_slopes
+from eyebiomech.calib.data import CLASSES, load_axis_shift, load_j0_slopes, load_sphere_bounds
 from eyebiomech.fem.data import _load, load_materials
 from eyebiomech.remodel.growth import load_growth_table
 from eyebiomech.remodel.history import (
@@ -217,8 +220,22 @@ def mean_j0_slope(vectors: NDArray, ages: NDArray, window: tuple[float, float]) 
     return float(np.polyfit(ages[sel], mean, 1)[0])
 
 
-def targets(priors: dict | None = None) -> list[dict]:
-    """The real calibration targets: axis-class bands and J0 slopes marked `useInFit`."""
+def mean_m_change(vectors: NDArray, ages: NDArray, band: tuple[float, float], interval: float):
+    """The cohort's mean change of M over `interval` years for subjects of the band's whole
+    baseline ages (those whose later age is still on the trajectory)."""
+    later = ages + interval
+    sel = (ages >= band[0]) & (ages <= band[1]) & (later <= ages[-1])
+    if not sel.any():
+        raise ValueError(f"no baseline age of {band} has a change over {interval} years")
+    j = np.searchsorted(ages, later[sel])
+    return float((vectors[:, j, 0] - vectors[:, sel, 0]).mean())
+
+
+def targets(priors: dict | None = None, *, bound_sphere: bool = False) -> list[dict]:
+    """The real calibration targets: axis-class bands and J0 slopes marked `useInFit`; with
+    `bound_sphere`, also the envelopes on the adult spherical-equivalent change marked
+    `useAsBound` (one-sided: only a mechanical change larger in magnitude than the observed one
+    costs; Task 5.14 Step 6)."""
     priors = priors or load_priors()
     n_eff = priors["effectiveSampleSize"]["value"]
     out = []
@@ -252,6 +269,19 @@ def targets(priors: dict | None = None) -> list[dict]:
                     "nearHours": None,
                 }
             )
+    if bound_sphere:
+        for b in load_sphere_bounds():
+            out.append(
+                {
+                    "kind": "spherebound",
+                    "source": b.id,
+                    "band": (b.age_from, b.age_to),
+                    "intervalYears": b.interval_years,
+                    "value": b.bound_d,
+                    "se": b.se_d,
+                    "nearHours": None,
+                }
+            )
     return out
 
 
@@ -279,6 +309,8 @@ def predict_targets(
             out.append(p[CLASSES.index(t["class"])])
         elif t["kind"] == "j0slope":
             out.append(mean_j0_slope(v, AGES, t["band"]))
+        elif t["kind"] == "spherebound":
+            out.append(mean_m_change(v, AGES, t["band"], t["intervalYears"]))
         else:
             raise ValueError(f"unknown target kind {t['kind']!r}")
     return np.array(out)

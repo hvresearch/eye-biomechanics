@@ -70,6 +70,36 @@ def load_axis_shift(path=None) -> list[AxisShiftSource]:
     return out
 
 
+@dataclass(frozen=True)
+class SphereBound:
+    """An envelope on the six-year (or `interval_years`) change of the cohort's mean spherical
+    equivalent for subjects of baseline ages `age_from`..`age_to` (Task 5.14 Step 6)."""
+
+    id: str
+    age_from: float
+    age_to: float
+    interval_years: float
+    bound_d: float
+    se_d: float
+
+
+def load_sphere_bounds(path=None) -> list[SphereBound]:
+    t = _load(path, "population", "refraction-by-age.json")
+    return [
+        SphereBound(
+            id=s["id"],
+            age_from=float(b["ageFrom"]),
+            age_to=float(b["ageTo"]),
+            interval_years=float(s["intervalYears"]),
+            bound_d=abs(float(b["changeD"])),
+            se_d=float(s["boundStandardErrorD"]),
+        )
+        for s in t["sources"]
+        if s["quantity"] == "meanSphericalEquivalentChange" and s.get("useAsBound")
+        for b in s["bands"]
+    ]
+
+
 def load_j0_slopes(path=None) -> list[J0SlopeSource]:
     t = _load(path, "population", "refraction-by-age.json")
     return [

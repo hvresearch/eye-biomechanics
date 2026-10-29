@@ -13,6 +13,7 @@ from eyebiomech.calib.forward import (
     load_priors,
     make_cohort,
     mean_j0_slope,
+    mean_m_change,
     predict_targets,
     state_trajectories,
     stiffness_function,
@@ -110,3 +111,18 @@ def test_targets_and_predictions_line_up():
     v = subject_vectors(start_params(PRIORS), LIBRARY, COHORT)
     slope = mean_j0_slope(v, AGES, (30, 80))
     assert slope == pytest.approx(m[[t["kind"] == "j0slope" for t in data]][0])
+
+
+def test_the_sphere_bounds_are_six_year_changes_of_the_mean():
+    """The bounding targets (M5 plan, Task 5.14 Step 6) are the Guangzhou bands' magnitudes,
+    and the model's value is the mean M change over the interval from the band's ages."""
+    bounds = [t for t in targets(PRIORS, bound_sphere=True) if t["kind"] == "spherebound"]
+    assert [t["band"] for t in bounds] == [(35, 44), (45, 54), (55, 64), (65, 80)]
+    assert [t["value"] for t in bounds] == pytest.approx([0.24, 0.51, 0.26, 0.05])
+    assert not any(t["kind"] == "spherebound" for t in targets(PRIORS))
+    v = np.zeros((4, AGES.size, 3))
+    v[:, :, 0] = -0.02 * AGES  # a myopic drift of 0.02 D per year
+    assert mean_m_change(v, AGES, (35, 44), 6) == pytest.approx(-0.12)
+    assert mean_m_change(v, AGES, (65, 90), 6) == pytest.approx(-0.12)  # ages past 84 skipped
+    with pytest.raises(ValueError, match="no baseline age"):
+        mean_m_change(v, AGES, (89, 90), 6)

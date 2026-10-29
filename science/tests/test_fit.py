@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from eyebiomech.calib.data import CLASSES
-from eyebiomech.calib.fit import Space, fit, start_params
+from eyebiomech.calib.fit import Space, fit, residuals, start_params
 from eyebiomech.calib.forward import PARAM_NAMES, load_priors, make_cohort, predict_targets
 from eyebiomech.remodel.library import Library
 
@@ -68,6 +68,23 @@ def test_the_growth_rate_is_bounded_by_the_validated_exposure():
     short = Library(LIBRARY.groups, LIBRARY.levels, {**LIBRARY.meta, "validRateTime": 1e-4})
     with pytest.raises(ValueError, match="lower bound"):
         Space(PRIORS).bounds(short)
+
+
+def test_a_sphere_bound_costs_only_beyond_the_envelope(monkeypatch):
+    """The spherical-equivalent envelope is one-sided in magnitude (Task 5.14 Step 6)."""
+    import eyebiomech.calib.fit as fit_module
+
+    data = [
+        {"kind": "spherebound", "value": 0.5, "se": 0.1},
+        {"kind": "j0slope", "value": 0.5, "se": 0.1},
+    ]
+    space = Space(PRIORS)
+    x = space.to_x(start_params(PRIORS))
+    n_prior = space.prior_residuals(x).size
+    for model, want in ((0.3, (0.0, -2.0)), (-0.3, (0.0, -8.0)), (-0.8, (3.0, -13.0))):
+        monkeypatch.setattr(fit_module, "predict_targets", lambda *a, m=model, **k: np.full(2, m))
+        r = residuals(x, space, LIBRARY, COHORT, data, PRIORS)
+        assert r[: len(r) - n_prior] == pytest.approx(want)
 
 
 def test_least_squares_recovers_known_parameters():

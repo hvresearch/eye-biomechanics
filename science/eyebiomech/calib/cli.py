@@ -28,6 +28,11 @@ def add_arguments(p: argparse.ArgumentParser) -> None:
     p.add_argument("--steps", type=int, default=1500)
     p.add_argument("--burn", type=int, default=500)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument(
+        "--bound-sphere",
+        action="store_true",
+        help="also bound the adult spherical-equivalent change by the observed one (envelope)",
+    )
 
 
 def posterior_document(post, data, library_path: Path, provenance: dict) -> dict:
@@ -64,7 +69,7 @@ def run(args: argparse.Namespace, argv: list[str]) -> int:
     lib_path = args.library or data_root() / "results" / "response" / "library-v1.json"
     library = load_library(lib_path)
     priors = load_priors()
-    data = targets(priors)
+    data = targets(priors, bound_sphere=args.bound_sphere)
     post = fit(
         None,
         data,

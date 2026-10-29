@@ -49,6 +49,10 @@
       "citation": "Six-year changes in refraction and related ocular biometric factors in an adult Chinese population (Guangzhou; search excerpt, 2026-10-29): mean spherical-equivalent changes +0.24, +0.51, +0.26, and -0.05 D for baseline ages 35-44, 45-54, 55-64, and 65+; a hyperopic shift before 65 and a myopic shift after.",
       "useInFit": false,
       "useNote": "Adult spherical-equivalent changes are dominated by the crystalline lens (hyperopic shift, then nuclear myopia), which the mechanical model does not contain; fitting them would push the homeostatic ratio to stand in for the lens (M5 plan, Task 5.9 notes). Kept for comparison.",
+      "useAsBound": true,
+      "boundNote": "The bounding fit (M5 plan, Task 5.14 Step 6; `eyebiomech calibrate --bound-sphere`) requires only that the mechanical six-year change of the mean spherical equivalent in each band not exceed the observed change in magnitude: the lens, not modeled, accounts for the rest, so the observed change is an envelope, not a target.",
+      "boundStandardErrorD": 0.1,
+      "boundSeCitation": "assumption: no standard error in the excerpt; 0.1 D, about a third of the largest band change, so a mechanical change one band-change beyond the envelope costs a few units of chi-square.",
       "verified": false
     },
     {

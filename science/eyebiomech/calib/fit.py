@@ -111,7 +111,9 @@ def residuals(x: NDArray, space: Space, library, cohort, data, priors) -> NDArra
     model = predict_targets(params, library, cohort, data, priors=priors)
     values = np.array([t["value"] for t in data])
     se = np.array([t["se"] for t in data])
-    r = (model - values) / se
+    bound = np.array([t["kind"] == "spherebound" for t in data], dtype=bool)
+    # An envelope costs only beyond it: |change| above the observed magnitude.
+    r = np.where(bound, np.maximum(np.abs(model) - values, 0.0), model - values) / se
     r = np.where(np.isfinite(r), r, 1e3)  # a band with no astigmatic eye is a poor fit
     return np.concatenate([r, space.prior_residuals(x)])
 
