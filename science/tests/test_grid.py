@@ -76,6 +76,8 @@ def test_the_cli_anchors_a_profile_at_its_age(tmp_path):
     want = vector_from_refraction(-1.25, -0.75, 170)
     # The median passes through the profile at its age (to the file's rounding, 1e-4 D).
     assert got == pytest.approx(want, abs=2e-4)
+    # Onsets are searched from the profile's age: this subject already needs correction then.
+    assert doc["onset"]["refraction"]["p50"] == pytest.approx(30.0)
 
 
 def test_the_cli_refuses_a_bad_profile(tmp_path, capsys):

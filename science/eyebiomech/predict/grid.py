@@ -89,19 +89,21 @@ def _changes(draws: list[dict], library) -> tuple[NDArray, NDArray]:
     return np.array(dist), np.array(near)
 
 
-def _bands(v: NDArray, ages: NDArray) -> dict:
+def _bands(v: NDArray, ages: NDArray, onset_from: float | None = None) -> dict:
     """Median and 5/95% of sphere and cylinder over draws (draws, ages, 3), axis and logMAR
-    of the median vector, and the onsets (median trajectory; 5-95% over draws)."""
+    of the median vector, and the onsets (median trajectory; 5-95% over draws), searched from
+    `onset_from` on (all ages by default)."""
     S, C, _ = to_refraction(v)
     med = np.median(v, axis=0)
     s_med, c_med, ax_med = to_refraction(med)
     lm = logmar(med, ages)
-    onset = onset_ages(ages, s_med, c_med, lm)
     lm_draws = logmar(v, ages)
+    keep = ages >= (ages[0] if onset_from is None else onset_from)
+    onset = onset_ages(ages[keep], s_med[keep], c_med[keep], lm[keep])
     per_draw = []
     for d in range(v.shape[0]):
         sd, cd, _ = to_refraction(v[d])
-        per_draw.append(onset_ages(ages, sd, cd, lm_draws[d]))
+        per_draw.append(onset_ages(ages[keep], sd[keep], cd[keep], lm_draws[d][keep]))
 
     def spread(key):
         x = np.array([np.inf if o[key] is None else o[key] for o in per_draw], dtype=float)
@@ -139,7 +141,8 @@ def _bands(v: NDArray, ages: NDArray) -> dict:
 def predict_profile(
     profile, posterior: dict, library, *, ages: NDArray = AGES, draws: int = DEFAULT_DRAWS
 ) -> dict:
-    """The trajectory of one subject (`SubjectProfile`), anchored at the profile's age."""
+    """The trajectory of one subject (`SubjectProfile`), anchored at the profile's age; onsets
+    are searched from that age on (the profile describes the subject from then)."""
     ps = posterior_draws(posterior, draws)
     dist, near = _changes(ps, library)
     f = near_fraction(profile.near_hours, load_duty_cycle())
@@ -153,7 +156,7 @@ def predict_profile(
     ).reshape(len(ps), 1, 3)
     v0 = vector_from_refraction(profile.sphere_d, profile.cylinder_d, profile.axis_deg)
     v = v0[None, None, :] + delta - anchor
-    out = _bands(v, ages)
+    out = _bands(v, ages, onset_from=profile.age_years)
     return {
         "profile": {
             "ageYears": profile.age_years,
