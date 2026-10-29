@@ -140,7 +140,7 @@ def support_dofs(ctx: Context, support: str, optic_nerve_radius_mm: float | None
     """Fixed vector dofs: "optic_nerve" fixes every node within the optic-nerve radius of the
     posterior axis (z > 0); "axis_points" fixes the two tangential components at the six
     outer-surface points on the coordinate axes (consistent with any radial solution)."""
-    X = ctx.sb.doflocs
+    X = ctx.sb.doflocs if ctx.shell.support_doflocs is None else ctx.shell.support_doflocs
     if support == "optic_nerve":
         if optic_nerve_radius_mm is None or not optic_nerve_radius_mm > 0:
             raise ValueError("the optic_nerve support needs a positive optic_nerve_radius_mm")

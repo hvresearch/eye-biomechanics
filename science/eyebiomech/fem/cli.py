@@ -20,12 +20,15 @@ import time
 from datetime import date
 from pathlib import Path
 
+import numpy as np
+
 from eyebiomech.fem.data import data_root, load_eom_table, load_eyelid, load_materials
 from eyebiomech.fem.export import (
     build_deformation,
     build_result,
     write_result,
 )
+from eyebiomech.fem.inverse import unloaded_shell
 from eyebiomech.fem.loads import Loads
 from eyebiomech.fem.material import region_materials
 from eyebiomech.fem.mesh import make_shell_mesh
@@ -41,8 +44,10 @@ DEFAULT_LAYERS = 1
 DEFAULT_STEPS = 2
 
 CITATION = (
-    "Elastic corneoscleral FEM (no remodeling; spec §7). Approximations: the document's "
-    "geometry is taken as stress-free and the result is the change from the IOP-only state; "
+    "Elastic corneoscleral FEM (no remodeling; spec §7). The stress-free geometry is found by "
+    "a fixed-point inverse solve so that the IOP-only state is the document's geometry, and the "
+    "result is the change from that state (--reference measured instead takes the document as "
+    "stress-free). Approximations: "
     "fixed optic-nerve support; muscle forces from length-proxy activation x capacity, "
     "brought into static equilibrium with a linear passive orbital moment by the least change, "
     "with the net force and the passive moment taken by an orbital reaction on the orbit's "
@@ -99,6 +104,12 @@ def add_arguments(f: argparse.ArgumentParser) -> None:
     f.add_argument("--n-face", type=int, default=DEFAULT_N_FACE)
     f.add_argument("--layers", type=int, default=DEFAULT_LAYERS)
     f.add_argument("--steps", type=int, default=DEFAULT_STEPS)
+    f.add_argument(
+        "--reference",
+        choices=("unloaded", "measured"),
+        default="unloaded",
+        help="stress-free geometry: found by the inverse solve (default), or the document's",
+    )
     f.add_argument("--out", required=True, type=Path)
 
 
@@ -168,18 +179,32 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
         loads.ciliary(materials["ciliaryTensionNPerMmPerD"]["value"], args.accommodation)
         loads.orbital_support()
     shell = make_shell_mesh(doc, layers=args.layers, n_face=args.n_face)
-    ctx = make_context(shell)
     age = doc["age"] if args.age is None else args.age
     mats = region_materials(materials, age, shell.geometry)
     on = materials["opticNerve"]["radiusMm"]
-    reference = solve(
-        shell, mats, Loads().iop(args.iop), optic_nerve_radius_mm=on, steps=args.steps, context=ctx
-    )
+    if args.reference == "unloaded":
+        # The stress-free shell whose IOP state is the document's geometry (M5, Task 5.3); all
+        # states are then expressed as displacements of the measured mesh.
+        inverse = unloaded_shell(shell, mats, args.iop, optic_nerve_radius_mm=on, steps=args.steps)
+        solved_shell, offset, reference = inverse.shell, inverse.offset, inverse.solution
+    else:
+        solved_shell, offset, reference = shell, np.zeros_like(shell.mesh.doflocs), None
+    ctx = reference.context if reference is not None else make_context(solved_shell)
+    if reference is None:
+        reference = solve(
+            solved_shell,
+            mats,
+            Loads().iop(args.iop),
+            optic_nerve_radius_mm=on,
+            steps=args.steps,
+            context=ctx,
+        )
     if args.loads == "iop":
-        U_ref, loaded = 0 * reference.nodal(), reference
+        # The inflation by IOP from the stress-free state (measured: the document's geometry).
+        U_ref, loaded = offset, reference
     else:
         loaded = solve(
-            shell,
+            solved_shell,
             mats,
             loads,
             optic_nerve_radius_mm=on,
@@ -188,7 +213,8 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
             initial_u=reference.u,
             ramp="dead",
         )
-        U_ref = reference.nodal()
+        U_ref = offset + reference.nodal()
+    U_load = offset + loaded.nodal()
     provenance = {
         "source": "eyebiomech fem",
         "citation": CITATION,
@@ -200,9 +226,9 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
     suffix = f"elastic FEM, gaze {args.gaze}, IOP {args.iop:g} mmHg" + (
         "" if args.loads == "all" else ", IOP only"
     )
-    result, shifts = build_result(doc, shell, U_ref, loaded.nodal(), provenance, suffix)
+    result, shifts = build_result(doc, shell, U_ref, U_load, provenance, suffix)
     sidecar = build_deformation(
-        shell, U_ref, loaded.nodal(), loads.summary(), doc, provenance, result["id"]
+        shell, U_ref, U_load, loads.summary(), doc, provenance, result["id"]
     )
     eye_path, side_path = write_result(result, sidecar, args.out)
     c = result["surfaces"][0]["zernikeHeight"]["coeffsMicrons"]

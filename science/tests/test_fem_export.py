@@ -154,6 +154,7 @@ def test_cli_end_to_end_on_a_coarse_mesh(tmp_path, capsys):
     assert re.fullmatch(r"([0-9a-f]{40}(-dirty)?)?", prov["gitHash"])
     assert prov["date"] == date.today().isoformat()
     assert prov["verified"] is False and "elastic" in prov["citation"].lower()
+    assert "inverse solve" in prov["citation"]  # the default stress-free reference (Task 5.3)
     assert np.max(np.abs(side["displacementMm"])) > 0
 
 
@@ -174,6 +175,7 @@ def test_cli_solves_an_eccentric_gaze(tmp_path, capsys):
     forces = DATA_DIR / "results" / "forces" / "duty-cycle.json"
     out = tmp_path / "n.eye.json"
     args = ["fem", "--eye", str(fixture), "--gaze", "near", "--forces", str(forces)]
+    args += ["--reference", "measured"]  # the inverse solve is tested end to end below
     code = main([*args, "--n-face", "6", "--layers", "1", "--steps", "1", "--out", str(out)])
     assert code == 0, capsys.readouterr().err
     side = json.loads(out.with_name("n.deformation.json").read_text())
@@ -249,7 +251,8 @@ def test_cli_exits_2_without_files_when_newton_fails(tmp_path, capsys, monkeypat
     monkeypatch.setattr(fem_cli, "solve", fail)
     out = tmp_path / "n.eye.json"
     fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
-    code = main(["fem", "--eye", str(fixture), "--n-face", "4", "--layers", "1", "--out", str(out)])
+    args = ["fem", "--eye", str(fixture), "--n-face", "4", "--layers", "1"]
+    code = main([*args, "--reference", "measured", "--out", str(out)])
     assert code == 2
     assert "failed" in capsys.readouterr().err
     assert not out.exists() and not out.with_name("n.deformation.json").exists()
