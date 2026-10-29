@@ -112,36 +112,3 @@ def test_the_eye_inflates_outward_under_iop():
     apex = int(np.argmin(X[2]))
     assert sol.nodal()[2, apex] < 0  # the apex moves anteriorly (toward −z)
     assert np.all(sol.u[sol.fixed_dofs] == 0)
-
-
-def cavity_volume_change(sol) -> float:
-    """First-order change of the enclosed volume (mm³ = µL): ∫ u · (−N) dA over the inner
-    surface, N the solid's outward normal there (pointing toward the center)."""
-    fb = sol.context.fb_inner
-    u = np.asarray(fb.interpolate(sol.u))
-    return float(np.sum(np.sum(u * -fb.normals, axis=0) * fb.dx))
-
-
-def test_ocular_rigidity_is_within_the_plausibility_band_of_the_in_vivo_mean():
-    """Friedenwald coefficient K = ln(P2/P1) / ΔV between 10 and 20 mmHg, against Pallikaris
-    et al. 2005 (data/materials/cornea-sclera.json, ocularRigidityReference; Deviation 1)."""
-    doc = json.loads((DATA_DIR / "fixtures" / "emmetrope-right.eye.json").read_text())
-    mats = load_materials()
-    ref = mats["ocularRigidityReference"]
-    shell = make_shell_mesh(doc, layers=1, n_face=8)
-    ctx = make_context(shell)
-    materials = region_materials(mats, mats["ageStiffening"]["referenceAgeYears"], shell.geometry)
-    volume = {}
-    for p in (10.0, 20.0):
-        sol = solve(
-            shell,
-            materials,
-            Loads().iop(p),
-            optic_nerve_radius_mm=mats["opticNerve"]["radiusMm"],
-            steps=2,
-            context=ctx,
-        )
-        volume[p] = cavity_volume_change(sol)
-    k_model = np.log(20.0 / 10.0) / (volume[20.0] - volume[10.0])
-    ratio = k_model / ref["coefficientPerUl"]
-    assert 1 / ref["plausibilityFactor"] < ratio < ref["plausibilityFactor"]

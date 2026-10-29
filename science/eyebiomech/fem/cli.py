@@ -17,6 +17,7 @@ import json
 import subprocess
 import sys
 import time
+from dataclasses import replace
 from datetime import date
 from pathlib import Path
 
@@ -32,7 +33,7 @@ from eyebiomech.fem.inverse import unloaded_shell
 from eyebiomech.fem.loads import Loads
 from eyebiomech.fem.material import region_materials
 from eyebiomech.fem.mesh import make_shell_mesh
-from eyebiomech.fem.solve import make_context, solve
+from eyebiomech.fem.solve import make_context, solve, tangent_at
 from eyebiomech.fem.units import MMHG_TO_KPA
 from eyebiomech.forces.from_viewer import check_document_muscles, load_force_table
 from eyebiomech.schema import validate_eye_parameters
@@ -47,7 +48,10 @@ CITATION = (
     "Elastic corneoscleral FEM (no remodeling; spec §7). The stress-free geometry is found by "
     "a fixed-point inverse solve so that the IOP-only state is the document's geometry, and the "
     "result is the change from that state (--reference measured instead takes the document as "
-    "stress-free). Approximations: "
+    "stress-free). Stiffness calibrated to the in-vivo ocular rigidity (data/materials). The "
+    "loads other than IOP act as a linear perturbation of the pressurized eye (the nonlinear "
+    "solve softens under the full muscle load, an artifact of the support model). "
+    "Approximations: "
     "fixed optic-nerve support; muscle forces from length-proxy activation x capacity, "
     "brought into static equilibrium with a linear passive orbital moment by the least change, "
     "with the net force and the passive moment taken by an orbital reaction on the orbit's "
@@ -104,6 +108,13 @@ def add_arguments(f: argparse.ArgumentParser) -> None:
     f.add_argument("--n-face", type=int, default=DEFAULT_N_FACE)
     f.add_argument("--layers", type=int, default=DEFAULT_LAYERS)
     f.add_argument("--steps", type=int, default=DEFAULT_STEPS)
+    f.add_argument(
+        "--perturbation",
+        choices=("linear", "nonlinear"),
+        default="linear",
+        help="the loads other than IOP: a linear perturbation of the pressurized eye (default), "
+        "or a nonlinear solve (softens under the full muscle load; M5 plan, Deviation 11)",
+    )
     f.add_argument(
         "--reference",
         choices=("unloaded", "measured"),
@@ -202,6 +213,13 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
     if args.loads == "iop":
         # The inflation by IOP from the stress-free state (measured: the document's geometry).
         U_ref, loaded = offset, reference
+    elif args.perturbation == "linear":
+        # The other loads as a linear perturbation of the pressurized eye (M5 plan, Deviation
+        # 11): the tangent there, with the IOP's follower term, times their load vector.
+        tangent = tangent_at(reference, mats, Loads().iop(args.iop), optic_nerve_radius_mm=on)
+        du = tangent.solve(loads.dead_vector(ctx))
+        loaded = replace(reference, u=reference.u + du, residual_history=[])
+        U_ref = offset + reference.nodal()
     else:
         loaded = solve(
             solved_shell,

@@ -93,9 +93,9 @@ Used for: FEM constitutive defaults, regional thickness, and age stiffening in `
 
 ## Ocular rigidity
 
-Pallikaris et al. Ocular rigidity in living human eyes. *Invest Ophthalmol Vis Sci* 2005 (PubMed 15671262).
-DOI: to be added
-Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Friedenwald coefficient 0.0126 /µL (95% CI 0.0112–0.0149) in 79 living eyes, stored in `data/materials/cornea-sclera.json` (`ocularRigidityReference`). `verified: false`.
+Pallikaris IG, Kymionis GD, Ginis HS, Kounis GA, Tsilimbaris MK. Ocular rigidity in living human eyes. *Invest Ophthalmol Vis Sci* 46(2):409-414, 2005 (PubMed 15671262).
+DOI: 10.1167/iovs.04-0162 (search excerpt of a reference list, 2026-10-29)
+Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Friedenwald coefficient 0.0126 /µL (95% CI 0.0112–0.0149) in 79 living eyes, stored in `data/materials/cornea-sclera.json` (`ocularRigidityReference`). `verified: false`. Since M5 the calibration target of the tissue stiffness (`calibration`).
 
 ## Remodeling framework
 

@@ -280,10 +280,7 @@ class Loads:
     def assemble(self, ctx, u: NDArray, scale: float, dead_scale: float | None = None):
         """External force vector and load stiffness ∂f_ext/∂u (or None) at displacement u, with
         the IOP scaled by `scale` and the dead loads by `dead_scale` (default `scale`)."""
-        cache = ctx.load_cache
-        if self._token not in cache:
-            cache[self._token] = self._dead(ctx)
-        f = (scale if dead_scale is None else dead_scale) * cache[self._token]
+        f = (scale if dead_scale is None else dead_scale) * self.dead_vector(ctx)
         K = None
         for item in self.items:
             if item["kind"] == "iop":
@@ -293,6 +290,13 @@ class Loads:
                 if Ki is not None:
                     K = Ki if K is None else K + Ki
         return f, K
+
+    def dead_vector(self, ctx) -> NDArray:
+        """The dead loads' (not the IOP's) load vector at full value, cached on the context."""
+        cache = ctx.load_cache
+        if self._token not in cache:
+            cache[self._token] = self._dead(ctx)
+        return cache[self._token]
 
     def _dead(self, ctx) -> NDArray:
         fb = ctx.fb_outer_loads

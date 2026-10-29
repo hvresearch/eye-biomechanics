@@ -256,3 +256,38 @@ def solve(
 
 class _IncrementFailed(RuntimeError):
     pass
+
+
+@dataclass
+class Tangent:
+    """The factorized tangent stiffness of a solved state, for linear responses about it."""
+
+    context: Context
+    free: NDArray
+    lu: object
+
+    def solve(self, f: NDArray) -> NDArray:
+        """Displacement (all dofs; zero at the supports) under the load vector f."""
+        u = np.zeros(self.context.n)
+        u[self.free] = self.lu.solve(f[self.free])
+        return u
+
+
+def tangent_at(
+    solution: Solution,
+    materials: dict,
+    loads: Loads,
+    *,
+    support: str = "optic_nerve",
+    optic_nerve_radius_mm: float | None = None,
+) -> Tangent:
+    """Factorize K = ∂f_int/∂u − ∂f_ext/∂u at `solution` (`loads` supplies the follower terms,
+    normally the IOP of that state)."""
+    ctx = solution.context
+    _, K_int = internal(ctx, materials, solution.u)
+    _, K_ext = loads.assemble(ctx, solution.u, 1.0)
+    K = K_int if K_ext is None else K_int - K_ext
+    fixed = support_dofs(ctx, support, optic_nerve_radius_mm)
+    free = np.setdiff1d(np.arange(ctx.n), fixed)
+    return Tangent(ctx, free, splu(K[free][:, free].tocsc(), **LU_OPTIONS))
+

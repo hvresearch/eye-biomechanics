@@ -47,3 +47,12 @@ gave bibliographic records but not these numbers.
   derived from Shin et al. 2023's ratios applied to the Collins 1981 horizontal mean;
   tendon stiffness is a lower bound from a transverse modulus. (M6, or any session with
   document access)
+
+## Verification
+
+- Spec §7 / master plan Task 4.2: reproduce a published corneal inflation curve (apex rise
+  against IOP) within 15% with the calibrated stiffness. Deferred from M4 by the owner (#14);
+  the M5 search (2026-10-29) found the abstracts of Elsheikh et al. 2007 (Curr Eye Res 32:11-19)
+  and 2010 (J R Soc Interface) but no apex-rise numbers, so the check still cannot be written.
+  The stiffness is now calibrated to the in-vivo ocular rigidity instead (M5 Task 5.4). Needs
+  the owner's decision to accept again, or a session with document access. (owner, M6)

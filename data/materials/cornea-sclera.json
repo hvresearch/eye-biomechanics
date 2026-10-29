@@ -136,5 +136,18 @@
     "meanMmHg": 15.0,
     "citation": "Default intraocular pressure for the CLI and the remodeling model: 15.0 mmHg, rounded from population means in search excerpts (2026-10-29): 14.7 +/- 2.8 mmHg in 3,135 eyes of the Beijing Eye Study 2011 (air-puff tonometry, mean age about 64); 15.4 (men) and 14.9 mmHg (women) in 284,937 adults without eye disease at 170 Chinese health-screening centers in 2018 (Front Endocrinol 2022, doi 10.3389/fendo.2022.949827); 14.2 mmHg in 1,223 adults aged 45-74 in Arkhangelsk. Rounding to 15 mmHg is a modeling choice (the M4 committed result used 15).",
     "verified": false
+  },
+  "calibration": {
+    "stiffnessScale": 0.2746,
+    "target": "ocularRigidityReference.coefficientPerUl (Pallikaris et al. 2005, in vivo)",
+    "method": "one scale on mu and k1 of every region; Friedenwald coefficient between 10 and 20 mmHg of the stress-free globe (inverse solve at intraocularPressure.meanMmHg) of the fixture eye (data/fixtures/emmetrope-right.eye.json); secant steps on ln K against ln scale to 2% (eyebiomech.fem.rigidity.calibrate_stiffness)",
+    "ageYears": 70,
+    "ageCitation": "assumption: Pallikaris et al. measured eyes during cataract surgery; the excerpt gives no mean age, and 70 years is taken as typical of cataract-surgery cohorts. The age factor of ageStiffening at 70 enters the calibrated model, so younger eyes are softer than the measured ones.",
+    "meshNFace": 16,
+    "meshLayers": 1,
+    "date": "2026-10-29",
+    "result": "scale 0.45 gave K = 0.02065 /uL; the secant step to 0.27461 gave K = 0.012733 /uL, 1.1% above the 0.0126 target (production mesh n_face 16, one layer; 11 and 17 min per evaluation). Stored rounded to 0.2746.",
+    "citation": "M5 plan, Task 5.4 (Deviation 10): calibration of an unverified constitutive set to an unverified in-vivo mean; it replaces the M4 plausibility band (factor 3) by agreement within 2%.",
+    "verified": false
   }
 }
