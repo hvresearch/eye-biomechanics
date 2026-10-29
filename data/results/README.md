@@ -126,6 +126,47 @@ slopes reach the growing mode in young eyes, and every slope keeps the spherical
 restored. This is why the calibration (Task 5.10) finds large spherical changes wherever growth
 is fast enough to move the astigmatism.
 
+### The growth basis against the FEM (M5 review round 1, Task 5.14 Step 4)
+
+**The committed `library-v1.json`, and the posterior and grid built from it, use the load
+patterns alone as the growth basis (Krylov depth 0), which does not follow the FEM's growth in
+J0.** They are superseded by a rebuild with the enriched basis described here (Task 5.14 Step 5).
+
+The round-1 review's stronger slow test compares growth increments (remodeled minus elastic)
+with explicit FEM growth on the coarse test mesh (`n_face 6`, document geometry as stress-free,
+calibrated stiffness, half the near-gaze loads, r = 1/yr, steps at r dt λ = 0.45). The span of
+the six load patterns restores an astigmatic growth mode that the FEM grows. The library now
+adds a Krylov sequence to the basis: the feedback drives of the newest patterns, orthogonalized
+and normalized, for `KRYLOV_DEPTH` = 6 rounds (42 patterns). Growth increments, D:
+
+| r·t | FEM ΔM | FEM ΔJ0 | depth 0 ΔM | depth 0 ΔJ0 | depth 6 ΔM | depth 6 ΔJ0 |
+|---|---|---|---|---|---|---|
+| 0.002 | +0.048 | −0.024 | +0.047 | −0.007 | +0.048 | −0.024 |
+| 0.005 | +0.112 | −0.066 | +0.093 | −0.002 | +0.109 | −0.061 |
+| 0.010 | +0.214 | −0.117 | +0.142 | +0.018 | +0.203 | −0.111 |
+
+(FEM at r·t 0.0052 and 0.00995.) Depths 4 and 6 agree within 6% in M and J0 up to r·t = 0.01
+at 0.5, 1, and 2 times the calibrated stiffness. Beyond it they stop agreeing (at r·t = 0.05,
+depth 4 and 6 give ΔM +0.65 and +0.80 D at scale 1, +0.48 and +0.66 D at scale 2): the slow
+growth modes do not converge with the depth. Among them is a spherical mode that **grows** at
+the calibrated stiffness. Its eigenvalue on the coarse mesh is +0.53, +0.58, +0.81, +0.95,
++0.95, and +0.99 per unit r·t at depths 2, 3, 4, 5, 6, and 8, against −1.45 at depth 0. It
+grows below about twice the calibrated stiffness (+0.86, +0.58, +0.09, and −0.81 at 0.5, 1, 2,
+and 4 times the calibrated stiffness, depth 3). The depth-0 basis made this mode look restored.
+
+The FEM itself fails shortly beyond r·t = 0.01. Its ΔM rate more than doubles between r·t 0.010
+and 0.012 (+0.047 D per 0.002 of r·t before, +0.106 D after). The largest growth strain sits at
+the first growing points outside the clamped optic-nerve cap (2.76 mm from the axis; cap radius
+2.55 mm) and grows by 60% over that interval, and before r·t 0.014 an element inverts. The median growth strain stays smooth. The
+explicit growth law therefore runs away at the edge of the rigid support, an artifact of the
+support model, before the slow modes matter.
+
+So the library records a **validated growth exposure** `validRateTime` = 0.01 (r·t from the
+growth start at birth). `Library.simulate` refuses longer exposures, and the calibration caps
+the rate at 0.01 / 90 years ≈ 1.1 × 10⁻⁴ per year, against the 0.033–0.079 per year of the
+committed posterior. The validation is on the coarse mesh only. The production mesh resolves the
+clamp edge more finely, and its runaway may start at a different exposure (follow-up).
+
 ## The calibration (M5, Task 5.10)
 
 Least squares from the priors' starting values, then the ensemble sampler from around the

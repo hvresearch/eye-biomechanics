@@ -17,16 +17,25 @@ superposes it:
 3. A unit growth of each drive pattern, εg = g_l, gives the eigenstrain response u_gl =
    −K⁻¹ ∂f_int/∂εg · g_l, its refraction γ_l, and the drive of its stress change d_l (the
    feedback, normally restoring).
-4. The growth dynamics are reduced to the span of the patterns (Galerkin): with εg = Σ a_l g_l,
+4. The basis is enriched with a Krylov sequence (`KRYLOV_DEPTH` rounds): the feedback drives
+   d_l of the newest patterns, orthogonalized against the basis and normalized, become further
+   patterns with their own γ and d (no load drives them directly). The load patterns alone miss
+   the shapes that growth itself produces: their span restores an astigmatic mode that the FEM
+   grows (M5 plan, Task 5.14, Step 4).
+5. The growth dynamics are reduced to the span of the basis (Galerkin): with εg = Σ a_l g_l,
    da/dt = r (L(t) + F a), F = G⁺ H, G_kl = ⟨g_k, g_l⟩, H_kl = ⟨g_k, d_l⟩ (volume-weighted
-   tensor inner products over the growing points). The refraction change at time t is
-   Σ_k L_k e_k (elastic) + Σ_l a_l γ_l (growth); "remodeled" is their sum.
+   tensor inner products over the growing points; L is zero on the Krylov patterns). The
+   refraction change at time t is Σ_k L_k e_k (elastic) + Σ_l a_l γ_l (growth); "remodeled" is
+   their sum. The reduction is validated up to a growth exposure r·t of `VALID_RATE_TIME`, and
+   `simulate` refuses longer exposures: the slow growth modes, among them a spherical mode that
+   grows at the calibrated stiffness, do not converge with the Krylov depth.
 
 Responses are tabled at several stiffness scales (relative to the calibrated stiffness) and
 interpolated linearly in ln s. Approximations, labeled wherever the library is used: linear
-superposition about the pressurized eye; the growth dynamics reduced to the load patterns'
-span; the reference eye's responses for every subject; the growth patterns and feedback of the
-stiffness at which they are evaluated (the reference geometry does not evolve between ages).
+superposition about the pressurized eye; the growth dynamics reduced to the span of the load
+patterns and their Krylov sequence, for growth exposures up to `VALID_RATE_TIME`; the
+reference eye's responses for every subject; the growth patterns and feedback of the stiffness
+at which they are evaluated (the reference geometry does not evolve between ages).
 """
 
 from __future__ import annotations
@@ -69,6 +78,21 @@ REFRACTION_PROBE_MM = 1e-3
 # Singular values of G below this fraction of the largest are dropped from the projection
 # (numerical: near-collinear load patterns).
 PROJECTION_RCOND = 1e-8
+# Krylov depth of the growth basis: rounds of feedback drives added to the load patterns
+# (numerical: on the coarse mesh at 0.5, 1, and 2 times the calibrated stiffness, depths 4 and 6
+# agree within 6% in M and J0 up to r·t = 0.01, and depth 6 follows explicit FEM growth there;
+# depth 0, the load patterns alone, misses the FEM's J0 growth by a factor of 3 at r·t = 2e-3;
+# M5 plan, Task 5.14, Step 4).
+KRYLOV_DEPTH = 6
+# A Krylov pattern whose part orthogonal to the basis is below this fraction of the feedback
+# drive it came from is refused (numerical: the basis already spans that drive, and dropping it
+# would give the stiffness levels different bases).
+KRYLOV_RTOL = 1e-6
+# Largest growth exposure r·t (rate times the time since growth started) at which the reduced
+# model is validated (numerical: beyond it the Krylov depths stop agreeing, because the slow
+# growth modes, including an unstable spherical one, are not converged in the basis; the slow
+# test `test_reduced_growth_follows_the_fem_growth` checks it against explicit FEM growth).
+VALID_RATE_TIME = 0.01
 COMPONENTS = ("M", "J0", "J45")
 
 
@@ -107,10 +131,10 @@ class LevelResponse:
 
     scale: float
     elastic: NDArray  # (groups, 3) M, J0, J45 per unit intensity, D
-    growth: NDArray  # (groups, 3) per unit growth amplitude, D
-    feedback: NDArray  # (groups, groups) F of da/dt = r (L + F a)
-    gram: NDArray  # (groups, groups) G, for inspection
-    drive_norm: NDArray  # (groups,) sqrt(⟨g_k, g_k⟩ / volume)
+    growth: NDArray  # (basis, 3) per unit growth amplitude, D; the groups, then Krylov patterns
+    feedback: NDArray  # (basis, basis) F of da/dt = r (L + F a)
+    gram: NDArray  # (basis, basis) G, for inspection
+    drive_norm: NDArray  # (basis,) sqrt(⟨g_k, g_k⟩ / volume)
 
 
 def build_level(
@@ -126,8 +150,10 @@ def build_level(
     iop_mmhg: float,
     reference: str = "unloaded",
     steps: int = 2,
+    krylov: int = KRYLOV_DEPTH,
 ) -> LevelResponse:
-    """Steps 1-4 of the module notes at one stiffness scale."""
+    """Steps 1-5 of the module notes at one stiffness scale, with `krylov` rounds of the
+    Krylov enrichment."""
     shell = make_shell_mesh(doc, layers=layers, n_face=n_face)
     mats = region_materials(materials, age_years, shell.geometry, scale=scale)
     on = materials["opticNerve"]["radiusMm"]
@@ -180,28 +206,50 @@ def build_level(
         dsigma = 0.5 * (cauchy_stress(ctx, mats, u0 + u_k) - cauchy_stress(ctx, mats, u0 - u_k))
         drives.append(_drive(dsigma, Pt, s_iop, mask))
 
-    growth = np.zeros((n, 3))
-    feedback_drives = []
-    for g in drives:
+    def grown(g: NDArray) -> tuple[NDArray, NDArray]:
+        """The refraction and the drive of the stress change of a unit growth εg = g."""
         size = float(np.max(np.abs(g)))
         if size == 0:
-            growth_u = np.zeros(ctx.n)
-            feedback_drives.append(np.zeros_like(g))
-            continue
+            return np.zeros(3), np.zeros_like(g)
         eta = GROWTH_PROBE / size
         plus, minus = GrowthState(eta * g), GrowthState(-eta * g)
         f_plus, _ = internal(ctx, mats, u0, tangent=False, growth=plus)
         f_minus, _ = internal(ctx, mats, u0, tangent=False, growth=minus)
         growth_u = linear(-(f_plus - f_minus) / (2 * eta))
-        growth[len(feedback_drives)] = refraction_of(growth_u)
         dsigma = (
             cauchy_stress(ctx, mats, u0 + eta * growth_u, plus)
             - cauchy_stress(ctx, mats, u0 - eta * growth_u, minus)
         ) / (2 * eta)
-        feedback_drives.append(_drive(dsigma, Pt, s_iop, mask))
+        return refraction_of(growth_u), _drive(dsigma, Pt, s_iop, mask)
 
-    G = np.array([[_inner(a, b, weights) for b in drives] for a in drives])
-    H = np.array([[_inner(a, d, weights) for d in feedback_drives] for a in drives])
+    patterns = list(drives)
+    responses = [grown(g) for g in patterns]
+    # Krylov enrichment: the feedback drives of the newest patterns, orthogonalized against the
+    # basis, become further patterns, so growth may take shapes the loads alone do not drive.
+    newest = list(range(n))
+    for _ in range(krylov):
+        added = []
+        for j in newest:
+            q = responses[j][1].copy()
+            for _sweep in range(2):  # Gram-Schmidt, twice for orthogonality
+                for p in patterns:
+                    q -= _inner(p, q, weights) / _inner(p, p, weights) * p
+            if _inner(q, q, weights) <= KRYLOV_RTOL**2 * _inner(
+                responses[j][1], responses[j][1], weights
+            ):
+                raise ValueError(
+                    f"Krylov pattern {len(patterns)} is in the span of the basis; "
+                    f"use a depth below {krylov}"
+                )
+            q /= np.sqrt(_inner(q, q, weights) / volume)
+            patterns.append(q)
+            responses.append(grown(q))
+            added.append(len(patterns) - 1)
+        newest = added
+
+    growth = np.array([r for r, _ in responses])
+    G = np.array([[_inner(a, b, weights) for b in patterns] for a in patterns])
+    H = np.array([[_inner(a, d, weights) for _, d in responses] for a in patterns])
     F = np.linalg.lstsq(G, H, rcond=PROJECTION_RCOND)[0]
     return LevelResponse(
         scale=float(scale),
@@ -240,6 +288,12 @@ class Library:
     def feedback(self, scale: float) -> NDArray:
         return self._interp("feedback", scale)
 
+    @property
+    def valid_rate_time(self) -> float:
+        """The largest growth exposure r·t the library is validated for (unbounded for a
+        library that does not record one, such as the depth-0 test fixture)."""
+        return float(self.meta.get("validRateTime", np.inf))
+
     def simulate(
         self,
         intensities: Callable[[float], NDArray],
@@ -257,19 +311,29 @@ class Library:
         exactly over each interval with the mid-interval L, F (through F's eigendecomposition,
         so no step-size instability; Review Focus 3). With no history the amplitudes start at
         zero at the first age, and fast modes settle in the first interval from that state, not
-        from the loads. The homeostatic intensity is multiplied by 1 − h."""
+        from the loads. The homeostatic intensity is multiplied by 1 − h. A growth exposure
+        r·(history + age span) beyond `valid_rate_time` is refused."""
         if not history_years >= 0:
             raise ValueError(f"the growth history must be non-negative, got {history_years}")
         ages = np.asarray(ages, dtype=float)
+        exposure = rate_per_year * (history_years + float(ages[-1] - ages[0]))
+        if exposure > self.valid_rate_time * (1 + 1e-9):
+            raise ValueError(
+                f"growth exposure r·t = {exposure:.3g} exceeds the {self.valid_rate_time:g} "
+                "the reduced growth model is validated for"
+            )
         n = len(self.groups)
         h_index = self.groups.index("homeostatic")
 
+        m = self.levels[0].feedback.shape[0]  # the growth basis: the groups, then Krylov
+
         def L(age: float) -> NDArray:
-            v = np.array(intensities(age), dtype=float)
+            v = np.zeros(m)
+            v[:n] = intensities(age)
             v[h_index] *= 1.0 - ratio
             return v
 
-        a = np.zeros(n)
+        a = np.zeros(m)
         out = np.zeros((ages.size, 2, 3))
         eig_cache: dict[float, tuple[NDArray, NDArray, NDArray]] = {}
         if history_years > 0:
@@ -282,7 +346,7 @@ class Library:
                 rdt = rate_per_year * (age - ages[i - 1])
                 a = self._step(a, L(mid), rdt, stiffness(mid), eig_cache)
             s = stiffness(age)
-            el = L(age) @ self.elastic(s)
+            el = L(age)[:n] @ self.elastic(s)
             out[i, 0] = el
             out[i, 1] = el + a @ self.growth_refraction(s)
         return out
@@ -377,6 +441,7 @@ def build_library(
     forces_path: Path | str | None = None,
     reference: str = "unloaded",
     age_years: float | None = None,
+    krylov: int = KRYLOV_DEPTH,
     provenance: dict | None = None,
     progress: Callable[[str], None] | None = None,
 ) -> Library:
@@ -404,6 +469,7 @@ def build_library(
                 age_years=age,
                 iop_mmhg=iop,
                 reference=reference,
+                krylov=krylov,
             )
         )
     for lv, s in zip(levels, sorted(stiffness_scales), strict=True):
@@ -412,6 +478,8 @@ def build_library(
         "provenance": provenance
         or {"generatedBy": "build_library", "date": date.today().isoformat()},
         "mesh": {"nFace": n_face, "layers": layers, "reference": reference},
+        "krylovDepth": krylov,
+        "validRateTime": VALID_RATE_TIME,
         "ageYears": age,
         "iopMmHg": iop,
         "eyeId": doc["id"],
@@ -419,9 +487,11 @@ def build_library(
         "citation": (
             "Reduced-order response library of the corneoscleral FEM (M5 plan, Task 5.8). "
             "Approximations: linear superposition about the pressurized eye; growth dynamics "
-            "reduced to the span of the load patterns (Galerkin); the reference eye's responses "
-            "for every subject; patterns and feedback at the tabled stiffness, interpolated in "
-            "ln s. elastic: per unit load intensity; growth: per unit growth amplitude."
+            "reduced to the span of the load patterns enriched by a Krylov sequence (Galerkin), "
+            "validated up to a growth exposure r·t of validRateTime; the reference eye's "
+            "responses for every subject; patterns and feedback at the tabled stiffness, "
+            "interpolated in ln s. elastic: per unit load intensity; growth: per unit growth "
+            "amplitude (the groups, then the Krylov patterns)."
         ),
     }
     return Library(GROUPS, levels, meta)

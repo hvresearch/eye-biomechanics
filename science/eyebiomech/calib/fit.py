@@ -3,7 +3,8 @@
 The parameters (`PARAM_NAMES`, bounds and priors in data/calibration/priors.json) are fitted in
 a transformed space (log for positive scales and rates). The residuals are the targets'
 standardized differences (model − data)/se plus the z-scores of the normal and log-normal
-priors; uniform and log-uniform priors only bound the search. `fit(..., method="lsq")` uses
+priors; uniform and log-uniform priors only bound the search, and the growth rate is further
+bounded by the response library's validated growth exposure. `fit(..., method="lsq")` uses
 SciPy's trust-region least squares and a Gauss–Newton covariance; `method="mcmc"` then samples
 the posterior exp(−½ Σ r²) with the ensemble sampler (Deviation 4) from walkers around the
 least-squares optimum.
@@ -18,7 +19,7 @@ import numpy as np
 from numpy.typing import NDArray
 from scipy.optimize import least_squares
 
-from eyebiomech.calib.forward import PARAM_NAMES, load_priors, predict_targets
+from eyebiomech.calib.forward import PARAM_NAMES, load_priors, max_rate_per_year, predict_targets
 from eyebiomech.calib.mcmc import ensemble_sample
 
 # Numerical: finite-difference step of the least-squares Jacobian in the transformed space, and
@@ -66,10 +67,19 @@ class Space:
             for n, s, v in zip(self.names, self.spec, x, strict=True)
         }
 
-    def bounds(self) -> tuple[NDArray, NDArray]:
+    def bounds(self, library=None) -> tuple[NDArray, NDArray]:
+        """The priors' bounds in the fitted space; with a library, the growth rate's upper bound
+        is also capped at the library's validated growth exposure (`max_rate_per_year`)."""
         lo, hi = [], []
-        for s in self.spec:
+        for n, s in zip(self.names, self.spec, strict=True):
             a, b = s["bounds"]
+            if n == "rate_per_year" and library is not None:
+                b = min(b, max_rate_per_year(library))
+                if not b > a:
+                    raise ValueError(
+                        f"the library's validated growth exposure allows rates up to {b:.3g} "
+                        f"per year, below the prior's lower bound {a:g}"
+                    )
             if s["transform"] == "log":
                 a, b = math.log(a), math.log(b)
             lo.append(a)
@@ -121,7 +131,7 @@ def fit(
         raise ValueError(f"unknown method {method!r}; expected 'lsq' or 'mcmc'")
     priors = priors or load_priors()
     space = Space(priors)
-    lo, hi = space.bounds()
+    lo, hi = space.bounds(library)
     x0 = np.clip(space.to_x(params0 or start_params(priors)), lo + 1e-9, hi - 1e-9)
 
     def r(x):

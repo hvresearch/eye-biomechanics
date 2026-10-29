@@ -81,6 +81,11 @@ gave bibliographic records but not these numbers.
   response library): in-plane growth enlarges and thins the pressurized shell, which raises its
   stress. Add growth in thickness (or a volumetric or isochoric constraint) to the law, rebuild
   the library, and recalibrate. (M6)
+- The reduced growth model's validated exposure (`VALID_RATE_TIME`, r·t = 0.01) comes from the
+  coarse test mesh. Repeat the FEM comparison on the production mesh (`n_face 20`) and set the
+  bound from it. The explicit FEM growth runs away at the edge of the clamped optic-nerve cap
+  shortly beyond r·t = 0.01: model the lamina and nerve-head support (or let the cap grow), so
+  that longer exposures can be validated. (M6)
 - The calibration reproduces the with-the-rule to against-the-rule shift only with growth that
   moves the spherical equivalent by several diopters (`data/results/README.md`, the
   calibration). Add the adult spherical-equivalent change as a bounding target (or an envelope

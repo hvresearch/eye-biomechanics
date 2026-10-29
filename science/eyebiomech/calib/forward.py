@@ -12,6 +12,9 @@ intensities are affine in the near-work fraction f, a subject's change is
 Δ_distance(age) + f·(Δ_near(age) − Δ_distance(age)): two simulations per parameter set serve
 the whole cohort.
 
+The growth rate is bounded so that the growth exposure r·t from birth to the last age stays in
+the range the response library is validated for (`max_rate_per_year`).
+
 The stiffness follows the age stiffening of data/materials with the fitted slope, anchored at
 the rigidity calibration's age (the calibrated stiffness there is kept).
 
@@ -104,6 +107,13 @@ def stiffness_function(slope: float, materials: dict | None = None):
         return anchor * math.exp(slope * (min(max(age, lo), hi) - a0))
 
     return s
+
+
+def max_rate_per_year(library, ages: NDArray = AGES) -> float:
+    """The largest growth rate whose exposure r·t from the growth start age to the last age stays
+    within the library's validated range (`Library.valid_rate_time`; M5 plan, Task 5.14)."""
+    start = load_growth_table()["growthStartAgeYears"]["value"]
+    return library.valid_rate_time / (float(ages[-1]) - start)
 
 
 def state_trajectories(params: dict, library, ages: NDArray = AGES, ratio: float = 1.0):

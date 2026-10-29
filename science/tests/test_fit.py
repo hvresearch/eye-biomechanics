@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from eyebiomech.calib.data import CLASSES
-from eyebiomech.calib.fit import fit, start_params
+from eyebiomech.calib.fit import Space, fit, start_params
 from eyebiomech.calib.forward import PARAM_NAMES, load_priors, make_cohort, predict_targets
 from eyebiomech.remodel.library import Library
 
@@ -54,6 +54,20 @@ def _flat_priors():
         if spec["prior"] in ("normal", "log-normal"):
             spec["prior"] = "uniform"
     return p
+
+
+def test_the_growth_rate_is_bounded_by_the_validated_exposure():
+    """A library that records its validated growth exposure caps the rate so that r·t from
+    birth to 90 years stays within it (M5 plan, Task 5.14, Step 4); one too short for the
+    prior's lower bound is refused."""
+    i = PARAM_NAMES.index("rate_per_year")
+    unbounded = Space(PRIORS).bounds(LIBRARY)[1][i]
+    assert np.exp(unbounded) == pytest.approx(PRIORS["parameters"]["rate_per_year"]["bounds"][1])
+    lib = Library(LIBRARY.groups, LIBRARY.levels, {**LIBRARY.meta, "validRateTime": 0.01})
+    assert np.exp(Space(PRIORS).bounds(lib)[1][i]) == pytest.approx(0.01 / 90.0)
+    short = Library(LIBRARY.groups, LIBRARY.levels, {**LIBRARY.meta, "validRateTime": 1e-4})
+    with pytest.raises(ValueError, match="lower bound"):
+        Space(PRIORS).bounds(short)
 
 
 def test_least_squares_recovers_known_parameters():

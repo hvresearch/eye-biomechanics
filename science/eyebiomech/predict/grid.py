@@ -59,9 +59,12 @@ def logmar(v: NDArray, ages: NDArray) -> NDArray:
     return logmar_lookup(residual, j, np.broadcast_to(pupil, M.shape))
 
 
-def posterior_draws(posterior: dict, n: int = DEFAULT_DRAWS, seed: int = 0) -> list[dict]:
+def posterior_draws(
+    posterior: dict, n: int = DEFAULT_DRAWS, seed: int = 0, library=None
+) -> list[dict]:
     """Parameter sets: thinned MCMC samples when the posterior has them, else draws from its
-    Gauss-Newton normal approximation in the transformed space; the best fit first."""
+    Gauss-Newton normal approximation in the transformed space, clipped to the calibration's
+    bounds (with `library`, its validated growth exposure too); the best fit first."""
     from eyebiomech.calib.fit import Space
 
     names = tuple(posterior["names"])
@@ -75,7 +78,7 @@ def posterior_draws(posterior: dict, n: int = DEFAULT_DRAWS, seed: int = 0) -> l
         draws += [dict(zip(names, map(float, s[i]), strict=True)) for i in idx]
     else:
         space = Space(load_priors(), names)
-        lo, hi = space.bounds()
+        lo, hi = space.bounds(library)
         x0 = space.to_x(best)
         cov = np.asarray(posterior["cov"], dtype=float)
         xs = rng.multivariate_normal(x0, cov, size=n - 1, check_valid="ignore")
@@ -143,7 +146,7 @@ def predict_profile(
 ) -> dict:
     """The trajectory of one subject (`SubjectProfile`), anchored at the profile's age; onsets
     are searched from that age on (the profile describes the subject from then)."""
-    ps = posterior_draws(posterior, draws)
+    ps = posterior_draws(posterior, draws, library=library)
     dist, near = _changes(ps, library)
     f = near_fraction(profile.near_hours, load_duty_cycle())
     delta = dist + f * (near - dist)
@@ -195,7 +198,7 @@ def predict_grid(
     """The prediction grid (schemas/predictions.schema.json): trajectories from a baseline at
     the first age, arrays in C order over (nearHours, baselineSphereD, baselineCylinderD, ages)
     and onsets over the first three axes."""
-    ps = posterior_draws(posterior, draws)
+    ps = posterior_draws(posterior, draws, library=library)
     dist, near = _changes(ps, library)
     duty = load_duty_cycle()
     shape = (len(near_hours), len(baseline_sph), len(baseline_cyl))
