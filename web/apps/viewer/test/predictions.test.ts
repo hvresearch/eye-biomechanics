@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { at, interpolate, parsePredictionGrid, reanchor, trajectoryFor } from "../src/data/predictions";
+import { at, interpolate, onsetCriteria, parsePredictionGrid, reanchor, trajectoryFor } from "../src/data/predictions";
 import { synthetic } from "./syntheticGrid";
 
 describe("prediction grid", () => {
@@ -78,5 +78,15 @@ describe("prediction grid", () => {
     expect(t.onset.refraction).toBe(50);
     const late = trajectoryFor(g, { nearHours: 4, baselineSphereD: 0, baselineCylinderD: 0, anchorAgeYears: 60 });
     expect(late.onset.refraction).toBeNull();
+  });
+});
+
+describe("onset criteria", () => {
+  it("states the grid's thresholds with the spec's strict sphere criterion", () => {
+    expect(onsetCriteria({ cylinderD: 0.75, sphereD: 0.5, logMAR: 0.3 })).toEqual(["cylinder of 0.75 D or more", "sphere beyond ±0.50 D", "acuity worse than 20/40"]);
+  });
+  it("leaves out thresholds the grid does not carry", () => {
+    expect(onsetCriteria({ cylinderD: 1, citation: "x" })).toEqual(["cylinder of 1.00 D or more"]);
+    expect(onsetCriteria(undefined)).toEqual([]);
   });
 });

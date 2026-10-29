@@ -193,3 +193,24 @@ export function trajectoryFor(grid: PredictionGrid, p: PredictionProfile): Traje
   if (p.anchorAgeYears === grid.baselineAgeYears) return traj;
   return reanchor(traj, p.anchorAgeYears, { sphereD: p.baselineSphereD, cylinderD: -Math.abs(p.baselineCylinderD), axisDeg: grid.baselineAxisDeg });
 }
+
+/**
+ * The onset criteria of a grid in words, from its `thresholds` (spec §8: cylinder at or above
+ * the cylinder threshold, sphere strictly beyond the sphere threshold, acuity worse than the
+ * logMAR threshold, shown as a Snellen fraction). Thresholds the grid does not carry are left out.
+ */
+export function onsetCriteria(thresholds: Record<string, unknown> | undefined): string[] {
+  const num = (key: string): number | null => {
+    const v = thresholds?.[key];
+    return typeof v === "number" && Number.isFinite(v) ? v : null;
+  };
+  const d = (x: number) => x.toFixed(2);
+  const out: string[] = [];
+  const cyl = num("cylinderD");
+  const sph = num("sphereD");
+  const logMAR = num("logMAR");
+  if (cyl !== null) out.push(`cylinder of ${d(cyl)} D or more`);
+  if (sph !== null) out.push(`sphere beyond ±${d(sph)} D`);
+  if (logMAR !== null) out.push(`acuity worse than 20/${Math.round(20 * 10 ** logMAR)}`);
+  return out;
+}

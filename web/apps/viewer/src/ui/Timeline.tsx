@@ -1,5 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from "react";
-import { at, type Trajectory } from "../data/predictions";
+import { at, onsetCriteria, type Trajectory } from "../data/predictions";
 import { useScene } from "../store/scene";
 import { formatSigned } from "./format";
 import { NumberField } from "./NumberField";
@@ -56,6 +56,8 @@ export function Timeline() {
   const y = (d: number) => PAD.top + ((d1 - d) / (d1 - d0)) * (H - PAD.top - PAD.bottom);
   const cursorAge = Math.min(a1, Math.max(a0, ageYears));
   const now = t ? at(t, ageYears) : null;
+  const criteria = onsetCriteria(grid?.thresholds);
+  const onsetText = criteria.length > 0 ? ` Onsets: ${[criteria.slice(0, -1).join(", "), criteria[criteria.length - 1]].filter(Boolean).join(", or ")}.` : "";
 
   const ageAt = (clientX: number) => {
     const svg = svgRef.current;
@@ -226,7 +228,8 @@ export function Timeline() {
         !error && <p className="note">Loading the prediction grid…</p>
       )}
       <p className="note" data-testid="timeline-stance">
-        Remodeled model, calibrated to population data: a hypothesis test, not a clinical prediction. Onsets: cylinder of 0.75 D or more, sphere of ±0.50 D or more, or acuity worse than 20/40. Drag the chart or use the arrow keys to set the age.
+        Remodeled model, calibrated to the population's astigmatism axis shift only: a hypothesis test, not a clinical prediction. Its spherical drift is far larger than population spherical-equivalent data show (see data/results/README.md).
+        {onsetText} Drag the chart or use the arrow keys to set the age.
       </p>
     </section>
   );

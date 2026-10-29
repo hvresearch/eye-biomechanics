@@ -105,6 +105,7 @@ describe("prediction tooltips", () => {
     expect(t).toMatch(/remodeled/);
     expect(t).toMatch(/linear superposition about the pressurized eye/);
     expect(t).toMatch(/parameter uncertainty only/);
+    expect(t).toMatch(/spherical drift is far larger than population spherical-equivalent data show/);
   });
   it("says the applied prediction is a corneal change", () => {
     const t = appliedPredictionTooltip();
