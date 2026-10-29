@@ -14,14 +14,18 @@ the current step, and the load stiffness of the follower loads (or None).
 - Ciliary: a line load at the scleral spur along the meridian, toward the posterior pole,
   `tension × accommodation` per mm of circumference (Deviation 12).
 - Eyelid: normal pressure on the outer surface over a horizontal band at each lid margin,
-  anterior half only.
+  anterior half only. The lids are fixed in the orbit: at an eccentric gaze the globe turns
+  under them, so the bands are placed in the orbit frame (M5, Task 5.2).
 - Orbital support: the globe is held by the orbit (Tenon's capsule, orbital fat), not by the
-  optic nerve; a traction a + ω × x on the posterior hemisphere of the outer surface, with a and
-  ω solved so that the dead loads above have zero net force and moment about the globe center.
-  Without it, the unbalanced pull of the length-proxy muscles pivots the globe about the small
-  optic-nerve support (approximation: the reaction's distribution is assumed).
+  optic nerve; a traction a + ω × x on the orbit's posterior hemisphere of the outer surface,
+  with a and ω solved so that the dead loads above have zero net force and moment about the
+  globe center. It carries the passive orbital moment the muscles balance at an eccentric gaze
+  (`eyebiomech.forces.equilibrium`) and any remaining net force (approximation: the reaction's
+  distribution is assumed).
 
-Dead loads act in the reference configuration.
+The FEM works in the globe's own frame; `gaze(q)` sets the orientation q of the globe in the
+orbit (from primary position), so an orbit-frame point is R(q) x. Dead loads act in the
+reference configuration.
 """
 
 from __future__ import annotations
@@ -34,6 +38,8 @@ from numpy.typing import NDArray
 from eyebiomech.fem import assembly as asm
 from eyebiomech.fem.data import load_eom_forces, load_materials
 from eyebiomech.fem.units import kpa_to_mpa, mmhg_to_mpa
+from eyebiomech.forces.equilibrium import capacities_n, equilibrium_forces, passive_moment
+from eyebiomech.forces.from_viewer import rotation_matrix
 
 # Half-width of the band that carries the ciliary line load, mm (numerical: a line load needs a
 # finite band on a continuum surface; it is spread over this arc and normalized to the line).
@@ -62,6 +68,8 @@ class Loads:
     # a new context never sees a vector assembled on another (M4 follow-up: keying by id(ctx)
     # could reuse the id of a collected context).
     _token: object = field(default_factory=object, repr=False)
+    # Orientation of the globe in the orbit (orbit-frame point = R x); identity in primary gaze.
+    _gaze: NDArray = field(default_factory=lambda: np.eye(3), repr=False)
 
     # -- builders ------------------------------------------------------------------------------
 
@@ -128,6 +136,18 @@ class Loads:
         )
         return self._changed()
 
+    def gaze(self, quaternion) -> Loads:
+        """Set the globe's orientation in the orbit ([x, y, z, w] from primary position): the lid
+        bands and the orbital reaction, fixed in the orbit, move over the globe's surface."""
+        q = np.asarray(quaternion, dtype=float)
+        if q.shape != (4,) or not np.all(np.isfinite(q)) or np.linalg.norm(q) == 0:
+            raise ValueError(f"gaze must be a finite nonzero quaternion [x, y, z, w], got {q}")
+        if any(item["kind"] == "gaze" for item in self.items):
+            raise ValueError("the gaze is already set")
+        self._gaze = rotation_matrix(q)
+        self.items.append({"kind": "gaze", "quaternion": _vec(q / np.linalg.norm(q))})
+        return self._changed()
+
     def eyelid(
         self,
         upper_kpa: float,
@@ -135,18 +155,31 @@ class Loads:
         aperture_mm: float,
         upper_height_mm: float,
         lower_height_mm: float,
+        upper_margin_mm: float | None = None,
+        lower_margin_mm: float | None = None,
     ) -> Loads:
+        """Lid bands of the given heights at the lid margins (orbit-frame heights above the
+        corneal center, mm; the upper band above its margin, the lower below its). Without
+        margins they sit symmetrically at ±aperture / 2."""
         for name, v in (("upper_kpa", upper_kpa), ("lower_kpa", lower_kpa)):
             if not np.isfinite(v) or v < 0:
                 raise ValueError(f"{name} must be a non-negative pressure, got {v}")
         if not aperture_mm > 0 or upper_height_mm < 0 or lower_height_mm < 0:
             raise ValueError("eyelid aperture must be positive and band heights non-negative")
+        upper = aperture_mm / 2 if upper_margin_mm is None else float(upper_margin_mm)
+        lower = -aperture_mm / 2 if lower_margin_mm is None else float(lower_margin_mm)
+        if not upper > lower:
+            raise ValueError(
+                f"the upper lid margin ({upper} mm) must lie above the lower ({lower})"
+            )
         self.items.append(
             {
                 "kind": "eyelid",
                 "upperKPa": float(upper_kpa),
                 "lowerKPa": float(lower_kpa),
-                "apertureMm": float(aperture_mm),
+                "apertureMm": float(upper - lower),
+                "upperMarginMm": upper,
+                "lowerMarginMm": lower,
                 "upperHeightMm": float(upper_height_mm),
                 "lowerHeightMm": float(lower_height_mm),
             }
@@ -154,35 +187,57 @@ class Loads:
         return self._changed()
 
     def from_force_table(
-        self, table, gaze_index: int, eom: dict, balance_moments: bool = True
+        self,
+        table,
+        gaze_index: int,
+        eom: dict,
+        balance_moments: bool = True,
+        passive: dict | bool | None = None,
     ) -> Loads:
-        """One insertion per muscle of the force table's gaze, in the globe's frame.
+        """One insertion per muscle of the force table's gaze, in the globe's frame, and the
+        gaze itself (`gaze`), so lid bands and the orbital reaction added afterwards follow it.
 
-        With `balance_moments` (the default) the forces are first changed by the smallest
-        relative amount that makes the six muscle moments about the globe center sum to zero:
-        the length-proxy activations of spec §4.4 v1 do not balance torque, and an unbalanced
-        moment would twist the globe about the optic-nerve support. This stands in for the v2
-        static equilibrium (approximation); each insertion records its table force. The change
-        is not small: in primary gaze it moves the lateral rectus from 0.116 to 0.182 N and the
-        medial rectus from 0.147 to 0.078 N. A balanced set that switches off a muscle the table
-        loads (the agonist in vertical and far temporal gazes) is rejected."""
+        With `balance_moments` (the default) the forces are first brought into static
+        equilibrium with the passive orbit within the muscles' capacities
+        (`eyebiomech.forces.equilibrium`; `passive` is the table, None for
+        data/eom/passive-orbit.json, or False for M4's torque balance with no passive moment and
+        the total tension kept): the length-proxy activations of spec §4.4 v1 do not balance
+        torque, and an unbalanced moment would twist the globe about the optic-nerve support.
+        Each insertion records its table force and the passive moment; muscles the equilibrium
+        unloads although the table loads them are listed in an "equilibrium" item
+        (approximation: least change from the proxy, not the v2 minimum-activation program)."""
         body = table.body_frame(gaze_index)
         tendons = {m["name"]: m["tendon"] for m in eom["muscles"]}
         table_forces = np.asarray(table.force_n[gaze_index], dtype=float)
-        forces = table_forces
+        quaternion = table.quaternions[gaze_index]
+        self.gaze(quaternion)
+        forces, moment = table_forces, np.zeros(3)
+        if balance_moments and passive is False:
+            forces = _torque_balanced(table_forces, body["insertion_mm"], body["insertion_dir"])
+        elif balance_moments:
+            moment = passive_moment(quaternion, None if passive in (None, True) else passive)
+            forces = equilibrium_forces(
+                table_forces,
+                body["insertion_mm"],
+                body["insertion_dir"],
+                moment,
+                capacities=capacities_n(names=table.muscles),
+            )
         if balance_moments:
-            forces = _torque_balanced(forces, body["insertion_mm"], body["insertion_dir"])
             unloaded = [
                 name
                 for name, f0, f in zip(table.muscles, table_forces, forces, strict=True)
                 if f0 > 0 and f == 0
             ]
-            if unloaded:
-                raise ValueError(
-                    "torque balancing unloads " + ", ".join(unloaded) + ", which the force "
-                    "table loads at this gaze; eccentric gazes need passive orbital torques "
-                    "(M5 follow-up)"
-                )
+            self.items.append(
+                {
+                    "kind": "equilibrium",
+                    "balance": "torque-only" if passive is False else "passive-orbit",
+                    "passiveMomentNmm": _vec(moment),
+                    "unloaded": unloaded,
+                    "gazeDeg": _vec(table.gazes_deg[gaze_index]),
+                }
+            )
         for i, name in enumerate(table.muscles):
             wraps = table.arc_mm[gaze_index, i] > 0
             self.insertion(
@@ -196,7 +251,12 @@ class Loads:
                 tangent_point_mm=body["tangent_mm"][i] if wraps else None,
             )
             self.items[-1]["tableForceN"] = float(table.force_n[gaze_index, i])
+            self.items[-1]["passiveMomentNmm"] = _vec(moment)
         return self
+
+    def unloaded_muscles(self) -> list[str]:
+        """Muscles the equilibrium switched off although the force table loads them."""
+        return [m for item in self.items if item["kind"] == "equilibrium" for m in item["unloaded"]]
 
     def orbital_support(self) -> Loads:
         """Balance the dead loads with a distributed orbital reaction (see the module notes).
@@ -204,7 +264,7 @@ class Loads:
         self-equilibrated)."""
         if any(item["kind"] == "orbitalSupport" for item in self.items):
             raise ValueError("orbital support is already applied")
-        self.items.append({"kind": "orbitalSupport", "region": "outer surface, z > 0"})
+        self.items.append({"kind": "orbitalSupport", "region": "outer surface, orbit-frame z > 0"})
         return self._changed()
 
     def summary(self) -> list[dict]:
@@ -247,9 +307,9 @@ class Loads:
             elif kind == "ciliary":
                 total += _ciliary_traction(item, ctx.shell, x, dx)
             elif kind == "eyelid":
-                total += _eyelid_traction(item, x, N)
+                total += _eyelid_traction(item, x, N, self._gaze)
         if any(item["kind"] == "orbitalSupport" for item in self.items):
-            total += _orbital_reaction(total, x, dx)
+            total += _orbital_reaction(total, x, dx, self._gaze)
         return _surface_vector(ctx, fb, total)
 
 
@@ -326,62 +386,35 @@ def _ciliary_traction(item: dict, shell, x: NDArray, dx: NDArray) -> NDArray:
     return band * (q / width) * e_theta
 
 
-def _eyelid_traction(item: dict, x: NDArray, N: NDArray) -> NDArray:
-    half = item["apertureMm"] / 2
-    y, front = x[1], x[2] < 0
-    upper = front & (y >= half) & (y <= half + item["upperHeightMm"])
-    lower = front & (y <= -half) & (y >= -half - item["lowerHeightMm"])
+def _orbit(x: NDArray, R: NDArray) -> NDArray:
+    """Orbit-frame coordinates R x of globe-frame points x (3, ...)."""
+    return np.einsum("ij,j...->i...", R, x)
+
+
+def _eyelid_traction(item: dict, x: NDArray, N: NDArray, R: NDArray) -> NDArray:
+    xo = _orbit(x, R)
+    up, low = item.get("upperMarginMm"), item.get("lowerMarginMm")
+    if up is None:  # documents of the M4 summary shape
+        up, low = item["apertureMm"] / 2, -item["apertureMm"] / 2
+    y, front = xo[1], xo[2] < 0
+    upper = front & (y >= up) & (y <= up + item["upperHeightMm"])
+    lower = front & (y <= low) & (y >= low - item["lowerHeightMm"])
     p = upper * kpa_to_mpa(item["upperKPa"]) + lower * kpa_to_mpa(item["lowerKPa"])
     return -p * N
 
 
 def _torque_balanced(forces: NDArray, centers: NDArray, directions: NDArray) -> NDArray:
-    """Non-negative forces f' with Σ f'_i (c_i × d_i) = 0 and Σ f'_i = Σ f_i (the overall tension
-    is kept, so the trivial all-zero set is excluded) closest to f in the weighted norm
-    Σ ((f'_i − f_i) / s_i)², s_i = max(f_i, mean f / 4) (a small quadratic program; the floor on
-    s_i lets a relaxed muscle take up tension when the others cannot balance alone). Raises
-    when no non-negative balanced set exists.
-
-    The program is convex with six unknowns, so it is solved exactly by enumerating which
-    muscles are held at zero: each choice is an equality-constrained least-squares problem with
-    a closed-form solution, and the optimum is the cheapest one that is non-negative. Unlike an
-    iterative solver this gives the same answer, to round-off, on every CPU."""
-    arms = np.cross(centers, directions)  # (6, 3): moment per newton
-    A = arms.T  # (3, 6)
-    if np.linalg.norm(A @ forces) == 0:
-        return forces.copy()
-    n = len(forces)
-    s = np.maximum(forces, max(forces.mean(), 1e-12) / 4)
-    B = np.vstack([A, np.ones((1, n))])  # (4, 6)
-    b = np.concatenate([np.zeros(3), [forces.sum()]])
-    scale = np.linalg.norm(arms, axis=1).max() * forces.max()
-    tol = 1e-10 * scale
-    best, best_cost = None, np.inf
-    for mask in range(1, 2**n):
-        free = np.array([(mask >> i) & 1 == 1 for i in range(n)])
-        # With the zeroed muscles fixed, f = f0 + s g on the free ones and g is the least-norm
-        # solution of (B s) g = b − B f0 (an SVD solve, so the moment is zero to round-off).
-        f = np.zeros(n)
-        Bs = B[:, free] * s[free]
-        g = np.linalg.lstsq(Bs, b - B[:, free] @ forces[free], rcond=None)[0]
-        f[free] = forces[free] + s[free] * g
-        if np.linalg.norm(B @ f - b) > tol or f.min() < -1e-12 * forces.max():
-            continue
-        f = np.maximum(f, 0.0)
-        cost = np.sum(((f - forces) / s) ** 2)
-        if cost < best_cost:
-            best, best_cost = f, cost
-    if best is None:
-        raise ValueError("no non-negative torque-balanced muscle forces")
-    return np.where(best < 1e-12 * forces.max(), 0.0, best)
+    """M4's torque balance: the equilibrium with no external moment (see
+    `eyebiomech.forces.equilibrium.equilibrium_forces`)."""
+    return equilibrium_forces(forces, centers, directions, np.zeros(3), keep_total=True)
 
 
-def _orbital_reaction(t: NDArray, x: NDArray, dx: NDArray) -> NDArray:
-    """Traction a + ω × x on the posterior hemisphere (z > 0) whose net force and moment about
-    the origin cancel those of the traction field t."""
+def _orbital_reaction(t: NDArray, x: NDArray, dx: NDArray, R: NDArray) -> NDArray:
+    """Traction a + ω × x on the orbit's posterior hemisphere (orbit-frame z > 0) whose net force
+    and moment about the origin cancel those of the traction field t."""
     F = np.einsum("ieq,eq->i", t, dx)
     M = np.einsum("ieq,eq->i", np.cross(x, t, axis=0), dx)
-    region = (x[2] > 0).astype(float)
+    region = (_orbit(x, R)[2] > 0).astype(float)
     if not np.any(region):
         raise ValueError("no posterior surface to carry the orbital reaction")
     cols = []

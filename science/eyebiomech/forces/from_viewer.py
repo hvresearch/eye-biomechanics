@@ -43,12 +43,27 @@ class ForceTable:
     tendon_elongation_mm: NDArray  # (G, 6)
     quaternions: NDArray  # (G, 4) [x, y, z, w], globe orientation of each gaze
     provenance: dict
+    labels: tuple[str | None, ...] = ()  # per gaze, in gaze-list tables ("distance", "near")
 
     def at(self, x_deg: float, y_deg: float) -> int:
         """Index of the gaze exactly at (x_deg, y_deg); KeyError when it is not on the lattice."""
         hits = np.flatnonzero((self.gazes_deg[:, 0] == x_deg) & (self.gazes_deg[:, 1] == y_deg))
         if hits.size == 0:
             raise KeyError(f"gaze ({x_deg}, {y_deg}) is not in the force table")
+        return int(hits[0])
+
+    def find(self, spec: str) -> int:
+        """Index of the gaze named `spec`: a label of the table, or "x,y" in degrees (matched
+        within 1e-9°). KeyError when there is none."""
+        if spec in self.labels:
+            return self.labels.index(spec)
+        try:
+            x, y = (float(v) for v in spec.split(","))
+        except ValueError:
+            raise KeyError(f"gaze {spec!r} is neither a label of the force table nor x,y") from None
+        hits = np.flatnonzero(np.all(np.abs(self.gazes_deg - [x, y]) <= 1e-9, axis=1))
+        if hits.size == 0:
+            raise KeyError(f"gaze ({x:g}, {y:g}) is not in the force table")
         return int(hits[0])
 
     def body_frame(self, g: int) -> dict[str, NDArray]:
@@ -93,7 +108,7 @@ def load_force_table(path: Path | str) -> ForceTable:
         "tendon_elongation_mm": "tendonElongationMm",
     }
     columns: dict[str, list] = {k: [] for k in fields}
-    gazes, quats = [], []
+    gazes, quats, labels = [], [], []
     for g, gaze in enumerate(doc["gazes"]):
         names = tuple(e.get("name") for e in gaze["entries"])
         if names != MUSCLE_NAMES:
@@ -103,6 +118,7 @@ def load_force_table(path: Path | str) -> ForceTable:
                 + (f" (unknown: {unknown})" if unknown else "")
             )
         gazes.append((gaze["xDeg"], gaze["yDeg"]))
+        labels.append(gaze.get("label"))
         if "quaternion" not in gaze:
             raise ValueError(f"gaze {g}: no quaternion (regenerate the table)")
         quats.append(gaze["quaternion"])
@@ -114,6 +130,7 @@ def load_force_table(path: Path | str) -> ForceTable:
         gazes_deg=np.asarray(gazes, dtype=float),
         quaternions=np.asarray(quats, dtype=float),
         provenance=doc.get("provenance", {}),
+        labels=tuple(labels),
         **arrays,
     )
 

@@ -2,9 +2,11 @@
 `main` live in `eyebiomech.cli`).
 
 Builds the shell from the document, solves the IOP-only reference state and the loaded state
-(IOP, the six torque-balanced muscle insertions of the force table's gaze, the eyelid bands,
-the ciliary ring at the given accommodation, and the orbital support that balances them), and
-writes the elastic result and its displacement sidecar (M4 plan, Task 4.7). `--loads iop`
+(IOP, the six muscle insertions of the force table's gaze in static equilibrium with the
+passive orbit, the eyelid bands at the lid margins in the orbit, the ciliary ring at the given
+accommodation, and the orbital support that balances them), and writes the elastic result and
+its displacement sidecar (M4 plan, Task 4.7; M5 Task 5.2). `--gaze` is a label of the force
+table ("near" in data/results/forces/duty-cycle.json) or "x,y" in degrees. `--loads iop`
 reports the inflation by IOP alone from the unloaded geometry instead.
 """
 
@@ -13,6 +15,7 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
+import sys
 import time
 from datetime import date
 from pathlib import Path
@@ -41,12 +44,14 @@ CITATION = (
     "Elastic corneoscleral FEM (no remodeling; spec §7). Approximations: the document's "
     "geometry is taken as stress-free and the result is the change from the IOP-only state; "
     "fixed optic-nerve support; muscle forces from length-proxy activation x capacity, "
-    "torque-balanced, with the net force taken by an orbital reaction on the posterior "
-    "hemisphere; dead loads in the reference configuration; lens follows the scleral spur, "
-    "the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina "
-    "follows the posterior pole. Materials, thickness, eyelid, and force data are unverified "
-    "(see data/materials, data/eyelid, data/eom). Tests the hypothesis that muscle and lid "
-    "loading shape the cornea; not an established result."
+    "brought into static equilibrium with a linear passive orbital moment by the least change, "
+    "with the net force and the passive moment taken by an orbital reaction on the orbit's "
+    "posterior hemisphere; lid bands fixed in the orbit at the lid margins; dead loads in the "
+    "reference configuration; Zernike maps fitted within 4 mm of the axis; lens follows the "
+    "scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, "
+    "and the retina follows the posterior pole. Materials, thickness, eyelid, and force data "
+    "are unverified (see data/materials, data/eyelid, data/eom). Tests the hypothesis that "
+    "muscle and lid loading shape the cornea; not an established result."
 )
 
 
@@ -72,7 +77,11 @@ def default_iop_mmhg() -> float:
 
 def add_arguments(f: argparse.ArgumentParser) -> None:
     f.add_argument("--eye", required=True, type=Path)
-    f.add_argument("--gaze", default="0,0", help="Fick x,y in degrees; only 0,0 is supported")
+    f.add_argument(
+        "--gaze",
+        default="0,0",
+        help='a gaze of the force table: "x,y" Fick degrees (x temporal, y up) or its label',
+    )
     f.add_argument(
         "--iop",
         type=float,
@@ -103,16 +112,29 @@ def read_json(path: Path, what: str) -> dict:
         raise ValueError(f"{what} {path}: not valid JSON ({exc})") from exc
 
 
-def _eyelid_kpa(doc: dict) -> tuple[float, float, float, float, float]:
+def eyelid_arguments(doc: dict) -> dict:
+    """Keyword arguments of `Loads.eyelid` for a document: its own `eyelid` pressures when it has
+    one, else the table's; the lid margins of the table (MRD1, MRD2), moved apart or together
+    symmetrically when the document gives its own aperture."""
     table = load_eyelid()
+    up, low = table["upperMarginMm"], table["lowerMarginMm"]
     lid = doc.get("eyelid")
     if lid:
-        upper, lower, aperture = lid["upperPressureKPa"], lid["lowerPressureKPa"], lid["apertureMm"]
+        upper, lower = lid["upperPressureKPa"], lid["lowerPressureKPa"]
+        widen = (lid["apertureMm"] - (up - low)) / 2
+        up, low = up + widen, low - widen
     else:
         upper = table["upperPressureMmHg"] * MMHG_TO_KPA
         lower = table["lowerPressureMmHg"] * MMHG_TO_KPA
-        aperture = table["palpebralApertureMm"]
-    return upper, lower, aperture, table["upperContactHeightMm"], table["lowerContactHeightMm"]
+    return {
+        "upper_kpa": upper,
+        "lower_kpa": lower,
+        "aperture_mm": up - low,
+        "upper_height_mm": table["upperContactHeightMm"],
+        "lower_height_mm": table["lowerContactHeightMm"],
+        "upper_margin_mm": up,
+        "lower_margin_mm": low,
+    }
 
 
 def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
@@ -122,15 +144,9 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
     check_document_muscles(doc)
     if args.iop is None:
         args.iop = default_iop_mmhg()
-    gx, gy = (float(v) for v in args.gaze.split(","))
     materials, eom = load_materials(), load_eom_table()
     loads = Loads().iop(args.iop)
     if args.loads == "all":
-        if (gx, gy) != (0.0, 0.0):
-            raise ValueError(
-                f"gaze {args.gaze}: only primary gaze (0,0) is supported; eccentric gazes need "
-                "passive orbital torques and lid bands that follow the gaze (M5 follow-up)"
-            )
         forces = args.forces or data_root() / "results" / "forces" / "default.json"
         read_json(forces, "force table")
         try:
@@ -138,12 +154,17 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
         except (KeyError, TypeError, IndexError, ValueError) as exc:
             raise ValueError(f"force table {forces}: {exc}") from exc
         try:
-            gaze = table.at(gx, gy)
+            gaze = table.find(args.gaze)
         except KeyError as exc:
-            raise ValueError(f"gaze {args.gaze} is not on the force table's lattice") from exc
+            raise ValueError(f"gaze {args.gaze}: {exc.args[0]} ({forces})") from exc
         loads.from_force_table(table, gaze, eom)
+        if loads.unloaded_muscles():
+            print(
+                "eyebiomech fem: the equilibrium unloads " + ", ".join(loads.unloaded_muscles()),
+                file=sys.stderr,
+            )
         if not args.no_eyelid:
-            loads.eyelid(*_eyelid_kpa(doc))
+            loads.eyelid(**eyelid_arguments(doc))
         loads.ciliary(materials["ciliaryTensionNPerMmPerD"]["value"], args.accommodation)
         loads.orbital_support()
     shell = make_shell_mesh(doc, layers=args.layers, n_face=args.n_face)

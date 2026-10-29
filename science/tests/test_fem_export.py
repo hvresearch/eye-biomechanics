@@ -167,16 +167,20 @@ def test_cli_rejects_a_future_schema_version(tmp_path, capsys):
     assert "2.0.0" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("gaze", ["15,0", "30,30", "0,-15"])
-def test_cli_rejects_eccentric_gazes(tmp_path, capsys, gaze):
-    """Until passive orbital torques exist and the lid bands follow the gaze, only primary gaze
-    has a defensible load set."""
+def test_cli_solves_an_eccentric_gaze(tmp_path, capsys):
+    """With the passive orbit and gaze-following lids, eccentric gazes have a load set (M5,
+    Task 5.2): the near gaze of the duty-cycle table, by its label."""
     fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
-    out = tmp_path / "e.eye.json"
-    code = main(["fem", "--eye", str(fixture), "--gaze", gaze, "--out", str(out)])
-    assert code == 2
-    assert "primary gaze" in capsys.readouterr().err
-    assert not out.exists()
+    forces = DATA_DIR / "results" / "forces" / "duty-cycle.json"
+    out = tmp_path / "n.eye.json"
+    args = ["fem", "--eye", str(fixture), "--gaze", "near", "--forces", str(forces)]
+    code = main([*args, "--n-face", "6", "--layers", "1", "--steps", "1", "--out", str(out)])
+    assert code == 0, capsys.readouterr().err
+    side = json.loads(out.with_name("n.deformation.json").read_text())
+    eq = [i for i in side["loads"] if i["kind"] == "equilibrium"]
+    assert eq and np.linalg.norm(eq[0]["passiveMomentNmm"]) > 0 and eq[0]["unloaded"] == []
+    gaze = [i for i in side["loads"] if i["kind"] == "gaze"]
+    assert gaze and gaze[0]["quaternion"] != [0.0, 0.0, 0.0, 1.0]
 
 
 def test_cli_rejects_a_gaze_off_the_lattice(tmp_path, capsys):
