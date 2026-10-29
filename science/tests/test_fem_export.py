@@ -317,3 +317,46 @@ def test_cli_iop_default_comes_from_the_data():
     args = _parser().parse_args(["fem", "--eye", "x.eye.json", "--out", "y.eye.json"])
     assert args.iop is None
     assert default_iop_mmhg() == load_materials()["intraocularPressure"]["meanMmHg"]
+
+
+def test_sidecar_displacement_is_relative_to_the_lens(shell):
+    """The heat map shows the change relative to the lens (the spur ring's lateral shift and
+    tilt removed, as for the corneal maps) and keeps the raw field (M4 follow-up, review of
+    edd021b)."""
+    from eyebiomech.fem.export import _spur_band
+
+    X = shell.mesh.doflocs
+    U = np.zeros_like(X)
+    pole = np.array([0.0, 0.0, shell.sclera_radius_mm])[:, None]
+    T = _rotation_y(0.004) @ (X - pole) + pole - X + _corneal_field(shell, 0.003, 0.0)
+    side = build_deformation(shell, U, T, [], FIXTURE, PROV)
+    raw = np.asarray(side["rawDisplacementMm"])
+    rel = np.asarray(side["displacementMm"])
+    verts = np.asarray(side["vertices"])
+    assert raw.shape == rel.shape == verts.shape
+    # The raw field carries the pivot (lateral motion on the spur ring); the relative one does not.
+    band = _spur_band(shell)
+    index = {tuple(np.round(p, 9)): i for i, p in enumerate(verts)}
+    ring = [index[k] for k in map(tuple, np.round(X[:, band].T, 9)) if k in index]
+    assert len(ring) > 8
+    assert np.max(np.abs(raw[ring, 0])) > 1e-3
+    assert np.max(np.abs(rel[ring, :2])) < 1e-6
+    assert "scleralMaps" in side
+
+
+def test_the_retina_is_measured_at_the_edge_of_the_optic_nerve_support(shell):
+    """The node at the posterior pole sits in the clamped optic-nerve support (always 0 in a
+    solve); the retina shift is the mean axial displacement of the free inner-surface ring around
+    the support (M4 follow-up, review of edd021b). Here the field is −1 µm outside the support
+    and 0 inside."""
+    from eyebiomech.fem.data import load_materials
+    from eyebiomech.fem.export import axial_shifts
+
+    X = shell.mesh.doflocs
+    on = load_materials()["opticNerve"]["radiusMm"]
+    U = np.zeros_like(X)
+    T = U.copy()
+    T[2] = np.where(np.hypot(X[0], X[1]) > on, -0.001, 0.0)
+    s = axial_shifts(shell, U, T)
+    assert s["retinaClampMm"] == 0.0
+    assert s["retinaMm"] == pytest.approx(-0.001, abs=1e-12)

@@ -73,8 +73,8 @@ def validate_deformation(doc: dict) -> None:
     n = len(doc["vertices"])
     errors = [
         f"/{key} has {len(doc[key])} entries for {n} vertices"
-        for key in ("displacementMm", "region")
-        if len(doc[key]) != n
+        for key in ("displacementMm", "region", "rawDisplacementMm")
+        if key in doc and len(doc[key]) != n
     ]
     bad = [i for i, t in enumerate(doc["triangles"]) if max(t) >= n]
     if bad:

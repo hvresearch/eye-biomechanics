@@ -209,11 +209,11 @@ Absorbs the M4 follow-ups on the retina shift measured at the clamp, the heat ma
 - `scleral.py`: `scleral_maps(shell, U_ref, U_load, rings_deg=(…)) -> dict` fits the outer scleral surface's radial height change relative to the spur ring, in Zernike polynomials on a stereographic projection about the posterior pole out to the equator (order 6), written to the sidecar as `scleralMaps: { projection, normRadiusMm, coeffsMicrons, rmsResidualUm }`.
 - Committed result: the input becomes the preset document with a lens accommodation model (`navarro-1985` preset exported through the TS preset loader, or the fixture plus the preset's `lensAccommodationModel`; decided in implementation by which one validates and traces in the viewer), solved with the unloaded reference (Task 5.3), the calibrated stiffness (Task 5.4), and the equilibrium forces (Task 5.2); the old file is replaced (same names, so the viewer's catalog and e2e test keep working).
 
-- [ ] **Step 1:** Failing tests: `scleral_maps` of a synthetic radial bulge `δr = a·Z(2,2)` on a sphere shell recovers `a` within 2%; `build_deformation` writes `displacementMm` relative to the spur ring (its rigid fit on the ring is zero) and `rawDisplacementMm` equal to the old field; `axial_shifts` reports a retina shift that is not the clamp node's (non-zero for a pure axial squeeze of a coarse shell); the viewer's `results.test.ts` loads the regenerated sidecar.
-- [ ] **Step 2:** Run; FAIL. Implement. Run; PASS.
-- [ ] **Step 3:** Mesh study: run the CLI at `n_face` 12, 16, 20 with one layer and 16 with two layers; record ΔM, ΔJ0, ΔJ45, c(2,2), and the run times in `data/results/README.md`, and choose the library's mesh (Task 5.8) as the coarsest whose ΔJ0 is within 5% of `n_face 20`.
-- [ ] **Step 4:** Regenerate the committed result; record its induced refraction (the e2e test reads a nonzero cylinder).
-- [ ] **Step 5:** Full gate including e2e. Commit: `feat(fem): retina at the support edge, lens-relative heat map, scleral maps; regenerated result`.
+- [x] **Step 1:** Failing tests: `scleral_maps` of a synthetic radial bulge `δr = a·Z(2,2)` on a sphere shell recovers `a` within 2%; `build_deformation` writes `displacementMm` relative to the spur ring (its rigid fit on the ring is zero) and `rawDisplacementMm` equal to the old field; `axial_shifts` reports a retina shift that is not the clamp node's (non-zero for a pure axial squeeze of a coarse shell); the viewer's `results.test.ts` loads the regenerated sidecar.
+- [x] **Step 2:** Run; FAIL. Implement. Run; PASS.
+- [x] **Step 3:** Mesh study: run the CLI at `n_face` 12, 16, 20 with one layer and 16 with two layers; record ΔM, ΔJ0, ΔJ45, c(2,2), and the run times in `data/results/README.md`, and choose the library's mesh (Task 5.8) as the coarsest whose ΔJ0 is within 5% of `n_face 20`.
+- [x] **Step 4:** Regenerate the committed result; record its induced refraction (the e2e test reads a nonzero cylinder).
+- [x] **Step 5:** Full gate including e2e. Commit: `feat(fem): retina at the support edge, lens-relative heat map, scleral maps; regenerated result`.
 
 ### Task 5.6: Load history from a daily duty cycle
 

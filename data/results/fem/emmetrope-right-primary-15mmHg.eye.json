@@ -1,13 +1,13 @@
 {
  "schemaVersion": "1.0.0",
- "id": "emmetrope-right-fem",
- "label": "Navarro 1985 relaxed emmetrope, right eye (fixture): elastic FEM, gaze 0,0, IOP 15 mmHg",
+ "id": "navarro-1985-relaxed-fem",
+ "label": "Navarro, Santamar\u00eda & Besc\u00f3s 1985 accommodation-dependent schematic eye (regression fixture): elastic FEM, gaze 0,0, IOP 15 mmHg",
  "provenance": {
   "source": "eyebiomech fem",
-  "citation": "Elastic corneoscleral FEM (no remodeling; spec \u00a77). Approximations: the document's geometry is taken as stress-free and the result is the change from the IOP-only state; fixed optic-nerve support; muscle forces from length-proxy activation x capacity, torque-balanced, with the net force taken by an orbital reaction on the posterior hemisphere; dead loads in the reference configuration; lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the posterior pole. Materials, thickness, eyelid, and force data are unverified (see data/materials, data/eyelid, data/eom). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.",
-  "generatedBy": "eyebiomech fem --eye ../data/fixtures/emmetrope-right.eye.json --gaze 0,0 --iop 15 --out ../data/results/fem/emmetrope-right-primary-15mmHg.eye.json",
-  "gitHash": "",
-  "date": "2026-10-28",
+  "citation": "Elastic corneoscleral FEM (no remodeling; spec \u00a77). The stress-free geometry is found by a fixed-point inverse solve so that the IOP-only state is the document's geometry, and the result is the change from that state (--reference measured instead takes the document as stress-free). Stiffness calibrated to the in-vivo ocular rigidity (data/materials). The loads other than IOP act as a linear perturbation of the pressurized eye (the nonlinear solve softens under the full muscle load, an artifact of the support model). Approximations: fixed optic-nerve support; muscle forces from length-proxy activation x capacity, brought into static equilibrium with a linear passive orbital moment by the least change, with the net force and the passive moment taken by an orbital reaction on the orbit's posterior hemisphere; lid bands fixed in the orbit at the lid margins; dead loads in the reference configuration; Zernike maps fitted within 4 mm of the axis; lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the edge of the optic-nerve support. Materials, thickness, eyelid, and force data are unverified (see data/materials, data/eyelid, data/eom). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.",
+  "generatedBy": "eyebiomech fem --eye ../data/fixtures/navarro-1985-preset.eye.json --gaze 0,0 --iop 15 --out ../data/results/fem/emmetrope-right-primary-15mmHg.eye.json",
+  "gitHash": "d742868f6eea6a1d89bab3a4496adf69fcd09932-dirty",
+  "date": "2026-10-29",
   "verified": false
  },
  "surfaces": [
@@ -19,67 +19,59 @@
    "zernikeHeight": {
     "normRadiusMm": 4.0,
     "coeffsMicrons": [
-     0.23479439597142715,
-     -0.06349963927550639,
-     -0.0376110346345812,
-     0.02215563112783445,
-     0.17677628756730301,
-     -0.3128741650304442,
-     0.012750705525074235,
-     0.00039961444413000313,
-     0.0021707620624565223,
-     0.09518719630651026,
-     0.001588307105427001,
-     0.0003128223597303331,
-     0.03229345143886812,
-     -0.02803016594232849,
-     0.03183130992114347,
-     0.00047803743976833346,
-     0.0005789877259759282,
-     0.000504503552720012,
-     0.00044968020977742204,
-     0.003412139996970834,
-     0.003406686203575676,
-     3.533791937637698e-05,
-     0.00010445822444767744,
-     0.0003323027984969973,
-     9.568484194952352e-05,
-     0.0008257937930776366,
-     0.0006345852592307133,
-     -0.0008028432006366272,
-     1.82080476132003e-05,
-     6.647531561251863e-06,
-     9.631319306212943e-05,
-     2.125246004666681e-05,
-     -6.162415962391449e-05,
-     0.0002496037199298459,
-     0.00015857926894403615,
-     -0.00012462395282766478,
-     1.1000765335701657e-05,
-     -2.468951200420774e-06,
-     8.798772895037433e-06,
-     2.6229381286234366e-05,
-     -0.0001886928936043683,
-     -0.00015671851067015907,
-     -1.7178220856414392e-05,
-     -6.253110326328096e-05,
-     0.000993394289956521
+     1.5755756356072297,
+     2.7039667273695636,
+     -0.01747824668135023,
+     -0.19990330340356166,
+     0.9463884983518949,
+     -1.0600972897852783,
+     0.5170410946180861,
+     0.1136222157569009,
+     0.0037785487084544545,
+     -0.0592615358258653,
+     0.00022203935408904307,
+     -0.006244543008724179,
+     -0.0040792543361158895,
+     0.05693416108275731,
+     -0.20749294024287201,
+     -0.07019789424004513,
+     0.09862330259678875,
+     -0.09915197626994743,
+     0.00039498172086584876,
+     -0.0007677122448376816,
+     0.0005328659286150117,
+     0.0003545182913815559,
+     0.00013199852845738325,
+     0.0007663662186204734,
+     -0.03525677979256589,
+     0.04905865773271573,
+     -0.04735032629445368,
+     0.043878762741125676,
+     0.019731029375486236,
+     -0.020723504738618226,
+     0.02337892818389009,
+     -0.02414284848849277,
+     -8.070946375915433e-05,
+     0.00023013249918257817,
+     -1.6416952159925557e-06,
+     2.956572194845464e-07,
+     2.340091541429279e-05,
+     5.561885415339418e-06,
+     1.0340680497988863e-05,
+     6.298106686186689e-05,
+     -0.006847284709987855,
+     0.009426659307809726,
+     -0.008637195506967121,
+     0.0077555107447047945,
+     -0.007368291662097015
     ]
    },
-   "thicknessToNextMm": 0.5499927495157841,
+   "thicknessToNextMm": 0.5500117855170886,
    "mediumAfter": {
     "name": "cornea",
     "index555": 1.376
    },
-   "apertureSemiDiamMm": 6.0,
-   "tilt": {
-    "xDeg": 0,
-    "yDeg": 0
-   },
-   "decenter": {
-    "xMm": 0,
-    "yMm": 0
-   }
+   "apertureSemiDiamMm": 6
   },
   {
    "name": "cornea.posterior",
@@ -87,122 +79,218 @@
    "radiusMm": 6.5,
    "conic": 0,
    "zernikeHeight": {
-    "normRadiusMm": 3.5,
+    "normRadiusMm": 4.0,
     "coeffsMicrons": [
-     0.21640444204378184,
-     -0.060421166991481506,
-     -0.03642504435723753,
-     0.013213100800707388,
-     0.16429779175806244,
-     -0.30926579898275225,
-     0.00859991988023713,
-     -9.59795644283612e-05,
-     0.001708202549879547,
-     0.07671271533515048,
-     0.0011108616575602748,
-     -0.00031797737550456895,
-     0.03192330207737019,
-     -0.03039520955126257,
-     0.020947749363165943,
-     0.0004724909158271562,
-     0.00036636762997809685,
-     0.0004059633334833803,
-     0.0004110972899470343,
-     0.003164777551994036,
-     0.002401607822226825,
-     -5.589674493200296e-05,
-     8.160257517063341e-05,
-     0.0002452706360107221,
-     0.0009808252717786736,
-     -8.088354971396566e-05,
-     0.0001461430066247169,
-     -0.0008332707652762492,
-     -1.7034826309238887e-05,
-     2.388633043209909e-05,
-     7.20869902233641e-05,
-     3.640237021992204e-05,
-     -8.487009429746645e-05,
-     0.0002483345441828427,
-     0.00010527008978745067,
-     -0.00025908503684635284,
-     7.743161354177575e-06,
-     -4.241557302246332e-06,
-     7.680790767957552e-06,
-     2.750157731022662e-05,
-     -0.00020665763665728837,
-     -3.530951805979371e-05,
-     -0.00019110793875444856,
-     5.410059058557487e-05,
-     0.0005784949246518071
+     1.968765097226715,
+     3.036642394374481,
+     -0.017124472538823085,
+     -0.2753132555624141,
+     1.1622039110516698,
+     -1.232263096612928,
+     0.8673446163745903,
+     0.006340637628471868,
+     0.00588157873604081,
+     -0.09719900168742845,
+     -0.0009416104409273179,
+     -0.011652885648243683,
+     -0.04837298527376688,
+     0.15943347126106128,
+     -0.41552751443815605,
+     -0.13131741429730776,
+     0.19760830927422424,
+     -0.1916552272532124,
+     0.0008357727735686105,
+     -0.0024602219788526503,
+     0.0012097445643607374,
+     0.00018101736627765264,
+     0.00018869602402284136,
+     0.0013297809753850531,
+     -0.05823918274423534,
+     0.08066005050575376,
+     -0.07915114351314786,
+     0.06557166368652563,
+     0.01367055020016041,
+     -0.017381314458610048,
+     0.023647813754678865,
+     -0.026641824465307717,
+     5.140672587541917e-06,
+     0.0006189037827667443,
+     0.0001769935381569221,
+     -0.0002929620475351502,
+     0.00012545352392101528,
+     -3.0305992391621572e-05,
+     4.634766894332648e-05,
+     0.0002330602925639247,
+     -0.0005633284280406256,
+     -0.0009108323212940195,
+     0.002163524942708994,
+     -0.0035395080280326754,
+     0.004834296284206729
     ]
    },
-   "thicknessToNextMm": 3.0504219674505624,
+   "thicknessToNextMm": 3.0510919710951794,
    "mediumAfter": {
     "name": "aqueous",
     "index555": 1.3374
    },
-   "apertureSemiDiamMm": 6.0,
-   "tilt": {
-    "xDeg": 0,
-    "yDeg": 0
-   },
-   "decenter": {
-    "xMm": 0,
-    "yMm": 0
-   }
+   "apertureSemiDiamMm": 6
   },
   {
    "name": "lens.anterior",
    "type": "conic",
    "radiusMm": 10.2,
    "conic": -3.1316,
-   "tilt": {
-    "xDeg": 0,
-    "yDeg": 0
-   },
-   "decenter": {
-    "xMm": 0,
-    "yMm": 0
-   },
-   "thicknessToNextMm": 4.0,
+   "thicknessToNextMm": 4,
    "mediumAfter": {
     "name": "lens",
     "index555": 1.42
    },
-   "apertureSemiDiamMm": 5.0
+   "apertureSemiDiamMm": 5
   },
   {
    "name": "lens.posterior",
    "type": "conic",
-   "radiusMm": -6.0,
-   "conic": -1.0,
-   "tilt": {
-    "xDeg": 0,
-    "yDeg": 0
-   },
-   "decenter": {
-    "xMm": 0,
-    "yMm": 0
-   },
-   "thicknessToNextMm": 16.35710110115298,
+   "radiusMm": -6,
+   "conic": -1,
+   "thicknessToNextMm": 16.336392225615846,
    "mediumAfter": {
     "name": "vitreous",
     "index555": 1.336
    },
-   "apertureSemiDiamMm": 5.0
+   "apertureSemiDiamMm": 5
   }
  ],
  "pupil": {
-  "model": "fixed",
+  "model": "watsonYellott2012",
   "params": {
-   "diameterMm": 4.0
+   "fieldAreaDeg2": 3600,
+   "eyes": 2,
+   "note": "Viewer defaults, assumptions: binocular viewing of a 60\u00b0 \u00d7 60\u00b0 adapting field (a room-sized scene)."
   }
  },
- "axialLengthMm": 23.95751581811933,
+ "axialLengthMm": 23.937495982228118,
  "retina": {
-  "radiusMm": -12.0,
+  "radiusMm": -12,
   "conic": 0
  },
  "age": 30,
- "interpupillaryDistanceMm": 63
+ "interpupillaryDistanceMm": 63,
+ "extraocularMuscles": [
+  {
+   "name": "lateralRectus",
+   "originMm": [
+    -15,
+    0,
+    32
+   ],
+   "pulleyMm": null,
+   "insertionDistFromLimbusMm": 6.9,
+   "insertionWidthMm": 9.2,
+   "tendon": {
+    "stiffnessNPerMm": 36.11,
+    "slackLengthMm": 7.5
+   }
+  },
+  {
+   "name": "medialRectus",
+   "originMm": [
+    -15,
+    0,
+    32
+   ],
+   "pulleyMm": null,
+   "insertionDistFromLimbusMm": 5.5,
+   "insertionWidthMm": 10.3,
+   "tendon": {
+    "stiffnessNPerMm": 81.95,
+    "slackLengthMm": 3.7
+   }
+  },
+  {
+   "name": "superiorRectus",
+   "originMm": [
+    -15,
+    0,
+    32
+   ],
+   "pulleyMm": null,
+   "insertionDistFromLimbusMm": 7.7,
+   "insertionWidthMm": 10.5,
+   "tendon": {
+    "stiffnessNPerMm": 51.52,
+    "slackLengthMm": 6
+   }
+  },
+  {
+   "name": "inferiorRectus",
+   "originMm": [
+    -15,
+    0,
+    32
+   ],
+   "pulleyMm": null,
+   "insertionDistFromLimbusMm": 6.5,
+   "insertionWidthMm": 8.4,
+   "tendon": {
+    "stiffnessNPerMm": 41.22,
+    "slackLengthMm": 6
+   }
+  },
+  {
+   "name": "superiorOblique",
+   "originMm": [
+    -9.180103,
+    17.370341,
+    -9.055217
+   ],
+   "pulleyMm": null,
+   "insertionDistFromLimbusMm": 16,
+   "insertionWidthMm": 10.32,
+   "tendon": {
+    "stiffnessNPerMm": 15.19,
+    "slackLengthMm": 20
+   }
+  },
+  {
+   "name": "inferiorOblique",
+   "originMm": [
+    -7.688174,
+    -16.828871,
+    -11.210758
+   ],
+   "pulleyMm": null,
+   "insertionDistFromLimbusMm": 17,
+   "insertionWidthMm": 9.4,
+   "tendon": {
+    "stiffnessNPerMm": 276.74,
+    "slackLengthMm": 1
+   }
+  }
+ ],
+ "visualAxis": {
+  "alphaDeg": 5,
+  "kappaDeg": 5
+ },
+ "pupilDecenterMm": {
+  "x": 0,
+  "y": 0
+ },
+ "lensAccommodationModel": {
+  "form": "navarro1985",
+  "description": "Lens and anterior chamber as functions of accommodation A (diopters), Table 4. L = ln(1 + A). anteriorRadius = R_a0 + anteriorRadiusPerLn * L; posteriorRadius = R_p0 + posteriorRadiusPerLn * L; thickness = t0 + thicknessPerLn * L; anteriorChamberDepth = ACD0 + chamberDepthPerLn * L; index = n0 + indexCoeff * (10 A + A^2); anteriorConic = Q_a0 + anteriorConicPerLn * L; posteriorConic = Q_p0 + posteriorConicPerLn * L. The retina stays at axialLengthMm and the vitreous absorbs the change in anterior chamber depth and lens thickness (buildSurfaces).",
+  "coefficients": {
+   "anteriorRadiusPerLn": -1.75,
+   "posteriorRadiusPerLn": 0.2294,
+   "thicknessPerLn": 0.1,
+   "chamberDepthPerLn": -0.05,
+   "indexCoeff": 9e-05,
+   "anteriorConicPerLn": -0.34,
+   "posteriorConicPerLn": -0.125
+  },
+  "unverified": [
+   "anteriorConicPerLn",
+   "posteriorConicPerLn"
+  ],
+  "unverifiedNote": "Radius, thickness, chamber depth, and index coefficients were confirmed against excerpts of Table 4 on 2026-10-26. The two conic coefficients could not be confirmed from the reachable excerpts and are retained from the secondary literature; confirm against the paper before relying on them."
+ }
 }

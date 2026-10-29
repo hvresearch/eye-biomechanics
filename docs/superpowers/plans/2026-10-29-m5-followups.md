@@ -60,3 +60,15 @@ gave bibliographic records but not these numbers.
   and 2010 (J R Soc Interface) but no apex-rise numbers, so the check still cannot be written.
   The stiffness is now calibrated to the in-vivo ocular rigidity instead (M5 Task 5.4). Needs
   the owner's decision to accept again, or a session with document access. (owner, M6)
+
+## Model
+
+- Loads other than IOP act as a linear perturbation of the pressurized eye (M5 Deviation 11)
+  because the globe, held only at the optic-nerve cap with a dead-load orbital reaction,
+  softens under the full muscle load. Model the orbit as an elastic foundation (orbital fat and
+  Tenon's capsule) and the muscles' own stiffness so the nonlinear solve is stable, then compare
+  it with the linear perturbation. (M6)
+- The induced astigmatism of the FEM is not mesh-converged (M5 Task 5.5 mesh study: ΔJ0 +0.121,
+  +0.102, +0.132 D at `n_face` 12, 16, 20). Integrate the lid bands exactly (or normalize their
+  resultant, as the muscle contact bands are), refine the cornea locally, and repeat the study;
+  rebuild the library at the converged mesh. (M6)

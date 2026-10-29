@@ -71,15 +71,38 @@ def _spur_band(shell: ShellMesh) -> NDArray:
     return _surface_nodes(shell, "outer") & (np.abs(theta - spur) <= np.pi / (4 * shell.n_face))
 
 
+def _retina_ring(shell: ShellMesh) -> tuple[NDArray, int]:
+    """Inner-surface nodes of the free ring just outside the optic-nerve support (within half an
+    element of the innermost free node), and the clamped posterior-pole node."""
+    from eyebiomech.fem.data import load_materials
+
+    X = shell.mesh.doflocs
+    inner = _surface_nodes(shell, "inner") & (X[2] > 0)
+    rho = np.hypot(X[0], X[1])
+    on = load_materials()["opticNerve"]["radiusMm"]
+    free = inner & (rho > on)
+    if not np.any(free):
+        raise ValueError("no free inner-surface node lies outside the optic-nerve support")
+    # Half an element of arc near the pole (numerical band).
+    half = np.pi * shell.sclera_radius_mm / (4 * shell.n_face)
+    ring = free & (rho <= rho[free].min() + half)
+    pole = int(np.argmax(np.where(inner, shell.geometry.polar(X), -np.inf)))
+    return ring, pole
+
+
 def axial_shifts(shell: ShellMesh, U_ref: NDArray, U_load: NDArray) -> dict[str, float]:
     """Axial (z) displacement differences, loaded minus reference, mm: the scleral-spur ring of
-    the outer surface (lens) and the posterior pole of the inner surface (retina)."""
-    X = shell.mesh.doflocs
+    the outer surface (lens) and the retina, taken as the mean of the free inner-surface ring at
+    the edge of the optic-nerve support (`retinaMm`; the support, which the orbit holds, is the
+    reference of every axial shift). The clamped posterior-pole node (`retinaClampMm`, M4's
+    retina, always 0 in a solve) is reported too (M4 follow-up, review of edd021b)."""
     dz = (np.asarray(U_load) - np.asarray(U_ref))[2]
-    theta = shell.geometry.polar(X)
-    inner = _surface_nodes(shell, "inner")
-    pole = int(np.argmax(np.where(inner, theta, -np.inf)))
-    return {"lensMm": float(dz[_spur_band(shell)].mean()), "retinaMm": float(dz[pole])}
+    ring, pole = _retina_ring(shell)
+    return {
+        "lensMm": float(dz[_spur_band(shell)].mean()),
+        "retinaMm": float(dz[ring].mean()),
+        "retinaClampMm": float(dz[pole]),
+    }
 
 
 def _rotation(vector: NDArray) -> NDArray:
@@ -178,6 +201,7 @@ def build_result(
         "posteriorApexMm": post.apex_shift_mm,
         "lensMm": s["lensMm"],
         "retinaMm": s["retinaMm"],
+        "retinaClampMm": s["retinaClampMm"],
     }
     surfaces = copy.deepcopy(params["surfaces"])
     t = [sf["thicknessToNextMm"] for sf in surfaces]
@@ -246,8 +270,11 @@ def build_deformation(
     result_id: str | None = None,
 ) -> dict:
     """The outer surface (corner vertices, two triangles per facet) with the displacement of the
-    loaded state relative to the reference state, in the FEM frame."""
+    loaded state relative to the reference state, in the FEM frame: `displacementMm` relative to
+    the lens (`relative_to_lens`, as the corneal maps), `rawDisplacementMm` before that, and the
+    scleral height maps (`scleralMaps`)."""
     from eyebiomech.fem.data import load_eom_table
+    from eyebiomech.fem.scleral import scleral_maps
 
     m = shell.mesh
     quads = m.facets[:, shell.outer_facets]
@@ -259,7 +286,9 @@ def build_deformation(
         a, b, c, d = index[_cyclic(q, m.p)]
         tris += [[int(a), int(b), int(c)], [int(a), int(c), int(d)]]
     X = m.p[:, verts]
-    dU = (np.asarray(U_load) - np.asarray(U_ref))[:, verts]
+    U_rel = relative_to_lens(shell, U_ref, U_load)
+    raw = (np.asarray(U_load) - np.asarray(U_ref))[:, verts]
+    dU = (U_rel - np.asarray(U_ref))[:, verts]
     region = shell.geometry.region_index(shell.geometry.polar(X))
     return {
         "schemaVersion": SCHEMA_VERSION,
@@ -272,6 +301,8 @@ def build_deformation(
         "vertices": np.round(X.T, 9).tolist(),
         "triangles": tris,
         "displacementMm": np.round(dU.T, 12).tolist(),
+        "rawDisplacementMm": np.round(raw.T, 12).tolist(),
+        "scleralMaps": scleral_maps(shell, U_ref, U_rel),
         "region": [REGIONS[int(r)] for r in region],
         "reference": reference,
     }

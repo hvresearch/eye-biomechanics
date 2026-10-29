@@ -14,7 +14,7 @@ const eyes = import.meta.glob<{ default: unknown }>("../../../../../data/results
 const sidecars = import.meta.glob<{ default: unknown }>("../../../../../data/results/fem/*.deformation.json");
 
 const LABELS: Record<string, string> = {
-  "emmetrope-right-primary-15mmHg": "Navarro fixture eye, primary gaze, IOP 15 mmHg, muscles and lids",
+  "emmetrope-right-primary-15mmHg": "Navarro 1985 schematic eye, primary gaze, IOP 15 mmHg, muscles and lids",
 };
 
 function entry(path: string): ResultEntry {

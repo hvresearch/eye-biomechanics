@@ -58,7 +58,8 @@ CITATION = (
     "posterior hemisphere; lid bands fixed in the orbit at the lid margins; dead loads in the "
     "reference configuration; Zernike maps fitted within 4 mm of the axis; lens follows the "
     "scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, "
-    "and the retina follows the posterior pole. Materials, thickness, eyelid, and force data "
+    "and the retina follows the edge of the optic-nerve support. Materials, thickness, eyelid, "
+    "and force data "
     "are unverified (see data/materials, data/eyelid, data/eom). Tests the hypothesis that "
     "muscle and lid loading shape the cornea; not an established result."
 )

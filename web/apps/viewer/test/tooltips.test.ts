@@ -84,7 +84,7 @@ describe("biomechanics tooltips", () => {
     expect(t).toMatch(/elastic/);
     expect(t).toMatch(/stress-free/);
     expect(t).toMatch(/fixed optic-nerve cap/);
-    expect(t).toMatch(/torque balancing changes the lateral and medial rectus forces/);
+    expect(t).toMatch(/static equilibrium with a linear passive orbital moment/);
   });
   it("says what the heat map shows and how it is exaggerated", () => {
     const t = heatMapTooltip(50);
@@ -94,5 +94,6 @@ describe("biomechanics tooltips", () => {
     expect(t).toMatch(/rigid motion/);
     expect(t).toMatch(/×50/);
     expect(t).toMatch(/IOP-only/);
+    expect(t).toMatch(/relative to the lens/);
   });
 });

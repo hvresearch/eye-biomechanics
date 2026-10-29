@@ -10,13 +10,17 @@ describe("biomechanics results catalog", () => {
     expect(entry).toBeDefined();
     expect(entry!.hasDeformation).toBe(true);
     const raw = await entry!.load();
-    expect(parseEyeDocument(raw.eye).id).toBe(`emmetrope-right-fem`);
+    expect(parseEyeDocument(raw.eye).id).toBe("navarro-1985-relaxed-fem");
     const d = parseDeformation(raw.deformation);
     expect(d.triangles.length % 3).toBe(0);
     expect(d.vertices.length).toBe(d.displacementMm.length);
     expect(d.magnitudeUm.length * 3).toBe(d.vertices.length);
     expect(d.maxUm).toBeGreaterThan(0);
-    expect(d.reference.id).toBe("emmetrope-right");
+    expect(d.reference.id).toBe("navarro-1985-relaxed");
+    // Since M5 the sidecar also carries the raw field (pivot included) and the scleral maps.
+    const side = raw.deformation as { rawDisplacementMm?: unknown[]; scleralMaps?: unknown };
+    expect(side.rawDisplacementMm?.length).toBe(d.vertices.length / 3);
+    expect(side.scleralMaps).toBeDefined();
   });
 });
 
@@ -38,7 +42,7 @@ describe("parsing loaded documents", () => {
     const eyeFile = new File([JSON.stringify(raw.eye)], "a.eye.json");
     const sideFile = new File([JSON.stringify(raw.deformation)], "a.deformation.json");
     const both = await parseFiles([sideFile, eyeFile]);
-    expect(both.eye.id).toBe("emmetrope-right-fem");
+    expect(both.eye.id).toBe("navarro-1985-relaxed-fem");
     expect(both.deformation).not.toBeNull();
     const alone = await parseFiles([eyeFile]);
     expect(alone.deformation).toBeNull();

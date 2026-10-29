@@ -222,7 +222,7 @@ describe("biomechanics results in the store", () => {
     const s = store.getState();
     expect(s.loadError).toBeNull();
     expect(s.loadedResult?.id).toBe(entry.id);
-    expect(s.eyes.right.id).toBe("emmetrope-right-fem");
+    expect(s.eyes.right.id).toBe("navarro-1985-relaxed-fem");
     expect(s.loadedResult?.deformation?.maxUm).toBeGreaterThan(0);
     store.getState().clearLoadedResult();
     expect(store.getState().loadedResult).toBeNull();
