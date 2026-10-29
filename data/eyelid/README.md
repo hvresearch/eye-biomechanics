@@ -2,7 +2,7 @@
 
 | File | Content | Status |
 |---|---|---|
-| `shaw-2010.json` | Upper and lower lid pressure (mmHg), contact band height (mm), palpebral aperture (mm) | upper lid from Shaw et al. 2010 by excerpt; lower lid assumed equal; aperture from three population studies by excerpt; `verified: false` |
+| `shaw-2010.json` | Upper and lower lid pressure (mmHg), contact band height (mm), palpebral aperture (mm) | upper lid from Shaw et al. 2010 by excerpt; lower lid assumed equal; aperture from three population studies by excerpt; lid margin heights (MRD1, MRD2) from two population studies by excerpt (M5); `verified: false` |
 
 The FEM applies each lid as a uniform normal pressure on the outer surface over a horizontal
 band of the given height at the lid margin (M4 plan, Task 4.5). When a document carries its own

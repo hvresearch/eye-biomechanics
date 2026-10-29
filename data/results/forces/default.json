@@ -105,7 +105,7 @@
      "activation": 0,
      "pathLengthMm": 44.678330521770825,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -130,11 +130,11 @@
       0.9045460830573578
      ],
      "arcOfContactMm": 3.0121364397900674,
-     "forceN": 0.349587331915601,
+     "forceN": 0.22593941526494482,
      "activation": 0.532456863638588,
      "pathLengthMm": 36.25367671697939,
-     "tendonElongationMm": 0.007124257834024882,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.005481305561983135,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -291,7 +291,7 @@
      "activation": 0,
      "pathLengthMm": 46.10975711166272,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -316,11 +316,11 @@
       0.9056719961612986
      ],
      "arcOfContactMm": 3.750218767590054,
-     "forceN": 0.36625637735193234,
+     "forceN": 0.2367126728606141,
      "activation": 0.5578455057391001,
      "pathLengthMm": 36.99175904477938,
-     "tendonElongationMm": 0.00746395715002919,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.005742665523061963,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -477,7 +477,7 @@
      "activation": 0,
      "pathLengthMm": 47.361823066679044,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -502,11 +502,11 @@
       0.90544080208849
      ],
      "arcOfContactMm": 4.22052488223306,
-     "forceN": 0.3848423697383938,
+     "forceN": 0.24872485942614342,
      "activation": 0.5861538519239531,
      "pathLengthMm": 37.46206515942238,
-     "tendonElongationMm": 0.007842722024422127,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006034081985107798,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -663,7 +663,7 @@
      "activation": 0,
      "pathLengthMm": 48.331151731788204,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -688,11 +688,11 @@
       0.9057558027894675
      ],
      "arcOfContactMm": 4.3669017874951725,
-     "forceN": 0.4042065887013616,
+     "forceN": 0.26124001632722804,
      "activation": 0.6156475158943682,
      "pathLengthMm": 37.608442064684496,
-     "tendonElongationMm": 0.0082373464173907,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006337700541660069,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -849,7 +849,7 @@
      "activation": 0,
      "pathLengthMm": 48.906906923840786,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -874,11 +874,11 @@
       0.9054439201448751
      ],
      "arcOfContactMm": 4.153801281219517,
-     "forceN": 0.42256471569529275,
+     "forceN": 0.2731049327578091,
      "activation": 0.6436088000401775,
      "pathLengthMm": 37.39534155840884,
-     "tendonElongationMm": 0.008611467611479372,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006625544220228266,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -1031,11 +1031,11 @@
       0.7285051446966392
      ],
      "arcOfContactMm": 9.316501791272819,
-     "forceN": 0.016802268983930356,
+     "forceN": 0.021487830775266874,
      "activation": 0.025591555037684788,
      "pathLengthMm": 42.55804206846214,
-     "tendonElongationMm": 0.0003424142853868016,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.00041707746070005576,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -1060,11 +1060,11 @@
       0.8898286553336281
      ],
      "arcOfContactMm": 5.379398444081798,
-     "forceN": 0.24581981801606967,
+     "forceN": 0.15887413779768983,
      "activation": 0.37440844496231523,
      "pathLengthMm": 38.62093872127112,
-     "tendonElongationMm": 0.005009574444998363,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0038542973750046055,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -1217,11 +1217,11 @@
       0.6833916051000468
      ],
      "arcOfContactMm": 10.547512219979183,
-     "forceN": 0.010517727004012592,
+     "forceN": 0.013450751099082272,
      "activation": 0.01601956198606036,
      "pathLengthMm": 43.789052497168505,
-     "tendonElongationMm": 0.00021434128803775405,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0002610782433828081,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -1246,11 +1246,11 @@
       0.8748766202262648
      ],
      "arcOfContactMm": 6.366451963980787,
-     "forceN": 0.2521043599959874,
+     "forceN": 0.1629358574611856,
      "activation": 0.38398043801393966,
      "pathLengthMm": 39.60799224117011,
-     "tendonElongationMm": 0.00513764744234741,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.003952834969946278,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -1403,11 +1403,11 @@
       0.6582182721440618
      ],
      "arcOfContactMm": 11.540957664369211,
-     "forceN": 0.0030623896169664436,
+     "forceN": 0.003916382360039834,
      "activation": 0.004664329115572741,
      "pathLengthMm": 44.78249794155853,
-     "tendonElongationMm": 0.00006240859215338178,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.00007601673835481044,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -1432,11 +1432,11 @@
       0.8673717219138164
      ],
      "arcOfContactMm": 7.058709027366771,
-     "forceN": 0.2595596973830336,
+     "forceN": 0.16775426595614434,
      "activation": 0.3953356708844273,
      "pathLengthMm": 40.3002493045561,
-     "tendonElongationMm": 0.005289580138231783,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.004069729887339746,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -1593,7 +1593,7 @@
      "activation": 0,
      "pathLengthMm": 45.45276729408091,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -1618,11 +1618,11 @@
       0.870917603701596
      ],
      "arcOfContactMm": 7.384593669872501,
-     "forceN": 0.26781574390492874,
+     "forceN": 0.17309017533631466,
      "activation": 0.40791046475071036,
      "pathLengthMm": 40.626133947061824,
-     "tendonElongationMm": 0.0054578305258799415,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.004199179411361345,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -1779,7 +1779,7 @@
      "activation": 0,
      "pathLengthMm": 45.73333778812391,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -1804,11 +1804,11 @@
       0.8840567252182531
      ],
      "arcOfContactMm": 7.299268590277323,
-     "forceN": 0.27633860395189336,
+     "forceN": 0.17859852715456948,
      "activation": 0.42089164260109374,
      "pathLengthMm": 40.540808867466644,
-     "tendonElongationMm": 0.005631518319785885,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0043328124006445775,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -1961,11 +1961,11 @@
       0.843873451951172
      ],
      "arcOfContactMm": 7.04242048632802,
-     "forceN": 0.12250094283062896,
+     "forceN": 0.15666214675367365,
      "activation": 0.18658132563028326,
      "pathLengthMm": 40.28396076351734,
-     "tendonElongationMm": 0.0024964528801840013,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.003040802537920684,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -1990,11 +1990,11 @@
       0.8138130310215909
      ],
      "arcOfContactMm": 7.673497556931523,
-     "forceN": 0.14012114416937108,
+     "forceN": 0.09056074545494677,
      "activation": 0.21341867436971676,
      "pathLengthMm": 40.915037834120845,
-     "tendonElongationMm": 0.002855535850201163,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0021970098363645507,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -2147,11 +2147,11 @@
       0.8200908111793279
      ],
      "arcOfContactMm": 8.045766852026157,
-     "forceN": 0.1273805450517613,
+     "forceN": 0.16290249839181184,
      "activation": 0.19401345333419925,
      "pathLengthMm": 41.28730712921548,
-     "tendonElongationMm": 0.002595894539469356,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0031619273756174657,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -2176,11 +2176,11 @@
       0.7773669377356768
      ],
      "arcOfContactMm": 8.915705253078361,
-     "forceN": 0.13524154194823873,
+     "forceN": 0.08740704286930978,
      "activation": 0.20598654666580077,
      "pathLengthMm": 42.15724553026769,
-     "tendonElongationMm": 0.0027560941909158085,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0021205007974116883,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -2333,11 +2333,11 @@
       0.8081260743722566
      ],
      "arcOfContactMm": 8.795701790933446,
-     "forceN": 0.1313110435,
+     "forceN": 0.16792907460000003,
      "activation": 0.2,
      "pathLengthMm": 42.037242068122765,
-     "tendonElongationMm": 0.002675994365192582,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.003259492907608696,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -2362,11 +2362,11 @@
       0.758458635110871
      ],
      "arcOfContactMm": 9.856571779887412,
-     "forceN": 0.1313110435,
+     "forceN": 0.08486674910000001,
      "activation": 0.2,
      "pathLengthMm": 43.09811205707673,
-     "tendonElongationMm": 0.002675994365192582,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.002058873098010675,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -2519,11 +2519,11 @@
       0.811960595778573
      ],
      "arcOfContactMm": 9.225051410651858,
-     "forceN": 0.13370392097834702,
+     "forceN": 0.17098924143638644,
      "activation": 0.20364459441424973,
      "pathLengthMm": 42.46659168784118,
-     "tendonElongationMm": 0.0027247589357723054,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.003318890555830482,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -2548,11 +2548,11 @@
       0.7640432891551251
      ],
      "arcOfContactMm": 10.40147341094448,
-     "forceN": 0.128918166021653,
+     "forceN": 0.08332022470137304,
      "activation": 0.1963554055857503,
      "pathLengthMm": 43.643013688133806,
-     "tendonElongationMm": 0.0026272297946128595,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.002021354311047381,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -2705,11 +2705,11 @@
       0.8307348203426214
      ],
      "arcOfContactMm": 9.290365610796865,
-     "forceN": 0.13407849953493764,
+     "forceN": 0.17146827677642063,
      "activation": 0.20421511544067142,
      "pathLengthMm": 42.531905887986184,
-     "tendonElongationMm": 0.002732392491031947,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0033281886020267975,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -2734,11 +2734,11 @@
       0.7930986359764443
      ],
      "arcOfContactMm": 10.484828161193251,
-     "forceN": 0.1285435874650624,
+     "forceN": 0.08307813337734503,
      "activation": 0.1957848845593286,
      "pathLengthMm": 43.72636843838257,
-     "tendonElongationMm": 0.002619596239353218,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.002015481159081636,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -2891,11 +2891,11 @@
       0.9014203087236411
      ],
      "arcOfContactMm": 4.675817388260208,
-     "forceN": 0.22753685639891785,
+     "forceN": 0.2909888819249492,
      "activation": 0.34656164528753874,
      "pathLengthMm": 37.91735766544953,
-     "tendonElongationMm": 0.00463698504990662,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.005648076124319666,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -2920,11 +2920,11 @@
       0.6863619771005846
      ],
      "arcOfContactMm": 9.843736337058875,
-     "forceN": 0.035085230601082165,
+     "forceN": 0.02267569720849627,
      "activation": 0.05343835471246128,
      "pathLengthMm": 43.0852766142482,
-     "tendonElongationMm": 0.0007150036804785443,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.0005501139545971924,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -3077,11 +3077,11 @@
       0.8941839940972117
      ],
      "arcOfContactMm": 5.448509216153219,
-     "forceN": 0.2434982091825034,
+     "forceN": 0.3114012945512463,
      "activation": 0.3708723999021505,
      "pathLengthMm": 38.69004949334254,
-     "tendonElongationMm": 0.004962262261718023,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006044279785544377,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -3106,11 +3106,11 @@
       0.6223964143367399
      ],
      "arcOfContactMm": 11.334426567218616,
-     "forceN": 0.019123877817496623,
+     "forceN": 0.012359823646946662,
      "activation": 0.029127600097849538,
      "pathLengthMm": 44.57596684440794,
-     "tendonElongationMm": 0.0003897264686671413,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.00029985016125537754,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -3263,11 +3263,11 @@
       0.8904741891396508
      ],
      "arcOfContactMm": 5.977006965589336,
-     "forceN": 0.2589719599800581,
+     "forceN": 0.3311901301492543,
      "activation": 0.394440487376156,
      "pathLengthMm": 39.218547242778655,
-     "tendonElongationMm": 0.005277602608112046,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006428379855381488,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -3292,11 +3292,11 @@
       0.5848724915506596
      ],
      "arcOfContactMm": 12.553421763970542,
-     "forceN": 0.0036501270199418884,
+     "forceN": 0.002359088814830254,
      "activation": 0.005559512623843993,
      "pathLengthMm": 45.79496204115986,
-     "tendonElongationMm": 0.00007438612227311775,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.00005723165489641568,
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -3449,11 +3449,11 @@
       0.8924153509538103
      ],
      "arcOfContactMm": 6.2062166055151735,
-     "forceN": 0.2723648952139293,
+     "forceN": 0.3483178839166039,
      "activation": 0.4148392822937689,
      "pathLengthMm": 39.447756882704496,
-     "tendonElongationMm": 0.0055505379093933015,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006760828492170107,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -3482,7 +3482,7 @@
      "activation": 0,
      "pathLengthMm": 46.616055813971265,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -3635,11 +3635,11 @@
       0.8990124743097935
      ],
      "arcOfContactMm": 6.10207381721462,
-     "forceN": 0.28194133612407984,
+     "forceN": 0.36056485734045884,
      "activation": 0.4294251703575562,
      "pathLengthMm": 39.34361409440395,
-     "tendonElongationMm": 0.005745696680743425,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.006998541485645552,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -3668,7 +3668,7 @@
      "activation": 0,
      "pathLengthMm": 46.92836765878851,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -3821,11 +3821,11 @@
       0.894200668195339
      ],
      "arcOfContactMm": 2.2573664345812308,
-     "forceN": 0.3291958850561314,
+     "forceN": 0.4209970377670795,
      "activation": 0.501398627688358,
      "pathLengthMm": 35.49890671177055,
-     "tendonElongationMm": 0.006708699512046696,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.00817152635417468,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -3854,7 +3854,7 @@
      "activation": 0,
      "pathLengthMm": 45.05458033361319,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -4007,11 +4007,11 @@
       0.899207014393535
      ],
      "arcOfContactMm": 2.8064229344638907,
-     "forceN": 0.3551207174208844,
+     "forceN": 0.4541513939593148,
      "activation": 0.5408847694076613,
      "pathLengthMm": 36.04796321165321,
-     "tendonElongationMm": 0.007237022975766953,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.008815050348589185,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -4040,7 +4040,7 @@
      "activation": 0,
      "pathLengthMm": 46.75201183404311,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -4193,11 +4193,11 @@
       0.9007232397443415
      ],
      "arcOfContactMm": 3.1342474633712625,
-     "forceN": 0.38202650512216674,
+     "forceN": 0.48856025942583897,
      "activation": 0.5818650053179522,
      "pathLengthMm": 36.37578774056058,
-     "tendonElongationMm": 0.007785337377667958,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.009482924290097805,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -4226,7 +4226,7 @@
      "activation": 0,
      "pathLengthMm": 48.265556683880305,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -4379,11 +4379,11 @@
       0.899830204172742
      ],
      "arcOfContactMm": 3.193674910282332,
-     "forceN": 0.40765465594017647,
+     "forceN": 0.5213352000238672,
      "activation": 0.6208992710353055,
      "pathLengthMm": 36.435215187471655,
-     "tendonElongationMm": 0.008307614753213297,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.010119083851394938,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -4412,7 +4412,7 @@
      "activation": 0,
      "pathLengthMm": 49.44801930613217,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -4565,11 +4565,11 @@
       0.8957088611461081
      ],
      "arcOfContactMm": 2.9539048580689222,
-     "forceN": 0.4283197345652512,
+     "forceN": 0.5477630421729173,
      "activation": 0.6523742758395659,
      "pathLengthMm": 36.19544513525825,
-     "tendonElongationMm": 0.008728749430716347,
-     "insertionWidthMm": 10
+     "tendonElongationMm": 0.01063204662602712,
+     "insertionWidthMm": 10.5
     },
     {
      "name": "inferiorRectus",
@@ -4598,7 +4598,7 @@
      "activation": 0,
      "pathLengthMm": 50.10654050273605,
      "tendonElongationMm": 0,
-     "insertionWidthMm": 10
+     "insertionWidthMm": 8.4
     },
     {
      "name": "superiorOblique",
@@ -4663,8 +4663,8 @@
  ],
  "provenance": {
   "generatedBy": "pnpm --filter @eye/eye-model export-forces --grid 5 --range 30 --out ../data/results/forces/default.json",
-  "gitHash": "13d92cb68b017ea87515c39371b5dfe5c350436a-dirty",
-  "date": "2026-10-28",
+  "gitHash": "da3601c98be2e76ae6be393b1d9cbbcf9c0b81a6-dirty",
+  "date": "2026-10-29",
   "citation": "Eye model (web/packages/eye-model) with data/eom/geometry-default.json, activation.json, and forces.json; forceN = activation x maxForceN, activation from the length proxy (data/eom/activation.json); an approximation. Not verified (see those tables)."
  }
 }

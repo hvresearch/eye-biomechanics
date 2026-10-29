@@ -10,5 +10,9 @@
   "lowerCitation": "assumption: no excerpt gave a lower-lid pressure or contact width (Shaw's 2009 QUT thesis measured lower-lid effects on topography); the upper-lid values are used.",
   "palpebralApertureMm": 10.1,
   "apertureCitation": "Mean of three excerpted adult population means of vertical palpebral fissure height: 10.3-10.4 mm (Turkish young adults), 9.35-9.41 mm (Serbian young adults), 10.6 mm (mixed sample, mean age 36.5). The lid bands are placed symmetrically about the corneal center (approximation; in primary gaze the lower lid sits near the inferior limbus and the upper lid covers 1-2 mm of the superior cornea).",
+  "upperMarginMm": 3.3,
+  "lowerMarginMm": -5.5,
+  "marginCitation": "Lid margin heights relative to the corneal light reflex in primary gaze, from margin reflex distances (search excerpts, 2026-10-29): MRD1 about 3.2-3.3 mm and MRD2 5.66 +/- 0.58 (age 20-40) and 5.29 +/- 0.80 mm (age 40-60) in a Korean photographic study of 380 eyes (synapse.koreamed.org 1098729); MRD1 3.5 and MRD2 5.2 mm in 760 eyes of mean age 58 (Int Ophthalmol 2023, doi 10.1007/s10792-023-02669-3). MRD1 falls with age (2.42 +/- 1.03 mm at 60 and over in the Korean study). The corneal reflex is taken as the corneal center (approximation). Their sum, 8.8 mm, is smaller than palpebralApertureMm, a separate population mean; the margins place the bands.",
+  "marginVerified": false,
   "verified": false
 }

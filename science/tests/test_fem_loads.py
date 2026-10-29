@@ -245,9 +245,10 @@ def test_nasal_gaze_is_rejected(gaze, message):
         Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)
 
 
-@pytest.mark.parametrize("gaze", [(30, 0), (0, 15), (0, -15), (0, 30)])
+@pytest.mark.parametrize("gaze", [(0, 15), (0, -15), (0, 30), (0, -30)])
 def test_balancing_that_unloads_a_loaded_muscle_is_rejected(gaze):
     """In these gazes the smallest balancing change switches off a muscle the table loads (the
-    agonist), which is not a stand-in for equilibrium; refuse it rather than solve it."""
+    agonist), which is not a stand-in for equilibrium; refuse it rather than solve it. (With the
+    M5 vertical rectus capacities, temporal gazes such as (30, 0) no longer unload a muscle.)"""
     with pytest.raises(ValueError, match="unloads"):
         Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)

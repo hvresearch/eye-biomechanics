@@ -106,9 +106,9 @@ Absorbs the M4 follow-ups that need document access: Zapata-Díaz 2019 Table 1, 
 
 **Interfaces:** none (data and docs).
 
-- [ ] **Step 1:** Search once per item with WebSearch (excerpts). Transcribe any value an excerpt states, with the source named and `verified: false`; never fill a value from memory.
-- [ ] **Step 2:** Re-file what remains in `2026-10-29-m5-followups.md` under "Data and provenance (needs a session with document access)" with the date and the hosts tried, naming M6 or "any session with document access". The Zapata-Díaz item stays blocking for the release gate on `verified: true` for the default preset.
-- [ ] **Step 3:** Full gate (the transcription tests in `presets.test.ts`, `geometry.test.ts`, and `test_fem_data.py` still pass with any changed values). Commit: `chore: M5 literature search and transcription re-files`.
+- [x] **Step 1:** Search once per item with WebSearch (excerpts). Transcribe any value an excerpt states, with the source named and `verified: false`; never fill a value from memory.
+- [x] **Step 2:** Re-file what remains in `2026-10-29-m5-followups.md` under "Data and provenance (needs a session with document access)" with the date and the hosts tried, naming M6 or "any session with document access". The Zapata-Díaz item stays blocking for the release gate on `verified: true` for the default preset.
+- [x] **Step 3:** Full gate (the transcription tests in `presets.test.ts`, `geometry.test.ts`, and `test_fem_data.py` still pass with any changed values). Commit: `chore: M5 literature search and transcription re-files`.
 
 ### Task 5.1: FEM and CLI hardening follow-ups
 
@@ -148,6 +148,7 @@ Absorbs the M4 follow-ups "the length-proxy muscle forces are not torque-balance
 **Interfaces:**
 - `equilibrium.py`: `passive_moment(gaze_quat: ArrayLike, table: dict) -> NDArray (3,)` (N·mm, in the globe frame: `−K` applied to the gaze rotation vector, `K` diagonal in the orbit's horizontal/vertical/torsional axes, rotated into the globe frame); `equilibrium_forces(proxy_forces: NDArray (6,), insertions: NDArray (6, 3), directions: NDArray (6, 3), external_moment: NDArray (3,)) -> NDArray (6,)` (the M4 QP generalized to `Σ fᵢ (cᵢ × dᵢ) = −external_moment`, `Σ fᵢ = Σ proxyᵢ`, `f ≥ 0`, same weights and exact enumeration; raises `ValueError` when infeasible). M4's `_torque_balanced` becomes the `external_moment = 0` case.
 - `Loads.from_force_table(table, gaze_index, eom, passive=None)`: forces from `equilibrium_forces` with the passive moment (`passive` defaults to `data/eom/passive-orbit.json`; `passive=False` gives M4's zero-moment balance for the regression comparison); records `tableForceN`, `forceN`, and `passiveMomentNmm`; a balanced set that unloads a muscle the table loads is no longer an error but recorded (`unloaded: [...]`) and printed by the CLI.
+- `Loads.eyelid(...)` places the bands at the lid margins of `data/eyelid/shaw-2010.json` (`upperMarginMm`, `lowerMarginMm`, MRD1 and MRD2 transcribed in Task 5.0) instead of symmetrically at `±aperture/2` (the M4 follow-up "the bands are placed symmetrically about the corneal center"); a document's `eyelid.apertureMm` shifts both margins symmetrically from those defaults.
 - `Loads.gaze(quat)`: sets the gaze for the orbit-frame loads; the lid bands are evaluated at `R(gaze)⁻¹`-rotated band coordinates (bands fixed in the orbit, the globe turning under them) and the orbital reaction acts on the outer surface where the orbit-frame `z > 0`. `from_force_table` sets it from the table's quaternion.
 - Orbital reaction: unchanged form (`a + ω × x`), now canceling the muscles', lids', and ciliary ring's force and moment (so it carries the passive moment).
 - `export-forces.ts`: `--gazes "h,v;h,v"` writes those gazes instead of the lattice; `buildForceTable({ gazes })`. `data/results/forces/duty-cycle.json` holds primary gaze and the near gaze of `data/calibration/duty-cycle.json` (written here with the duty-cycle data file, Task 5.6 reads it).

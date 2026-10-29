@@ -22,8 +22,8 @@ Used for: wide-field model, angle alpha and lens tilt and decentration defaults.
 
 ## Rozema et al. 2016 (SyntEyes)
 
-Rozema JJ, Rodriguez P, Navarro R, Tassignon MJ. *Invest Ophthalmol Vis Sci* 57:683-691, 2016.
-DOI: to be added
+Rozema JJ, Rodriguez P, Navarro R, Tassignon MJ. SyntEyes: a higher-order statistical eye model for healthy eyes. *Invest Ophthalmol Vis Sci* 57(2):683-691, 2016.
+DOI: 10.1167/iovs.15-18067 (search excerpt of the Zaguan repository record, 2026-10-29)
 Used for: population biometry variability, synthetic subjects for the prediction grid.
 
 ## Anderson et al. 2008
@@ -99,15 +99,15 @@ Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Frieden
 
 ## Remodeling framework
 
-Rodriguez EK, Hoger A, McCulloch AD, 1994; Grytz R, Meschke G, 2010; Grytz R, Siegwart JT, 2015.
+Rodriguez EK, Hoger A, McCulloch AD. Stress-dependent finite growth in soft elastic tissues. *J Biomech* 27:455-467, 1994 (search excerpt, 2026-10-29; DOI not in the excerpt). Grytz R, Meschke G, 2010; Grytz R, Siegwart JT, 2015 (no excerpt found, 2026-10-29).
 DOI: to be added
-Used for: the growth law of the remodeling layer.
+Used for: the growth law of the remodeling layer: the multiplicative decomposition of the deformation gradient into a growth part and an elastic part (Rodriguez 1994), M5 plan Deviation 3.
 
 ## Eyelid pressure on the cornea
 
 Shaw AJ, Collins MJ, Davis BA, Carney LG. Eyelid pressure and contact with the ocular surface. *Invest Ophthalmol Vis Sci* 2010 (PubMed 19834035). Shaw AJ, Eyelid pressure on the cornea, PhD thesis, Queensland University of Technology, 2009.
 DOI: to be added (not in the excerpts)
-Used for: eyelid load defaults in `data/eyelid/shaw-2010.json` (M4): upper-lid pressure 8.0 mmHg and contact band 0.60 mm by excerpt; lower lid assumed equal. `verified: false`.
+Used for: eyelid load defaults in `data/eyelid/shaw-2010.json` (M4): upper-lid pressure 8.0 mmHg and contact band 0.60 mm by excerpt; lower lid assumed equal. `verified: false`. The lid margin positions (MRD1, MRD2) come from two population studies named in that file (M5).
 
 ## Oculomotor dynamics
 
