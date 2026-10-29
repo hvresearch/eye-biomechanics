@@ -60,7 +60,7 @@ Used for: the magnitude of near miosis in `data/pupil/near-response.json` (1.83 
 
 Watson AB, Ahumada AJ. Predicting visual acuity from wavefront aberrations. *J Vis* 8(4):17, 2008.
 DOI: 10.1167/8.4.17
-Used for: acuity from wavefront, the onset acuity threshold.
+Used for: acuity from wavefront, the onset acuity threshold. Not transcribed in M5: the excerpts (2026-10-29) described the simulated observer and the simple metric the authors derived from it but gave neither the model's constants nor the metric's formula, and the hosts holding the paper and its patent (US 8,408,707) were unreachable. `data/acuity/watson-ahumada-2008.json` names an MTF-threshold stand-in instead (assumptions, labeled "Approximation").
 
 ## Atchison & Thibos 2016
 

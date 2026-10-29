@@ -51,6 +51,10 @@ gave bibliographic records but not these numbers.
   assumed values): transcribe the SyntEyes mixture (Rozema et al. 2016, IOVS 57:683-691, doi
   10.1167/iovs.15-18067, and its supplement) and re-run the calibration. (M6, or any session
   with document access)
+- `data/acuity/watson-ahumada-2008.json` names an MTF-threshold stand-in: transcribe the Watson &
+  Ahumada 2008 acuity model or its simple metric (J Vis 8(4):17, doi 10.1167/8.4.17), replace
+  the stand-in and its lookup table, and regenerate the prediction grid. (M6, or any session
+  with document access)
 
 ## Verification
 

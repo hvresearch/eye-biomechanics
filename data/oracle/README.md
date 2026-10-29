@@ -40,3 +40,4 @@ below set to 1, then the Python test is rerun.
 |---|---|---|---|
 | `accommodation-values.json` | `web/packages/eye-model/test/accommodation-values.test.ts` (`UPDATE_ACCOMMODATION_FIXTURE`) | `science/tests/test_accommodation.py` | amplitude by age, demand by target distance, steady-state response by demand and amplitude (1e-12) |
 | `induced-refraction.json` | `web/apps/viewer/test/induced-refraction.test.ts` (`UPDATE_INDUCED_FIXTURE`) | `science/tests/test_paraxial.py` | the viewer worker's induced refraction (4 mm pupil, right eye, TABO) of the committed FEM result and of two synthetic changes of the fixture eye; Python's paraxial method agrees within 0.01 D |
+| `pupil-values.json` | `web/packages/eye-model/test/pupil-values.test.ts` (`UPDATE_PUPIL_FIXTURE`) | `science/tests/test_acuity.py` | Watson & Yellott pupil diameters at fixed luminance, field, age, and eye count |
