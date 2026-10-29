@@ -56,6 +56,8 @@ class Context:
     n: int
     vector_dofs: NDArray  # (3, nscalar): vector dof of component c at scalar dof k
     x_quad: NDArray  # (3, nel, nqp) quadrature points
+    # Dead-load vectors assembled on this context, keyed by the load set's identity token.
+    load_cache: dict = field(default_factory=dict, repr=False)
 
 
 def make_context(shell: ShellMesh) -> Context:

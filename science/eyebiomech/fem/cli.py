@@ -1,4 +1,5 @@
-"""Command line: `eyebiomech fem --eye EYE.json --gaze H,V --iop MMHG --out OUT.eye.json`.
+"""`eyebiomech fem --eye EYE.json --gaze H,V [--iop MMHG] --out OUT.eye.json` (the parser and
+`main` live in `eyebiomech.cli`).
 
 Builds the shell from the document, solves the IOP-only reference state and the loaded state
 (IOP, the six torque-balanced muscle insertions of the force table's gaze, the eyelid bands,
@@ -12,14 +13,12 @@ from __future__ import annotations
 import argparse
 import json
 import subprocess
-import sys
 import time
 from datetime import date
 from pathlib import Path
 
-from eyebiomech.fem.data import DATA_DIR, load_eom_table, load_eyelid, load_materials
+from eyebiomech.fem.data import data_root, load_eom_table, load_eyelid, load_materials
 from eyebiomech.fem.export import (
-    UnphysicalResultError,
     build_deformation,
     build_result,
     write_result,
@@ -27,10 +26,10 @@ from eyebiomech.fem.export import (
 from eyebiomech.fem.loads import Loads
 from eyebiomech.fem.material import region_materials
 from eyebiomech.fem.mesh import make_shell_mesh
-from eyebiomech.fem.solve import NewtonDidNotConverge, make_context, solve
+from eyebiomech.fem.solve import make_context, solve
 from eyebiomech.fem.units import MMHG_TO_KPA
-from eyebiomech.forces.from_viewer import load_force_table
-from eyebiomech.schema import SchemaError, validate_eye_parameters
+from eyebiomech.forces.from_viewer import check_document_muscles, load_force_table
+from eyebiomech.schema import validate_eye_parameters
 
 # Production mesh (numerical): mesh refinement from 12 to 16 changed the induced corneal
 # astigmatism by about 3-8% (data/results/README.md).
@@ -51,29 +50,40 @@ CITATION = (
 )
 
 
-def _git_hash() -> str:
-    """HEAD's hash when the working tree is clean, else empty."""
+def _git_hash(cwd: Path | str | None = None) -> str:
+    """HEAD's hash, with "-dirty" when the working tree differs from it (as the TypeScript
+    exporter writes); empty outside a checkout."""
     try:
         head = subprocess.run(
-            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+            ["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, cwd=cwd
         ).stdout.strip()
         dirty = subprocess.run(
-            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True
+            ["git", "status", "--porcelain"], capture_output=True, text=True, check=True, cwd=cwd
         ).stdout.strip()
     except (OSError, subprocess.CalledProcessError):
         return ""
-    return "" if dirty else head
+    return f"{head}-dirty" if dirty else head
 
 
-def _parser() -> argparse.ArgumentParser:
-    p = argparse.ArgumentParser(prog="eyebiomech", description=__doc__.splitlines()[0])
-    sub = p.add_subparsers(dest="command", required=True)
-    f = sub.add_parser("fem", help="elastic corneoscleral FEM result for an EyeParameters file")
+def default_iop_mmhg() -> float:
+    """The materials table's default intraocular pressure, mmHg."""
+    return float(load_materials()["intraocularPressure"]["meanMmHg"])
+
+
+def add_arguments(f: argparse.ArgumentParser) -> None:
     f.add_argument("--eye", required=True, type=Path)
     f.add_argument("--gaze", default="0,0", help="Fick x,y in degrees; only 0,0 is supported")
-    f.add_argument("--iop", type=float, default=15.0, help="intraocular pressure, mmHg")
+    f.add_argument(
+        "--iop",
+        type=float,
+        default=None,
+        help="intraocular pressure, mmHg (default: intraocularPressure in "
+        "data/materials/cornea-sclera.json)",
+    )
     f.add_argument("--accommodation", type=float, default=0.0, help="diopters (ciliary load)")
-    f.add_argument("--forces", type=Path, default=DATA_DIR / "results" / "forces" / "default.json")
+    f.add_argument(
+        "--forces", type=Path, default=None, help="default: data/results/forces/default.json"
+    )
     f.add_argument("--no-eyelid", action="store_true")
     f.add_argument("--loads", choices=("all", "iop"), default="all")
     f.add_argument("--age", type=float, default=None, help="years (default: the document's)")
@@ -81,7 +91,16 @@ def _parser() -> argparse.ArgumentParser:
     f.add_argument("--layers", type=int, default=DEFAULT_LAYERS)
     f.add_argument("--steps", type=int, default=DEFAULT_STEPS)
     f.add_argument("--out", required=True, type=Path)
-    return p
+
+
+def read_json(path: Path, what: str) -> dict:
+    """A JSON file's contents; `ValueError` naming the file when it is missing or malformed."""
+    try:
+        return json.loads(Path(path).read_text())
+    except OSError as exc:
+        raise ValueError(f"{what} {path}: {exc.strerror or exc}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{what} {path}: not valid JSON ({exc})") from exc
 
 
 def _eyelid_kpa(doc: dict) -> tuple[float, float, float, float, float]:
@@ -98,8 +117,11 @@ def _eyelid_kpa(doc: dict) -> tuple[float, float, float, float, float]:
 
 def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
     started = time.time()
-    doc = json.loads(args.eye.read_text())
+    doc = read_json(args.eye, "EyeParameters file")
     validate_eye_parameters(doc)
+    check_document_muscles(doc)
+    if args.iop is None:
+        args.iop = default_iop_mmhg()
     gx, gy = (float(v) for v in args.gaze.split(","))
     materials, eom = load_materials(), load_eom_table()
     loads = Loads().iop(args.iop)
@@ -109,7 +131,12 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
                 f"gaze {args.gaze}: only primary gaze (0,0) is supported; eccentric gazes need "
                 "passive orbital torques and lid bands that follow the gaze (M5 follow-up)"
             )
-        table = load_force_table(args.forces)
+        forces = args.forces or data_root() / "results" / "forces" / "default.json"
+        read_json(forces, "force table")
+        try:
+            table = load_force_table(forces)
+        except (KeyError, TypeError, IndexError, ValueError) as exc:
+            raise ValueError(f"force table {forces}: {exc}") from exc
         try:
             gaze = table.at(gx, gy)
         except KeyError as exc:
@@ -169,16 +196,7 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
 
 
 def main(argv: list[str] | None = None) -> int:
-    argv = list(sys.argv[1:] if argv is None else argv)
-    args = _parser().parse_args(argv)
-    try:
-        if args.command == "fem":
-            return run_fem(args, argv)
-    except (SchemaError, UnphysicalResultError, NewtonDidNotConverge, ValueError) as exc:
-        print(f"eyebiomech {args.command}: {exc}", file=sys.stderr)
-        return 2
-    return 1  # pragma: no cover - argparse rejects unknown commands
+    """Compatibility entry point; the program lives in `eyebiomech.cli`."""
+    from eyebiomech.cli import main as _main
 
-
-if __name__ == "__main__":
-    sys.exit(main())
+    return _main(argv)

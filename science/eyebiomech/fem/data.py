@@ -1,32 +1,70 @@
-"""Loaders for the tables the FEM reads: data/materials, data/eyelid, and data/eom."""
+"""Loaders for the tables the package reads (data/materials, data/eyelid, data/eom, ...).
+
+The tables are found by `data_root()`: an override set with `data_root_override` (the CLI's
+`--data-root`), else the `EYEBIOMECH_DATA` environment variable, else the repository's `data/`
+when running from a checkout, else the copy the wheel ships under `eyebiomech/data/`
+(`[tool.hatch.build.targets.wheel.force-include]` in pyproject.toml; M4 follow-up: `DATA_DIR`
+pointed into the repository, so the installed wheel could not find its tables).
+"""
 
 from __future__ import annotations
 
 import json
 import math
+import os
+from collections.abc import Iterator
+from contextlib import contextmanager
+from importlib.resources import files
 from pathlib import Path
 
-DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+_REPOSITORY_DATA = Path(__file__).resolve().parents[3] / "data"
+_override: Path | None = None
 
 
-def _load(path: Path | str | None, default: Path) -> dict:
-    return json.loads(Path(path or default).read_text())
+def data_root() -> Path:
+    if _override is not None:
+        return _override
+    env = os.environ.get("EYEBIOMECH_DATA")
+    if env:
+        return Path(env)
+    if (_REPOSITORY_DATA / "materials").is_dir():
+        return _REPOSITORY_DATA
+    return Path(str(files("eyebiomech").joinpath("data")))
+
+
+@contextmanager
+def data_root_override(path: Path | str) -> Iterator[Path]:
+    """Read every table from `path` inside the block."""
+    global _override
+    previous, _override = _override, Path(path)
+    try:
+        yield _override
+    finally:
+        _override = previous
+
+
+# The data root at import (a checkout's data/ in development and tests).
+DATA_DIR = data_root()
+
+
+def _load(path: Path | str | None, *default: str) -> dict:
+    return json.loads(Path(path or data_root().joinpath(*default)).read_text())
 
 
 def load_materials(path: Path | str | None = None) -> dict:
-    return _load(path, DATA_DIR / "materials" / "cornea-sclera.json")
+    return _load(path, "materials", "cornea-sclera.json")
 
 
 def load_eyelid(path: Path | str | None = None) -> dict:
-    return _load(path, DATA_DIR / "eyelid" / "shaw-2010.json")
+    return _load(path, "eyelid", "shaw-2010.json")
 
 
 def load_eom_table(path: Path | str | None = None) -> dict:
-    return _load(path, DATA_DIR / "eom" / "geometry-default.json")
+    return _load(path, "eom", "geometry-default.json")
 
 
 def load_eom_forces(path: Path | str | None = None) -> dict:
-    return _load(path, DATA_DIR / "eom" / "forces.json")
+    return _load(path, "eom", "forces.json")
 
 
 def lame_lambda(mu: float, poisson_ratio: float) -> float:

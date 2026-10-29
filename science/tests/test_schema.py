@@ -57,3 +57,34 @@ def test_toric_missing_axis():
     with pytest.raises(SchemaError) as excinfo:
         validate_eye_parameters(doc)
     assert "axisDeg" in str(excinfo.value)
+
+
+def _sidecar() -> dict:
+    root = Path(__file__).resolve().parents[2] / "data/results/fem"
+    return json.loads(next(root.glob("*.deformation.json")).read_text())
+
+
+def test_deformation_lengths_must_agree():
+    """`vertices`, `displacementMm`, and `region` describe the same vertices (M4 follow-up,
+    review of 8ac4f73, mirroring the TypeScript loader)."""
+    from eyebiomech.schema import validate_deformation
+
+    doc = _sidecar()
+    validate_deformation(doc)
+    short = copy.deepcopy(doc)
+    short["displacementMm"] = short["displacementMm"][:-1]
+    with pytest.raises(SchemaError, match="displacementMm"):
+        validate_deformation(short)
+    regions = copy.deepcopy(doc)
+    regions["region"] = regions["region"][:-1]
+    with pytest.raises(SchemaError, match="region"):
+        validate_deformation(regions)
+
+
+def test_deformation_triangles_must_index_vertices():
+    from eyebiomech.schema import validate_deformation
+
+    doc = _sidecar()
+    doc["triangles"][0][1] = len(doc["vertices"])
+    with pytest.raises(SchemaError, match="triangle"):
+        validate_deformation(doc)

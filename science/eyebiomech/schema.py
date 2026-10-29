@@ -65,6 +65,19 @@ def validate_eye_parameters(doc: dict) -> None:
 
 
 def validate_deformation(doc: dict) -> None:
-    """Validate a `*.deformation.json` sidecar (and its embedded reference EyeParameters)."""
+    """Validate a `*.deformation.json` sidecar (and its embedded reference EyeParameters), and
+    check what the schema cannot: one displacement and one region per vertex, and triangle
+    indices within the vertex list (as the TypeScript loader does)."""
     _validate(_DEFORMATION_VALIDATOR, doc)
     validate_eye_parameters(doc["reference"])
+    n = len(doc["vertices"])
+    errors = [
+        f"/{key} has {len(doc[key])} entries for {n} vertices"
+        for key in ("displacementMm", "region")
+        if len(doc[key]) != n
+    ]
+    bad = [i for i, t in enumerate(doc["triangles"]) if max(t) >= n]
+    if bad:
+        errors.append(f"/triangles/{bad[0]} has a triangle index beyond the {n} vertices")
+    if errors:
+        raise SchemaError(errors)

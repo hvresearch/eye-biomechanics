@@ -28,10 +28,16 @@ from eyebiomech.schema import validate_deformation, validate_eye_parameters
 
 # Sanity limit on a fitted height map's RMS, µm (master plan Review Focus 5; numerical).
 MAX_MAP_RMS_UM = 500.0
-# Fit radii and order of the corneal maps (numerical): the anterior map covers an 8 mm pupil;
-# the posterior stays inside the zone where the shell follows the document's posterior surface.
+# Fit radii and order of the corneal maps (numerical): both maps cover an 8 mm diameter, the
+# zone rays of the largest pupils reach on either corneal surface. The maps are the change of
+# the FEM shell's surfaces, which beyond about 3.1 mm from the axis (where the inner surface
+# reaches the limbal thickness and leaves the document's posterior surface) is a blend; the
+# change is still that of the shell's inner surface. Rays beyond 4 mm (pupils above about
+# 7.5 mm) evaluate the order-8 polynomials outside the unit disk (approximation, stated in the
+# citation; M4 follow-up, review of b6f5a0d: at 3.5 mm the posterior map's higher-order terms
+# reached 0.8 µm at 4 mm).
 ANTERIOR_NORM_RADIUS_MM = 4.0
-POSTERIOR_NORM_RADIUS_MM = 3.5
+POSTERIOR_NORM_RADIUS_MM = 4.0
 MAX_ORDER = 8
 # Sampling reaches this far beyond each fit radius so the disk stays covered at the loaded
 # lateral positions (numerical; up to 250 µm of lateral motion, inside the zone where the inner
@@ -195,8 +201,9 @@ def build_result(
 
 
 def check_physical(doc: dict) -> None:
-    """Raise `UnphysicalResultError` when a map's RMS (piston excluded) exceeds the limit or any
-    surface number is not finite."""
+    """Raise `UnphysicalResultError` when a map's RMS (piston and tilt excluded: they are rigid
+    motion of the surface, not deformation) exceeds the limit or any surface number is not
+    finite."""
     for s in doc["surfaces"]:
         for key in ("radiusMm", "thicknessToNextMm", "conic"):
             if key in s and not np.isfinite(s[key]):
@@ -207,7 +214,7 @@ def check_physical(doc: dict) -> None:
         c = np.asarray(z["coeffsMicrons"], dtype=float)
         if not np.all(np.isfinite(c)):
             raise UnphysicalResultError(f"{s['name']}: non-finite Zernike coefficients")
-        rms = float(np.sqrt(np.sum(c[1:] ** 2)))
+        rms = float(np.sqrt(np.sum(c[3:] ** 2)))
         if rms > MAX_MAP_RMS_UM:
             raise UnphysicalResultError(
                 f"{s['name']}: height map RMS {rms:.1f} µm exceeds {MAX_MAP_RMS_UM:.0f} µm"

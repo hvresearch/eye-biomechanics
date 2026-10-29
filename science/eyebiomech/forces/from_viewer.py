@@ -116,3 +116,67 @@ def load_force_table(path: Path | str) -> ForceTable:
         provenance=doc.get("provenance", {}),
         **arrays,
     )
+
+
+# Tolerance for comparing a document's muscle numbers with the table's, mm or N/mm (numerical:
+# JSON round trips of the same numbers).
+_MUSCLE_TOL = 1e-9
+
+
+def document_muscles(eom: dict | None = None) -> list[dict]:
+    """The EOM table's six muscles in the EyeParameters `extraocularMuscles` shape (the Python
+    mirror of `toDocumentMuscles` in web/packages/eye-model/src/eom/geometry.ts)."""
+    eom = eom or load_eom_table()
+    by_name = {m["name"]: m for m in eom["muscles"]}
+    return [
+        {
+            "name": name,
+            "originMm": list(by_name[name]["originMm"]),
+            "pulleyMm": None
+            if by_name[name]["pulleyMm"] is None
+            else list(by_name[name]["pulleyMm"]),
+            "insertionDistFromLimbusMm": by_name[name]["insertion"]["arcFromLimbusMm"],
+            "insertionWidthMm": by_name[name]["insertion"]["widthMm"],
+            "tendon": {
+                "stiffnessNPerMm": by_name[name]["tendon"]["stiffnessNPerMm"],
+                "slackLengthMm": by_name[name]["tendon"]["slackLengthMm"],
+            },
+        }
+        for name in MUSCLE_NAMES
+    ]
+
+
+def check_document_muscles(doc: dict, eom: dict | None = None) -> None:
+    """Raise `ValueError` when the document carries `extraocularMuscles` that differ from the
+    table the force table was generated from: the forces would not belong to that geometry
+    (M4 follow-up, review of edd021b). A document without muscles uses the table's."""
+    muscles = doc.get("extraocularMuscles")
+    if not muscles:
+        return
+    expected = {m["name"]: m for m in document_muscles(eom)}
+    given = {m["name"]: m for m in muscles}
+    if set(given) != set(expected):
+        raise ValueError(
+            f"extraocularMuscles names {sorted(given)} differ from the force table's "
+            f"{sorted(expected)}; regenerate the force table from this document first"
+        )
+
+    def flat(m: dict) -> NDArray:
+        pulley = m["pulleyMm"] if m["pulleyMm"] is not None else [np.nan] * 3
+        values = [*m["originMm"], *pulley, m["insertionDistFromLimbusMm"]]
+        values += [m["insertionWidthMm"], m["tendon"]["stiffnessNPerMm"]]
+        return np.asarray(values + [m["tendon"]["slackLengthMm"]], dtype=float)
+
+    differ = [
+        name
+        for name in MUSCLE_NAMES
+        if not np.allclose(
+            flat(given[name]), flat(expected[name]), atol=_MUSCLE_TOL, equal_nan=True
+        )
+    ]
+    if differ:
+        raise ValueError(
+            "extraocularMuscles of " + ", ".join(differ) + " differ from data/eom/geometry-default"
+            ".json, from which the force table is generated; regenerate the force table from "
+            "this document first"
+        )

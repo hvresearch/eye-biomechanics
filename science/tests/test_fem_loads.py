@@ -252,3 +252,21 @@ def test_balancing_that_unloads_a_loaded_muscle_is_rejected(gaze):
     M5 vertical rectus capacities, temporal gazes such as (30, 0) no longer unload a muscle.)"""
     with pytest.raises(ValueError, match="unloads"):
         Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)
+
+
+def test_dead_load_cache_lives_on_the_context():
+    """A context built after another is garbage-collected may reuse its id(); the cached dead
+    load must not carry over (M4 follow-up, review of b6f5a0d)."""
+    import gc
+
+    loads = Loads().eyelid(1.0, 1.0, 9.0, 0.6, 0.6)
+    first = make_context(make_sphere_shell(11.5, 12.0, layers=1, n_face=4))
+    f1, _ = loads.assemble(first, np.zeros(first.n), 1.0)
+    del first
+    gc.collect()
+    second = make_context(make_sphere_shell(10.0, 11.0, layers=1, n_face=4))
+    f2, _ = loads.assemble(second, np.zeros(second.n), 1.0)
+    fresh, _ = Loads().eyelid(1.0, 1.0, 9.0, 0.6, 0.6).assemble(second, np.zeros(second.n), 1.0)
+    assert np.array_equal(f2, fresh)
+    assert not np.array_equal(f1, f2)
+    assert second.load_cache  # the cache is on the context
