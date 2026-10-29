@@ -53,9 +53,9 @@ per-milestone kickoff prompts in `docs/cloud-sessions.md`.
 7. Do one step, then stop. Do not loop waiting for CI inside a run; the next
    fire will pick up the new state.
 8. Runs can overlap, because the routine fires on the hour and on every
-   pull-request and check-suite event. Before a review, a fix, or a merge on a
+   pull-request and check-suite event. Before a review or a fix on a
    ready PR, post a lock comment on the PR:
-   `<!-- driver-lock step=<review|fix|merge> sha=<head sha> at=<UTC ISO time> -->`.
+   `<!-- driver-lock step=<review|fix> sha=<head sha> at=<UTC ISO time> -->`.
    If a lock comment for the same sha and step exists and is less than
    **90 minutes** old, another run owns that step: **exit** without acting. A
    lock older than 90 minutes is stale and may be taken over. The draft PR is
@@ -103,8 +103,8 @@ Run `gh pr checks <n> -R $REPO`.
   marker whose `sha` equals `headRefOid`.
   - **No marker for this sha → review** (Step 1c).
   - Marker with `verdict=APPROVE`, for this sha or for its first parent when
-    the head is an update-from-main merge commit → **merge** (Step 1d). This
-    path also recovers from a run that approved but failed to merge.
+    the head is an update-from-main merge commit → the auto-merge workflow
+    merges it; follow Step 1d only if it has not.
   - Marker with `verdict=CHANGES` → a previous run posted findings but did not
     push fixes. Fix them now (Step 1c, fixing part). **Exit.**
 
@@ -127,7 +127,8 @@ Post the report as one issue comment on the PR, prefixed by the marker line:
 
 Then:
 
-- Verdict APPROVE: proceed directly to Step 1d in the same run.
+- Verdict APPROVE: **exit.** Posting the marker fires the auto-merge
+  workflow, which merges the PR (Step 1d).
 - Verdict CHANGES: check out the branch, fix every Critical and Important
   finding (Minor findings are optional; record skipped ones in the followups
   file for the milestone), run the gate, commit as `fix(review): ...`, push.
@@ -144,35 +145,39 @@ without a cap a PR never merges. Note the round number in the report header.
 
 ### 1d. Merge
 
-Run each GitHub write as its own plain command, starting with `gh api` or
-`gh pr`, with the repository name and PR number spelled out literally and no
-shell variables, `&&` chains or subshells in front of it. The repository's
-`.claude/settings.json` allows exactly these command prefixes, and the
-permission check matches on the literal text of the command.
+The driver does not merge. The GitHub Actions workflow
+`.github/workflows/auto-merge.yml` (script `.github/scripts/auto-merge.sh`)
+runs when a review marker comment is posted and when CI completes, checks
+every open ready PR, and squash-merges one when all of these hold:
 
-```sh
-gh api -X PUT repos/hvresearch/eye-biomechanics/pulls/<n>/merge \
-  -f merge_method=squash \
-  -f commit_title="<PR title> (#<n>)" \
-  -f commit_message="<first paragraph of the PR body>
+- GitHub reports it `clean`: required checks green, up to date with `main`,
+  no conflicts;
+- the check runs `web` and `python` on the head both succeeded;
+- the newest `driver-review` marker written by the repository owner says
+  `APPROVE` for the head sha, or for the first parent of a head that is an
+  update-from-main merge commit whose tree equals the clean merge of its two
+  parents (**approval carries over an update from main**).
 
-Co-Authored-By: Claude <model name> <noreply@anthropic.com>"
-gh api -X DELETE repos/hvresearch/eye-biomechanics/git/refs/heads/<branch>
-```
+It then deletes the branch, comments `<!-- auto-merge sha=<head> -->`, and
+dispatches the CI and Pages workflows on `main`. The squash commit's title is
+`<PR title> (#<n>)`; its message is the PR body's first paragraph plus the
+most common `Co-Authored-By` trailer of the branch's commits.
 
-**Approval carries over an update from main.** If the branch is behind
-`main`, run `gh api -X PUT repos/hvresearch/eye-biomechanics/pulls/<n>/update-branch`
-and **exit**. The new head is a merge commit whose parents are the approved
-head and a commit on `main`; it changes nothing in the PR's own diff. A later
-run treats an `APPROVE` marker for the first parent of such a merge commit as
-valid for the new head (verify with `git rev-parse <head>^1`), so once CI is
-green on it the run merges without another review round.
+The driver's part:
 
-If the merge is rejected because checks are not green or the branch is behind
-`main` with `strict` protection, update the branch
-(`gh api -X PUT repos/$REPO/pulls/<n>/update-branch`) and **exit**; CI reruns
-and the next fire re-evaluates. **Exit** after a successful merge; starting the
-next milestone is a separate run.
+- **Behind `main`**: run
+  `gh api -X PUT repos/hvresearch/eye-biomechanics/pulls/<n>/update-branch`
+  and **exit**. The new head is a merge commit whose parents are the approved
+  head and a commit on `main`; it changes nothing in the PR's own diff, so
+  the workflow merges it once CI is green without another review round.
+- **Approved, `clean`, and still open** two hours after the newest `APPROVE`
+  marker: run `gh workflow run auto-merge.yml --repo hvresearch/eye-biomechanics --ref main`
+  and **exit**. If that is refused or the PR is still open on the following
+  run, open an issue titled `driver-blocked: auto-merge did not merge PR #<n>`
+  with the head sha, the marker comment URL, and the latest workflow run URL
+  (`gh run list --workflow auto-merge.yml`), unless one is already open.
+
+Starting the next milestone is a separate run.
 
 ## Step 2: no open milestone PR
 

@@ -1,0 +1,42 @@
+name: Auto-merge approved PRs
+
+# Merges milestone pull requests once the driver's independent review has posted
+# `<!-- driver-review sha=<head> verdict=APPROVE -->` and the required checks are
+# green. The gate lives in .github/scripts/auto-merge.sh; the policy is in
+# docs/automation/driver.md (Step 1d).
+
+on:
+  issue_comment:
+    types: [created]
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  actions: write
+
+concurrency:
+  group: auto-merge
+  cancel-in-progress: false
+
+jobs:
+  merge:
+    if: >-
+      github.event_name != 'issue_comment' ||
+      (github.event.issue.pull_request != null &&
+       github.event.comment.author_association == 'OWNER' &&
+       contains(github.event.comment.body, 'driver-review'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Merge approved pull requests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/scripts/auto-merge.sh
