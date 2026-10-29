@@ -681,3 +681,78 @@ table.figures td.rx {
   color: var(--text-dim);
   font-size: var(--fs-xs);
 }
+
+.timeline-chart {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin-bottom: var(--space-2);
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.timeline-chart:focus-visible {
+  outline: 1px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.timeline-chart .grid {
+  stroke: var(--line);
+  stroke-width: 0.5;
+}
+
+.timeline-chart .axis.zero {
+  stroke: var(--text-faint);
+  stroke-width: 0.75;
+}
+
+.timeline-chart text {
+  font-family: var(--font-ui);
+  font-size: 8px;
+  fill: var(--text-dim);
+}
+
+.timeline-chart .tick {
+  fill: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline-chart .band {
+  stroke: none;
+  opacity: 0.22;
+}
+
+.timeline-chart .median {
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.timeline-chart .sphere {
+  fill: var(--accent);
+  stroke: var(--accent);
+}
+
+.timeline-chart .cylinder {
+  fill: var(--lens);
+  stroke: var(--lens);
+}
+
+.timeline-chart .median.sphere,
+.timeline-chart .median.cylinder {
+  fill: none;
+}
+
+.timeline-chart text.legend {
+  stroke: none;
+}
+
+.timeline-chart .onset line {
+  stroke: var(--text-dim);
+  stroke-width: 0.75;
+  stroke-dasharray: 3 2;
+}
+
+.timeline-chart .cursor {
+  stroke: var(--text);
+  stroke-width: 1;
+}

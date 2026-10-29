@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { presetTable } from "@eye/eye-model";
-import { decompositionTooltip, gazeTooltip, heatMapTooltip, inducedTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, vergenceTooltip } from "../src/ui/tooltips";
+import { appliedPredictionTooltip, decompositionTooltip, gazeTooltip, heatMapTooltip, inducedTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, timelineTooltip, vergenceTooltip } from "../src/ui/tooltips";
 
 describe("readoutTooltips", () => {
   const t = readoutTooltips(3.5, "fixed");
@@ -95,5 +95,20 @@ describe("biomechanics tooltips", () => {
     expect(t).toMatch(/×50/);
     expect(t).toMatch(/IOP-only/);
     expect(t).toMatch(/relative to the lens/);
+  });
+});
+
+describe("prediction tooltips", () => {
+  it("labels the timeline an approximation of a remodeled model with parameter-only bands", () => {
+    const t = timelineTooltip();
+    expect(t.startsWith("Approximation:")).toBe(true);
+    expect(t).toMatch(/remodeled/);
+    expect(t).toMatch(/linear superposition about the pressurized eye/);
+    expect(t).toMatch(/parameter uncertainty only/);
+  });
+  it("says the applied prediction is a corneal change", () => {
+    const t = appliedPredictionTooltip();
+    expect(t.startsWith("Approximation:")).toBe(true);
+    expect(t).toMatch(/applied to the eye as a corneal change/);
   });
 });

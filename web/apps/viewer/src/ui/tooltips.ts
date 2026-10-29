@@ -112,3 +112,13 @@ export function inducedTooltip(): string {
 export function heatMapTooltip(exaggeration: number): string {
   return `Approximation: displacement magnitude of the globe's outer surface, loaded minus IOP-only, drawn ×${exaggeration} for visibility (elastic). Displacements are relative to the lens: the scleral-spur ring's rigid motion (its lateral shift and tilt, the globe's pivot about the fixed optic-nerve cap) is removed, as for the corneal maps; files written before Milestone 5 show the raw field, pivot included. The orbital reaction that holds the globe is assumed. Without a .deformation.json file a loaded document shows its refraction but no map.`;
 }
+
+/** Hover text for the prediction timeline. */
+export function timelineTooltip(): string {
+  return "Approximation: model responses of the reference eye (Navarro 1985 schematic eye) for every subject; linear superposition about the pressurized eye; remodeled (growth of the corneoscleral shell under muscle, lid, and ciliary loads, calibrated to population data); bands are parameter uncertainty only (5–95% over posterior draws), not subject variability; acuity is a stand-in MTF-threshold metric. A hypothesis test, not a clinical prediction.";
+}
+
+/** Hover text for applying the predicted refraction to the eye. */
+export function appliedPredictionTooltip(): string {
+  return "Approximation: the predicted change is applied to the eye as a corneal change (the anterior cornea of the schematic eye is reshaped to carry the predicted sphere and cylinder at the current age), although the model remodels the whole corneoscleral shell; the left eye is the mirror image.";
+}

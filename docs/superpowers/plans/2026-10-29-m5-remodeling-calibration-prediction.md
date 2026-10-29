@@ -357,13 +357,15 @@ Master plan Task 5.6.
 - `Timeline.tsx`: an SVG chart (the theme's tokens; muscles keep the only hot hue): sphere and cylinder medians with 5–95% bands against age 6–90, the two onset markers (labeled "refraction" and "acuity 20/40"), the age cursor (drag or click to set the subject age; keyboard arrows), near-hours and baseline inputs, the "apply to eye" toggle, the current S/C × axis readout, and the stance line ("remodeled model, calibrated to population data: a hypothesis test, not a clinical prediction").
 - Tooltips: timeline ("Approximation: model responses of the reference eye for every subject; linear superposition about the pressurized eye; bands are parameter uncertainty only; remodeled"), applied prediction ("Approximation: the predicted change is applied to the eye as a corneal change").
 
-- [ ] **Step 1:** Failing tests:
+**As implemented:** the timeline is a panel of the inspector, after Biomechanics. The store's `prediction` also holds the loaded `grid`, with `loadPredictions()` (lazy, once) and `setPredictionGrid(grid)` beside the two planned actions; applying the prediction remembers the eyes shown before and restores them when cleared, and choosing a schematic or refractive preset or loading a result clears it. The profile's baseline is the refraction at the grid's baseline age (6), so the viewer interpolates without re-anchoring (`reanchor` and `trajectoryFor` support a later anchor age). Every subject of the committed grid crosses a threshold (the calibration's spherical drift), so the e2e test of the "no onset by 90" path serves a copy of the committed grid with one node's onsets removed, in place of the grid's chunk.
+
+- [x] **Step 1:** Failing tests:
   - `predictions.test.ts`: the committed grid validates; `interpolate` at a grid node returns the node's values exactly and between nodes the linear blend; inputs outside the grid clamp and report the axis; `at` clamps ages; `reanchor` at the baseline age is the identity.
   - `store.test.ts`: setting the profile computes a trajectory; applying the prediction changes the right eye's corneal surface and clearing it restores the preset; changing age while applied updates the eye.
   - `tooltips.test.ts`: the timeline tooltip starts with "Approximation:" and says "remodeled".
-- [ ] **Step 2:** Run `cd web && pnpm --filter @eye/viewer test`; FAIL. Implement.
-- [ ] **Step 3:** Playwright `timeline.spec.ts`: open the timeline, set near hours to the grid's largest value; moving the age cursor from 10 to 60 changes the displayed cylinder; an onset marker is visible for a profile whose trajectory crosses a threshold (chosen from the committed grid in the test setup) and absent (with "no onset by 90" text) for one that does not.
-- [ ] **Step 4:** Run; PASS. Full gate including e2e (worker benchmark under budget). Commit: `feat(viewer): prediction timeline with bands and onset markers`.
+- [x] **Step 2:** Run `cd web && pnpm --filter @eye/viewer test`; FAIL. Implement.
+- [x] **Step 3:** Playwright `timeline.spec.ts`: open the timeline, set near hours to the grid's largest value; moving the age cursor from 10 to 60 changes the displayed cylinder; an onset marker is visible for a profile whose trajectory crosses a threshold (chosen from the committed grid in the test setup) and absent (with "no onset by 90" text) for one that does not.
+- [x] **Step 4:** Run; PASS. Full gate including e2e (worker benchmark under budget). Commit: `feat(viewer): prediction timeline with bands and onset markers`.
 
 ### Task 5.13: Finish
 
