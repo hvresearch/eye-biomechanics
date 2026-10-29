@@ -81,3 +81,8 @@ gave bibliographic records but not these numbers.
   response library): in-plane growth enlarges and thins the pressurized shell, which raises its
   stress. Add growth in thickness (or a volumetric or isochoric constraint) to the law, rebuild
   the library, and recalibrate. (M6)
+- The calibration reproduces the with-the-rule to against-the-rule shift only with growth that
+  moves the spherical equivalent by several diopters (`data/results/README.md`, the
+  calibration). Add the adult spherical-equivalent change as a bounding target (or an envelope
+  on the mechanical change) and refit; start the sampler from several modes (the likelihood is
+  multimodal in the rate). (M6)
