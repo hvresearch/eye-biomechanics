@@ -20,7 +20,7 @@ from numpy.typing import NDArray
 from scipy.optimize import least_squares
 
 from eyebiomech.calib.forward import PARAM_NAMES, load_priors, max_rate_per_year, predict_targets
-from eyebiomech.calib.mcmc import ensemble_sample
+from eyebiomech.calib.mcmc import autocorrelation_time, ensemble_sample
 
 # Numerical: finite-difference step of the least-squares Jacobian in the transformed space, and
 # the walkers' starting spread around the optimum (in units of its Gauss-Newton SD, capped).
@@ -38,9 +38,11 @@ class Posterior:
     cost: float  # ½ Σ r²
     dof: int
     method: str
-    converged: bool
+    lsq_converged: bool  # SciPy's least-squares success flag, not a statement on the chain
     per_target: list[dict] = field(default_factory=list)
     acceptance: float | None = None
+    autocorr_steps: NDArray | None = None  # per parameter, MCMC only
+    chain_steps: int | None = None  # MCMC steps after the burn-in
 
     def sd_transformed(self) -> NDArray:
         return np.sqrt(np.diag(self.cov))
@@ -167,7 +169,7 @@ def fit(
         cost=float(sol.cost),
         dof=len(data) - len(space.names),
         method="lsq",
-        converged=bool(sol.success),
+        lsq_converged=bool(sol.success),
         per_target=per_target,
     )
     if method == "lsq":
@@ -187,6 +189,8 @@ def fit(
     post.samples = np.array([[*space.to_params(x).values()] for x in flat])
     post.method = "mcmc"
     post.acceptance = acc
+    post.autocorr_steps = autocorrelation_time(chain[burn:])
+    post.chain_steps = n_steps - burn
     tcov = np.cov(flat.T)
     tsd = np.sqrt(np.diag(tcov))
     post.cov, post.corr = tcov, tcov / np.outer(tsd, tsd)

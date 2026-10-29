@@ -25,6 +25,7 @@ BEST = {
 # A posterior of the shape `eyebiomech calibrate` writes, without samples (the normal
 # approximation with a small covariance in the transformed space).
 POSTERIOR = {
+    "schema": "eye-posterior/1",
     "names": list(PARAM_NAMES),
     "best": BEST,
     "samples": None,
@@ -78,6 +79,17 @@ def test_the_cli_anchors_a_profile_at_its_age(tmp_path):
     assert got == pytest.approx(want, abs=2e-4)
     # Onsets are searched from the profile's age: this subject already needs correction then.
     assert doc["onset"]["refraction"]["p50"] == pytest.approx(30.0)
+
+
+def test_the_cli_refuses_a_posterior_of_another_schema(tmp_path, capsys):
+    """M5 review round 1, Minor 14."""
+    post = tmp_path / "posterior.json"
+    post.write_text(json.dumps({**POSTERIOR, "schema": "eye-posterior/2"}))
+    argv = ["predict", "--profile", "age=30,nearHours=4,sphere=0,cyl=0", "--posterior",
+            str(post), "--library", str(FIXTURE), "--out", str(tmp_path / "x.json")]  # fmt: skip
+    assert main(argv) == 2
+    assert "eye-posterior/1" in capsys.readouterr().err
+    assert not (tmp_path / "x.json").exists()
 
 
 def test_the_cli_refuses_a_bad_profile(tmp_path, capsys):

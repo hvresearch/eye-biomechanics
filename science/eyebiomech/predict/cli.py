@@ -9,6 +9,7 @@ import time
 from datetime import date
 from pathlib import Path
 
+from eyebiomech.calib.cli import SCHEMA as POSTERIOR_SCHEMA
 from eyebiomech.fem.cli import _git_hash, read_json
 from eyebiomech.fem.data import data_root
 from eyebiomech.predict.acuity import acuity_table
@@ -54,6 +55,10 @@ def parse_profile(text: str, axis: float) -> SubjectProfile:
 def _inputs(args):
     post_path = args.posterior or data_root() / "results" / "calibration" / "posterior-v1.json"
     posterior = read_json(post_path, "posterior")
+    if posterior.get("schema") != POSTERIOR_SCHEMA:
+        raise ValueError(
+            f"posterior {post_path}: schema {posterior.get('schema')!r} is not {POSTERIOR_SCHEMA!r}"
+        )
     return posterior, load_library(args.library)
 
 

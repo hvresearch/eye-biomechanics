@@ -40,8 +40,12 @@ def posterior_document(post, data, library_path: Path, provenance: dict) -> dict
         "cov": post.cov.tolist(),
         "corr": np.round(post.corr, 4).tolist(),
         "method": post.method,
-        "converged": post.converged,
+        "lsqConverged": post.lsq_converged,
         "acceptance": post.acceptance,
+        "autocorrelationSteps": None
+        if post.autocorr_steps is None
+        else dict(zip(post.names, np.round(post.autocorr_steps, 2).tolist(), strict=True)),
+        "chainStepsAfterBurn": post.chain_steps,
         "fit": {"cost": post.cost, "dof": post.dof, "perTarget": post.per_target},
         "data": sorted({t["source"] for t in data}),
         "library": str(library_path),

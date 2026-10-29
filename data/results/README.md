@@ -171,7 +171,7 @@ clamp edge more finely, and its runaway may start at a different exposure (follo
 
 Least squares from the priors' starting values, then the ensemble sampler from around the
 least-squares optimum: 24 walkers, 1 500 steps, 500 discarded, acceptance 0.39, 52 min. The
-cohort is 300 synthetic subjects (common random numbers). The fitted targets are the
+cohort is 1 000 synthetic subjects (common random numbers). The fitted targets are the
 axis-class proportions among astigmatic eyes of the Zibo City children (6–12 years) and of the
 two adult bands of Read, Collins & Carney's review (21–30, 61–80; with-the-rule and
 against-the-rule only), and the two mean J0 slopes over 30–80 years; 9 targets, 6 parameters

@@ -55,3 +55,27 @@ def ensemble_sample(
         chain[step] = walkers
         lps[step] = lp
     return chain, lps, accepted / (n_steps * n)
+
+
+def autocorrelation_time(chain: NDArray, window: float = 5.0) -> NDArray:
+    """Integrated autocorrelation time of each parameter, in steps, from the walker-averaged
+    autocorrelation of a chain (steps, walkers, p), with Sokal's automatic window: the sum runs
+    to the first lag M ≥ `window`·τ(M) (Goodman & Weare 2010; Foreman-Mackey et al. 2013,
+    the estimator `emcee` uses). Unreliable when the chain is shorter than about 50 τ."""
+    x = np.asarray(chain, dtype=float)
+    steps = x.shape[0]
+    out = np.empty(x.shape[2])
+    nfft = 1 << (2 * steps - 1).bit_length()
+    for j in range(x.shape[2]):
+        y = x[:, :, j] - x[:, :, j].mean(axis=0)
+        f = np.fft.rfft(y, n=nfft, axis=0)
+        acf = np.fft.irfft(f * np.conj(f), n=nfft, axis=0)[:steps].mean(axis=1)
+        if acf[0] <= 0:
+            out[j] = np.nan
+            continue
+        rho = acf / acf[0]
+        taus = 2.0 * np.cumsum(rho) - 1.0
+        lags = np.arange(steps)
+        m = np.flatnonzero(lags >= window * taus)
+        out[j] = taus[m[0]] if m.size else taus[-1]
+    return out

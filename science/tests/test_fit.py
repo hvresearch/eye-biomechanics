@@ -73,7 +73,7 @@ def test_the_growth_rate_is_bounded_by_the_validated_exposure():
 def test_least_squares_recovers_known_parameters():
     data = _rich_design()
     post = fit(start_params(PRIORS), data, library=LIBRARY, cohort=COHORT, priors=_flat_priors())
-    assert post.converged
+    assert post.lsq_converged
     for name in PARAM_NAMES:
         assert post.best[name] == pytest.approx(TRUTH[name], rel=0.10), name
 
