@@ -32,6 +32,7 @@ packages = ["eyebiomech"]
 "../data/results/forces" = "eyebiomech/data/results/forces"
 "../data/accommodation" = "eyebiomech/data/accommodation"
 "../data/calibration" = "eyebiomech/data/calibration"
+"../data/remodeling" = "eyebiomech/data/remodeling"
 
 [tool.ruff]
 line-length = 100

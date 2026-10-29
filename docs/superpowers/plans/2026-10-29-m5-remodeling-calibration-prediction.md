@@ -245,14 +245,14 @@ Master plan Task 5.2 (Deviation 3).
 - `growth.py`: `@dataclass GrowthState { eps: NDArray (3, 3, nel, nq) /* εg */; age_years: float }` with `zero(ctx)`, `fg()` (`I + εg`); `GrownMaterial(base, fg)` with `first_pk(F, x)` = `Jg · P_base(F Fg⁻¹) Fg⁻ᵀ` and `tangent_tensor` (chain rule), selectable per element chunk; `homeostatic_stress(solution, materials) -> NDArray` (Cauchy stress at the quadrature points); `growth_rate(sigma, sigma_iop, normals, rate_per_year, ratio) -> NDArray` (Deviation 3's law); `grow(shell, materials, loads, state, sigma_iop, *, rate_per_year, ratio, dt_years, context, optic_nerve_radius_mm) -> tuple[GrowthState, Solution]` (solve at the current growth under the loads, explicit Euler update; refuses a step with `r·dt·λ > maxStepFraction`, λ the local feedback estimate).
 - `solve(..., growth: GrowthState | None = None)`; with `None` the results are bit-identical to M4's.
 
-- [ ] **Step 1:** Failing tests:
+- [x] **Step 1:** Failing tests:
   - stress equal to homeostatic (`h = 1`, IOP-only loads) gives zero growth rate everywhere (1e-12 relative);
   - uniform over-stress on `make_sphere_shell(10, 11)` (`h = 0.8`, IOP only) grows it isotropically: the outer radius after one step changes uniformly (spread < 1% of the mean change) and outward;
   - a non-axisymmetric over-stress (IOP plus an upper and lower lid band, `h = 1`) on the coarse fixture produces a c(2,2) change of the anterior corneal fit after one growth step whose sign matches the elastic c(2,2) change under the same loads (growth continues the elastic deformation; stated as the predicted sign);
   - `GrownMaterial` with `Fg = I` equals the base material (1e-14); its `first_pk` equals the numerical derivative of `Jg·W(F Fg⁻¹)` and its tangent the derivative of `first_pk` (1e-6 relative) for a random small `εg`;
   - a step too large raises `ValueError` naming the limit.
-- [ ] **Step 2:** Run; FAIL. Implement; PASS.
-- [ ] **Step 3:** Full gate. Commit: `feat(remodel): stress-driven growth toward a homeostatic target`.
+- [x] **Step 2:** Run; FAIL. Implement; PASS.
+- [x] **Step 3:** Full gate. Commit: `feat(remodel): stress-driven growth toward a homeostatic target`.
 
 ### Task 5.8: Response library (reduced-order model)
 

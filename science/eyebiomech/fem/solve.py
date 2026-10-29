@@ -98,8 +98,10 @@ class Solution:
         return self.u[self.context.vector_dofs]
 
 
-def internal(ctx: Context, materials: dict, u: NDArray, tangent: bool = True):
-    """Internal force vector and (optionally) tangent stiffness."""
+def internal(ctx: Context, materials: dict, u: NDArray, tangent: bool = True, growth=None):
+    """Internal force vector and (optionally) tangent stiffness. With a growth state
+    (`eyebiomech.remodel.growth.GrowthState`), each element's material is the grown one
+    (M5, Task 5.7)."""
     vb = ctx.vb
     grad = vb.interpolate(u).grad
     f = np.zeros(ctx.n)
@@ -112,7 +114,7 @@ def internal(ctx: Context, materials: dict, u: NDArray, tangent: bool = True):
             sel = chunk[region[chunk] == r]
             if sel.size == 0:
                 continue
-            mat = materials[name]
+            mat = materials[name] if growth is None else growth.material(materials[name], sel)
             F = np.eye(3)[:, :, None, None] + grad[:, :, sel, :]
             x = ctx.x_quad[:, sel, :]
             G = asm.basis_gradients(vb, sel)
@@ -179,6 +181,7 @@ def solve(
     initial_u: NDArray | None = None,
     ramp: str = "all",
     max_cuts: int = MAX_STEP_CUTS,
+    growth=None,
 ) -> Solution:
     """Displacement under `loads` by incremental loading and Newton's method.
 
@@ -187,11 +190,12 @@ def solve(
     equilibrium, so the other loads act on the pressurized globe). An increment that fails
     (non-finite values, an inverted element, or no convergence in `max_iter`) is retried at half
     the size, at most `max_cuts` times in a row; then `NewtonDidNotConverge` is raised with the
-    residual history."""
+    residual history. `growth` (a `GrowthState`) solves the grown shell (M5, Task 5.7); `ramp=
+    "none"` holds every load at full value and only re-equilibrates (after a growth step)."""
     if steps < 1:
         raise ValueError("steps must be at least 1")
-    if ramp not in ("all", "dead"):
-        raise ValueError(f"unknown ramp {ramp!r}; expected 'all' or 'dead'")
+    if ramp not in ("all", "dead", "none"):
+        raise ValueError(f"unknown ramp {ramp!r}; expected 'all', 'dead', or 'none'")
     ctx = context or make_context(shell)
     fixed = support_dofs(ctx, support, optic_nerve_radius_mm)
     free = np.setdiff1d(np.arange(ctx.n), fixed)
@@ -202,6 +206,8 @@ def solve(
     history: list[float] = []
 
     def scales(lam: float) -> tuple[float, float]:
+        if ramp == "none":
+            return (1.0, 1.0)
         return (lam, lam) if ramp == "all" else (1.0, lam)
 
     def increment(lam: float, u_start: NDArray) -> NDArray:
@@ -210,7 +216,7 @@ def solve(
         for _ in range(max_iter):
             try:
                 with np.errstate(all="ignore"):
-                    f_int, K_int = internal(ctx, materials, v)
+                    f_int, K_int = internal(ctx, materials, v, growth=growth)
                     f_ext, K_ext = loads.assemble(ctx, v, s_iop, s_dead)
             except np.linalg.LinAlgError:
                 raise _IncrementFailed("a singular deformation gradient") from None
@@ -280,11 +286,12 @@ def tangent_at(
     *,
     support: str = "optic_nerve",
     optic_nerve_radius_mm: float | None = None,
+    growth=None,
 ) -> Tangent:
     """Factorize K = ∂f_int/∂u − ∂f_ext/∂u at `solution` (`loads` supplies the follower terms,
     normally the IOP of that state)."""
     ctx = solution.context
-    _, K_int = internal(ctx, materials, solution.u)
+    _, K_int = internal(ctx, materials, solution.u, growth=growth)
     _, K_ext = loads.assemble(ctx, solution.u, 1.0)
     K = K_int if K_ext is None else K_int - K_ext
     fixed = support_dofs(ctx, support, optic_nerve_radius_mm)
