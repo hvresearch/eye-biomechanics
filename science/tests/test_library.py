@@ -15,7 +15,14 @@ from eyebiomech.fem.mesh import make_shell_mesh
 from eyebiomech.fem.solve import make_context, solve
 from eyebiomech.forces.from_viewer import load_force_table
 from eyebiomech.optics.paraxial import induced_refraction
-from eyebiomech.remodel.growth import GrowthState, cauchy_stress, grow
+from eyebiomech.remodel.growth import (
+    GrowthState,
+    cauchy_stress,
+    feedback_estimate,
+    grow,
+    growth_mask,
+    load_growth_table,
+)
 from eyebiomech.remodel.history import GROUPS
 from eyebiomech.remodel.library import LevelResponse, Library, build_library
 
@@ -206,10 +213,13 @@ def test_a_stiffer_eye_responds_less():
 
 @pytest.mark.slow
 def test_reduced_growth_follows_the_fem_growth(library, pressurized):
-    """Three explicit FEM growth steps under half the near-gaze loads against the reduced
-    model with the same intensities (Review Focus 2): J0 of the remodeled change within 20%.
-    Half load keeps the FEM in the linear regime the library describes (see the superposition
-    test above)."""
+    """Explicit FEM growth steps under half the near-gaze loads against the reduced model with
+    the same intensities (Review Focus 2). The growth increments are compared (the remodeled
+    change minus the elastic one), not the totals, so the elastic response, which the
+    superposition test checks, cannot hide a growth error. Each step is as long as the FEM
+    allows (r dt lambda at 0.9 of `maxStepFraction`), so the increment is well above the
+    solver's noise. Half load keeps the FEM in the linear regime the library describes (see
+    the superposition test above)."""
     shell, ctx, mats, ref = pressurized
     loads = _half(_near_loads())
     loaded = solve(
@@ -223,9 +233,12 @@ def test_reduced_growth_follows_the_fem_growth(library, pressurized):
         ramp="dead",
     )
     sigma_iop = cauchy_stress(ctx, mats, ref.u)
-    r, dt = 1e-5, 2.0
+    mask = growth_mask(ctx, "optic_nerve", ON)
+    lam = feedback_estimate(ctx, mats, loaded.u, sigma_iop, GrowthState.zero(ctx), mask)
+    r, steps = 1.0, 4
+    dt = 0.9 * load_growth_table()["maxStepFraction"]["value"] / (r * lam)
     state, u = GrowthState.zero(ctx), loaded.u
-    for _ in range(3):
+    for _ in range(steps):
         state, sol = grow(
             shell,
             mats,
@@ -240,14 +253,19 @@ def test_reduced_growth_follows_the_fem_growth(library, pressurized):
             initial_u=u,
         )
         u = sol.u
-    fem = _refraction(shell, ref.nodal(), sol.nodal())
+    fem = _refraction(shell, ref.nodal(), sol.nodal()) - _refraction(
+        shell, ref.nodal(), loaded.nodal()
+    )
     L = np.zeros(len(GROUPS))
     L[NEAR] = 0.5
-    reduced = library.simulate(
+    out = library.simulate(
         lambda a: L,
-        np.array([0.0, 3 * dt]),
+        np.array([0.0, steps * dt]),
         rate_per_year=r,
         ratio=1.0,
         stiffness=lambda a: 1.0,
-    )[-1, 1]
-    assert reduced[1] == pytest.approx(fem[1], rel=0.20)
+    )[-1]
+    reduced = out[1] - out[0]
+    for i in (0, 1):  # M and J0
+        assert abs(fem[i]) > 1e-3  # an increment the comparison can resolve
+        assert reduced[i] == pytest.approx(fem[i], rel=0.25)
