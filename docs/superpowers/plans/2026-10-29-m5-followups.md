@@ -126,3 +126,28 @@ Minor 4, 5, 9, and 14 (posterior schema check) are steps of plan Task 5.14 or fi
   data file's definition text); read them from data. The two J0-slope targets cover the same
   window with assumed SEs, which double-weights the slope; state it or merge them. (M6)
 
+## Review round 2 (PR #16, head a894140), Minor findings not fixed in the fix round
+
+Minor 3 and 5 are fixed in plan Task 5.15; Minor 8 (chain length) is already filed under Model;
+Minor 10 is the owner decision asked in the PR body.
+
+- The timeline's stance line (`web/apps/viewer/src/ui/Timeline.tsx`, "axis shift only") and the
+  tooltip (`web/apps/viewer/src/ui/tooltips.ts`, "axis shift and J0 slope only") disagree, and
+  both hard-code the current calibration's findings ("growth negligible", "the shift comes from
+  the elastic loads"), which go stale on recalibration. Align them and carry the summary in the
+  grid document (its `citation` or a new field). (M6)
+- `Library._interp` also clamps at the top of the table: with the anchor 1.542 at 70, a slope
+  above 0.0477/yr exceeds scale 4 at 90, which about 47% of the posterior draws do (ages 87–90).
+  Table a scale 6, or warn (together with the low-edge item above). (M6)
+- `remodel/library.py` interpolates F and γ in ln s although the Krylov patterns differ between
+  stiffness levels (pattern 36's growth M −42 at 0.5, +74 at 1). Within the validated exposure
+  this agrees with interpolating per-level results within about 3%; label it as an
+  approximation next to "patterns and feedback of the tabled stiffness", or build the Krylov
+  sequence once and reuse it across levels. (M6)
+- The bounding fit (`posterior-v1-sphere-bound.json`) reports `dof` 7, counting the four
+  inactive one-sided envelopes; exclude envelopes from `dof` in `calib/fit.py` or note it. (M6)
+- `data/results/predictions/v1.json` provenance has `gitHash` `fc02b80…-dirty`; head regenerates
+  it identically, so regenerate it from a clean tree on the next grid build. (M6)
+- `test_library.py` `test_the_library_is_enriched_bounded_and_labeled` asserts only finite
+  feedback eigenvalues; assert the documented structure (one eigenvalue with positive real
+  part, its eigenvector's refraction mostly in M). (M6)

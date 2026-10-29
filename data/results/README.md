@@ -208,11 +208,23 @@ the chain.
 
 (Model values with hard classes.)
 
-**Does the mechanism reproduce the with-the-rule to against-the-rule shift?** In the fitted
-targets, largely yes, but **not through remodeling**. The with-the-rule share falls from 0.62
-to 0.13 and the against-the-rule share rises from 0.14 to 0.60. The mean J0 declines at about
-two thirds of the observed rate, and the children's against-the-rule share is half the observed
-one. The growth rate goes to its lower bound, and switching growth off at the best fit changes
+**Does the mechanism reproduce the with-the-rule to against-the-rule shift?** Only in part,
+and **not through remodeling**. The endpoint proportions match: the with-the-rule share falls
+from 0.62 to 0.13 and the against-the-rule share rises from 0.14 to 0.60. The mean J0 declines at
+about two thirds of the observed rate. The fit is poor in absolute terms, though:
+- The target χ² is 86.4 on 3 degrees of freedom (9 targets, 6 parameters). The standard errors
+  come from the assumed `effectiveSampleSize` of 200 (`data/calibration/priors.json`), so the
+  χ² scales with that assumption, but the pattern of residuals does not.
+- The worst residuals are in the children's band: oblique +7.0σ (0.24 against 0.10) and
+  against-the-rule −4.3σ (0.14 against 0.27). The 21–30 y band follows at +2.4σ (with-the-rule)
+  and −2.6σ (against-the-rule), then the two J0 slopes at +1.5σ and +1.8σ.
+- The model's with-the-rule share rises slightly from 6–12 to 21–30 y (0.62 to 0.64) where the
+  data fall (0.63 to 0.55). All of the model's age dependence comes from the fitted stiffening
+  slope, which acts only above the 50-year clamp, and that clamp is an assumption
+  (`cornea-sclera.json` `ageStiffening`: no excerpt covers younger corneas). So the decline
+  between childhood and young adulthood cannot be produced.
+
+The growth rate goes to its lower bound, and switching growth off at the best fit changes
 no trajectory by more than 0.09 D. The shift comes from the elastic loads and the age
 stiffening:
 - The lids' elastic with-the-rule load (scaled by 2.4 from the Shaw et al. pressure) holds the
@@ -231,6 +243,11 @@ stiffening:
   above the between-subject spread.
 - At the 90% interval's upper end the slope puts the stiffness below 50 years at the library's
   lowest tabled scale, where `Library._interp` clamps (follow-up).
+- The clamp also bites at the top: with the anchor 1.542 at 70, a slope above 0.0477 per year
+  puts the stiffness at 90 above the highest tabled scale (4). The posterior median is 0.0472
+  and its 95th percentile 0.0566 (stiffness 4.8 at 90, clamped from about 87 years), so roughly
+  half the draws are clamped at grid ages 87–90. These ages lie outside every target band
+  (follow-up).
 
 The secondary target behaves: the mechanical spherical-equivalent change stays within a few
 hundredths of a diopter per six years (the bounding fit below). So the first calibration's
@@ -246,12 +263,15 @@ withdrawn too.
 **Answer so far.**
 - Within the growth exposures its reduced model is validated for, stress-driven remodeling
   contributes nothing to the fit.
-- Elastic lid loading on a cornea and sclera that stiffen with age reproduces most of the
-  population's axis shift without spherical side effects. This needs an against-the-rule
-  unloaded eye, a steep age stiffening, and lid pressures at the high end of the published
-  estimates.
-- The hypothesis that muscle, tendon, and eyelid loading predict the shift is thus supported in
-  its elastic form, conditional on those three, and **untested in its remodeling form**. Longer
+- Elastic lid loading on a cornea and sclera that stiffen with age can reproduce the endpoint
+  axis-class proportions and about two thirds of the J0 slope without spherical side effects.
+  It does so only with three parameters at or beyond their prior ranges (an against-the-rule
+  unloaded eye at its bound, a stiffening slope 2.3 prior SDs high, lid pressure 2.4 times the
+  tabled one) and with a poor fit to the children's band (target χ² 86 on 3 degrees of freedom).
+- This is **not a confirmation** of the hypothesis that muscle, tendon, and eyelid loading
+  predict the shift. In its elastic form the mechanism is compatible with the endpoints under
+  those conditions but misses the childhood-to-adult change. The hypothesis is **untested in its
+  remodeling form**. Longer
   growth exposures need a growth law that the FEM can integrate past the clamp-edge runaway, and
   whose spherical mode does not grow (follow-ups).
 - Every input is unverified or a stand-in (the SyntEyes baseline, the population tables from
@@ -275,8 +295,9 @@ every envelope. The grid keeps the axis-shift posterior.
 
 200 posterior draws, 395 kB, 28 s.
 - **Before 50.** Each subject starts from its observed refraction at 6, and the grid moves it
-  by the model's change since then. Nothing changes before 50: the elastic loads are constant
-  there, and growth is negligible.
+  by the model's change since then. Little changes before 50 (under 0.1 D: at most 0.071 D in
+  sphere and 0.069 D in cylinder): the elastic loads are constant there, and growth is
+  negligible.
 - **After 50.** The stiffening tissue loses the elastic with-the-rule lid load. A child
   emmetropic at 6 without cylinder reaches cylinder −0.19 D at 60 and −0.61 D at 90 (5–95%
   −0.47 to −0.72) with no near work, and −0.41 and −1.00 D with 8 h a day. Its axis is against
