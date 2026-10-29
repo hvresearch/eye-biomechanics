@@ -227,9 +227,9 @@ Master plan Task 5.1.
 - `accommodation.py`: `amplitude_for_age(age) -> float`; `demand_from_distance(m, far_point_d=0) -> float`; `response(demand_d, amplitude_d) -> float` (same equations and clamps as the TS controller; a test compares 20 ages and demands with values the TS test suite writes to `data/oracle/accommodation-values.json`).
 - `history.py`: `@dataclass(frozen=True) SubjectProfile { age_years: float; near_hours: float; sphere_d: float = 0; cylinder_d: float = 0; axis_deg: float = 180 }`; `@dataclass(frozen=True) LoadIntensities { distance_fraction; near_fraction; muscles_distance; muscles_near; lids_distance; lids_near; ciliary_d }` (dimensionless multipliers on the library's load groups, and the time-averaged ciliary diopters); `history_loads(profile, age_years, duty: dict | None = None, eom_tone_scale=1.0, lid_pressure_scale=1.0) -> LoadIntensities`: near fraction `nearHours / wakingHours` (clamped to [0, 1]), distance the rest; ciliary diopters `near_fraction × response(demand(nearDistance), amplitude(age))`; muscles and lids scaled by the calibration scales. `time_averaged_force_sets(profile, age, force_table) -> list[(weight, gaze_index)]` for direct FEM use.
 
-- [ ] **Step 1:** Failing tests: 0 near hours equals the distance-only intensities; `nearHours = wakingHours` equals near-only; intensities are linear in near hours between; the ciliary load at age 60 is below that at age 20 (presbyopia) and never exceeds `near_fraction × demand`; the Python accommodation functions match the TS values (1e-12).
-- [ ] **Step 2:** Run; FAIL. Implement; PASS.
-- [ ] **Step 3:** Full gate. Commit: `feat(remodel): load history from a near-work duty cycle`.
+- [x] **Step 1:** Failing tests: 0 near hours equals the distance-only intensities; `nearHours = wakingHours` equals near-only; intensities are linear in near hours between; the ciliary load at age 60 is below that at age 20 (presbyopia) and never exceeds `near_fraction × demand`; the Python accommodation functions match the TS values (1e-12).
+- [x] **Step 2:** Run; FAIL. Implement; PASS.
+- [x] **Step 3:** Full gate. Commit: `feat(remodel): load history from a near-work duty cycle`.
 
 ### Task 5.7: Stress-driven growth law
 
