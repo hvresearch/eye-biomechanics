@@ -1,0 +1,208 @@
+{
+ "schemaVersion": "1.0.0",
+ "id": "emmetrope-right-fem",
+ "label": "Navarro 1985 relaxed emmetrope, right eye (fixture): elastic FEM, gaze 0,0, IOP 15 mmHg",
+ "provenance": {
+  "source": "eyebiomech fem",
+  "citation": "Elastic corneoscleral FEM (no remodeling; spec \u00a77). Approximations: the document's geometry is taken as stress-free and the result is the change from the IOP-only state; fixed optic-nerve support; muscle forces from length-proxy activation x capacity, torque-balanced, with the net force taken by an orbital reaction on the posterior hemisphere; dead loads in the reference configuration; lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the posterior pole. Materials, thickness, eyelid, and force data are unverified (see data/materials, data/eyelid, data/eom). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.",
+  "generatedBy": "eyebiomech fem --eye ../data/fixtures/emmetrope-right.eye.json --gaze 0,0 --iop 15 --out ../data/results/fem/emmetrope-right-primary-15mmHg.eye.json",
+  "gitHash": "",
+  "date": "2026-10-28",
+  "verified": false
+ },
+ "surfaces": [
+  {
+   "name": "cornea.anterior",
+   "type": "zernike",
+   "radiusMm": 7.72,
+   "conic": -0.26,
+   "zernikeHeight": {
+    "normRadiusMm": 4.0,
+    "coeffsMicrons": [
+     0.23479439597142715,
+     -0.06349963927550639,
+     -0.0376110346345812,
+     0.02215563112783445,
+     0.17677628756730301,
+     -0.3128741650304442,
+     0.012750705525074235,
+     0.00039961444413000313,
+     0.0021707620624565223,
+     0.09518719630651026,
+     0.001588307105427001,
+     0.0003128223597303331,
+     0.03229345143886812,
+     -0.02803016594232849,
+     0.03183130992114347,
+     0.00047803743976833346,
+     0.0005789877259759282,
+     0.000504503552720012,
+     0.00044968020977742204,
+     0.003412139996970834,
+     0.003406686203575676,
+     3.533791937637698e-05,
+     0.00010445822444767744,
+     0.0003323027984969973,
+     9.568484194952352e-05,
+     0.0008257937930776366,
+     0.0006345852592307133,
+     -0.0008028432006366272,
+     1.82080476132003e-05,
+     6.647531561251863e-06,
+     9.631319306212943e-05,
+     2.125246004666681e-05,
+     -6.162415962391449e-05,
+     0.0002496037199298459,
+     0.00015857926894403615,
+     -0.00012462395282766478,
+     1.1000765335701657e-05,
+     -2.468951200420774e-06,
+     8.798772895037433e-06,
+     2.6229381286234366e-05,
+     -0.0001886928936043683,
+     -0.00015671851067015907,
+     -1.7178220856414392e-05,
+     -6.253110326328096e-05,
+     0.000993394289956521
+    ]
+   },
+   "thicknessToNextMm": 0.5499927495157841,
+   "mediumAfter": {
+    "name": "cornea",
+    "index555": 1.376
+   },
+   "apertureSemiDiamMm": 6.0,
+   "tilt": {
+    "xDeg": 0,
+    "yDeg": 0
+   },
+   "decenter": {
+    "xMm": 0,
+    "yMm": 0
+   }
+  },
+  {
+   "name": "cornea.posterior",
+   "type": "zernike",
+   "radiusMm": 6.5,
+   "conic": 0,
+   "zernikeHeight": {
+    "normRadiusMm": 3.5,
+    "coeffsMicrons": [
+     0.21640444204378184,
+     -0.060421166991481506,
+     -0.03642504435723753,
+     0.013213100800707388,
+     0.16429779175806244,
+     -0.30926579898275225,
+     0.00859991988023713,
+     -9.59795644283612e-05,
+     0.001708202549879547,
+     0.07671271533515048,
+     0.0011108616575602748,
+     -0.00031797737550456895,
+     0.03192330207737019,
+     -0.03039520955126257,
+     0.020947749363165943,
+     0.0004724909158271562,
+     0.00036636762997809685,
+     0.0004059633334833803,
+     0.0004110972899470343,
+     0.003164777551994036,
+     0.002401607822226825,
+     -5.589674493200296e-05,
+     8.160257517063341e-05,
+     0.0002452706360107221,
+     0.0009808252717786736,
+     -8.088354971396566e-05,
+     0.0001461430066247169,
+     -0.0008332707652762492,
+     -1.7034826309238887e-05,
+     2.388633043209909e-05,
+     7.20869902233641e-05,
+     3.640237021992204e-05,
+     -8.487009429746645e-05,
+     0.0002483345441828427,
+     0.00010527008978745067,
+     -0.00025908503684635284,
+     7.743161354177575e-06,
+     -4.241557302246332e-06,
+     7.680790767957552e-06,
+     2.750157731022662e-05,
+     -0.00020665763665728837,
+     -3.530951805979371e-05,
+     -0.00019110793875444856,
+     5.410059058557487e-05,
+     0.0005784949246518071
+    ]
+   },
+   "thicknessToNextMm": 3.0504219674505624,
+   "mediumAfter": {
+    "name": "aqueous",
+    "index555": 1.3374
+   },
+   "apertureSemiDiamMm": 6.0,
+   "tilt": {
+    "xDeg": 0,
+    "yDeg": 0
+   },
+   "decenter": {
+    "xMm": 0,
+    "yMm": 0
+   }
+  },
+  {
+   "name": "lens.anterior",
+   "type": "conic",
+   "radiusMm": 10.2,
+   "conic": -3.1316,
+   "tilt": {
+    "xDeg": 0,
+    "yDeg": 0
+   },
+   "decenter": {
+    "xMm": 0,
+    "yMm": 0
+   },
+   "thicknessToNextMm": 4.0,
+   "mediumAfter": {
+    "name": "lens",
+    "index555": 1.42
+   },
+   "apertureSemiDiamMm": 5.0
+  },
+  {
+   "name": "lens.posterior",
+   "type": "conic",
+   "radiusMm": -6.0,
+   "conic": -1.0,
+   "tilt": {
+    "xDeg": 0,
+    "yDeg": 0
+   },
+   "decenter": {
+    "xMm": 0,
+    "yMm": 0
+   },
+   "thicknessToNextMm": 16.35710110115298,
+   "mediumAfter": {
+    "name": "vitreous",
+    "index555": 1.336
+   },
+   "apertureSemiDiamMm": 5.0
+  }
+ ],
+ "pupil": {
+  "model": "fixed",
+  "params": {
+   "diameterMm": 4.0
+  }
+ },
+ "axialLengthMm": 23.95751581811933,
+ "retina": {
+  "radiusMm": -12.0,
+  "conic": 0
+ },
+ "age": 30,
+ "interpupillaryDistanceMm": 63
+}

@@ -82,9 +82,20 @@ Used for: regression fixture only, paraxial-power test; not a UI preset. Transcr
 
 ## Corneal and scleral material
 
-Elsheikh et al. 2007 (age stiffness); Pandolfi & Holzapfel 2008; Whitford et al. 2015.
+Pandolfi A, Holzapfel GA. (cornea model with distributed collagen fibril orientations). *J Biomech Eng* 130(6):061006, 2008.
+DOI: 10.1115/1.2982251
+Whitford C, Studer H, Boote C, Meek KM, Elsheikh A. Biomechanical model of the human cornea: considering shear stiffness and regional variation of collagen anisotropy and density. *J Mech Behav Biomed Mater* 42:76-87, 2015.
+DOI: 10.1016/j.jmbbm.2014.11.006
+Elsheikh A, Wang D, Pye D. Determination of the modulus of elasticity of the human cornea. *J Refract Surg* 2007 (PubMed 17985801); Elsheikh et al., Assessment of corneal biomechanical properties and their variation with age, *Curr Eye Res* 2007, DOI 10.1080/02713680601077145.
+González-Cabrero J, Gómez C, Paredes M, Cavas F. Addressing parameter variability in corneal biomechanical models. *Biomimetics* 10(10):683, 2025. DOI: 10.3390/biomimetics10100683 (secondary source of the HGO corneal row used).
+Scleral thickness in human eyes. *PLoS One* 2012 (PMC3253100; Vurgese et al.).
+Used for: FEM constitutive defaults, regional thickness, and age stiffening in `data/materials/cornea-sclera.json` (M4). Transcribed from search excerpts, partly secondary; `verified: false`. The DOIs of Pandolfi & Holzapfel and Whitford et al. come from search excerpts.
+
+## Ocular rigidity
+
+Pallikaris et al. Ocular rigidity in living human eyes. *Invest Ophthalmol Vis Sci* 2005 (PubMed 15671262).
 DOI: to be added
-Used for: FEM constitutive defaults for cornea and sclera.
+Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Friedenwald coefficient 0.0126 /µL (95% CI 0.0112–0.0149) in 79 living eyes, stored in `data/materials/cornea-sclera.json` (`ocularRigidityReference`). `verified: false`.
 
 ## Remodeling framework
 
@@ -94,9 +105,9 @@ Used for: the growth law of the remodeling layer.
 
 ## Eyelid pressure on the cornea
 
-Shaw AJ, Collins MJ, Davis BA, Carney LG, 2008-2010.
-DOI: to be added
-Used for: eyelid load defaults.
+Shaw AJ, Collins MJ, Davis BA, Carney LG. Eyelid pressure and contact with the ocular surface. *Invest Ophthalmol Vis Sci* 2010 (PubMed 19834035). Shaw AJ, Eyelid pressure on the cornea, PhD thesis, Queensland University of Technology, 2009.
+DOI: to be added (not in the excerpts)
+Used for: eyelid load defaults in `data/eyelid/shaw-2010.json` (M4): upper-lid pressure 8.0 mmHg and contact band 0.60 mm by excerpt; lower lid assumed equal. `verified: false`.
 
 ## Oculomotor dynamics
 

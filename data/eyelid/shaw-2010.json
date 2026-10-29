@@ -1,0 +1,14 @@
+{
+  "name": "eyelid-shaw-2010",
+  "label": "Eyelid pressure on the ocular surface (primary gaze, static)",
+  "upperPressureMmHg": 8.0,
+  "upperPressureCitation": "Shaw AJ, Collins MJ, Davis BA, Carney LG, Eyelid pressure and contact with the ocular surface, Invest Ophthalmol Vis Sci 2010 (PubMed 19834035): 8.0 +/- 3.4 mmHg, derived with the pressure-sensitive paper imprint widths (11 young adults), the authors' preferred estimate; the whole-cell estimate was 3.8 +/- 0.7 and the Marx's-line estimate 55 +/- 26 mmHg (excerpt).",
+  "upperContactHeightMm": 0.6,
+  "upperContactCitation": "Shaw et al. 2010: mean contact width of the upper lid margin band on the ocular surface 0.60 +/- 0.16 mm from the imprints (excerpt). Used as the vertical extent of the pressure band.",
+  "lowerPressureMmHg": 8.0,
+  "lowerContactHeightMm": 0.6,
+  "lowerCitation": "assumption: no excerpt gave a lower-lid pressure or contact width (Shaw's 2009 QUT thesis measured lower-lid effects on topography); the upper-lid values are used.",
+  "palpebralApertureMm": 10.1,
+  "apertureCitation": "Mean of three excerpted adult population means of vertical palpebral fissure height: 10.3-10.4 mm (Turkish young adults), 9.35-9.41 mm (Serbian young adults), 10.6 mm (mixed sample, mean age 36.5). The lid bands are placed symmetrically about the corneal center (approximation; in primary gaze the lower lid sits near the inferior limbus and the upper lid covers 1-2 mm of the superior cornea).",
+  "verified": false
+}

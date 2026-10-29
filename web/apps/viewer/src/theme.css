@@ -650,3 +650,34 @@ table.figures td.rx {
   text-align: right;
   font-family: var(--font-mono);
 }
+
+.readout-grid .stat.wide {
+  grid-column: 1 / span 2;
+}
+
+/* Biomechanics heat-map legend: the ramp drawn on the globe, 0 to the largest displacement. */
+.heatmap-legend {
+  margin: 0 0 var(--space-3);
+}
+
+.heatmap-legend .bar {
+  height: 10px;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+
+.heatmap-legend .labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--space-1);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.field input[type="file"] {
+  grid-column: 1 / span 2;
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+}

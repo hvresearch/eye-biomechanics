@@ -12,6 +12,8 @@ export type {
 } from "./surfaces/types";
 export { intersect, meridianCurvature, normalAt, sag } from "./surfaces/geometry";
 export type { Intersection } from "./surfaces/geometry";
+export { dirToGlobal, dirToLocal, surfaceFrame, toGlobal, toLocal } from "./surfaces/tilt";
+export type { Mat3, SurfaceFrame } from "./surfaces/tilt";
 export { placeSurface, surfacesFromSequential } from "./surfaces/sequential";
 export {
   zernikeBasis,

@@ -21,8 +21,9 @@ export interface Medium {
  * Coordinates: right-handed, z along the optical axis toward the retina, x temporal for
  * the right eye, y superior. Angles are measured from +x toward +y.
  *
- * `tilt` is carried for the schema contract but must be zero; `intersect` throws otherwise
- * so the limitation is loud rather than silently wrong. `image: true` marks the image
+ * `tilt` rotates the surface about its vertex, first about x by `xDeg`, then about y by `yDeg`
+ * (right-handed; see surfaces/tilt). Ray tracing honors it; paraxial optics ignores it (an
+ * approximation for the small tilts of an eye's lens). `image: true` marks the image
  * surface (the retina): paraxial and defocus calculations end there, and an index-matched
  * surface without the flag is an ordinary (non-refracting) surface.
  */

@@ -70,3 +70,18 @@ describe("deriveEyeState", () => {
     expect(() => deriveEyeState(scene(), eye, "right")).toThrow(/pupil model/);
   });
 });
+
+describe("documents without a lens accommodation model", () => {
+  it("cannot accommodate: amplitude, response, and lens parameter are zero", async () => {
+    const { readFileSync } = await import("node:fs");
+    const { resolve } = await import("node:path");
+    const { defaultScene } = await import("../src/scene/defaults");
+    const fixture = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../../data/fixtures/emmetrope-right.eye.json"), "utf8"));
+    expect(fixture.lensAccommodationModel).toBeUndefined();
+    const s = deriveEyeState({ ...defaultScene("navarro-1985"), targetDistanceM: 0.33 }, fixture, "right", 0, () => 0);
+    expect(s.amplitudeD).toBe(0);
+    expect(s.accommodationD).toBe(0);
+    expect(s.lensParameterA).toBe(0);
+    expect(s.ciliaryActivation).toBe(0);
+  });
+});

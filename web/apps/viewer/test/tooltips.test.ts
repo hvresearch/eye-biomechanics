@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { presetTable } from "@eye/eye-model";
-import { decompositionTooltip, gazeTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, vergenceTooltip } from "../src/ui/tooltips";
+import { decompositionTooltip, gazeTooltip, heatMapTooltip, inducedTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, vergenceTooltip } from "../src/ui/tooltips";
 
 describe("readoutTooltips", () => {
   const t = readoutTooltips(3.5, "fixed");
@@ -74,5 +74,25 @@ describe("optics tooltips", () => {
     const p = readoutTooltips(3, "watsonYellott2012").pupil;
     expect(p).toMatch(/^Approximation: Watson & Yellott 2012/);
     expect(p).toMatch(/unverified/);
+  });
+});
+
+describe("biomechanics tooltips", () => {
+  it("labels the induced refraction as an elastic approximation", () => {
+    const t = inducedTooltip();
+    expect(t.startsWith("Approximation:")).toBe(true);
+    expect(t).toMatch(/elastic/);
+    expect(t).toMatch(/stress-free/);
+    expect(t).toMatch(/fixed optic-nerve cap/);
+    expect(t).toMatch(/torque balancing changes the lateral and medial rectus forces/);
+  });
+  it("says what the heat map shows and how it is exaggerated", () => {
+    const t = heatMapTooltip(50);
+    expect(t).toMatch(/^Approximation: /);
+    expect(t).toMatch(/fixed optic-nerve cap/);
+    expect(t).toMatch(/orbital reaction/);
+    expect(t).toMatch(/rigid motion/);
+    expect(t).toMatch(/×50/);
+    expect(t).toMatch(/IOP-only/);
   });
 });

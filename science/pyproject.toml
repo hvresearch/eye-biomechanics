@@ -10,6 +10,9 @@ dependencies = [
     "scipy>=1.18.1",
 ]
 
+[project.scripts]
+eyebiomech = "eyebiomech.fem.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"

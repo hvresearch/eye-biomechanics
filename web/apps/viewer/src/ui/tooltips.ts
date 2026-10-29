@@ -102,3 +102,13 @@ export function spectaclesTooltip(): string {
 export function decompositionTooltip(): string {
   return "Approximation: paraxial spherical equivalents; each part is the change from the schematic eye when only its cornea, its lens, or its axial length is taken from this eye; the residual is the interaction the split does not capture.";
 }
+
+/** Hover text for the induced refraction of a loaded biomechanics result. */
+export function inducedTooltip(): string {
+  return "Approximation: elastic FEM result (no remodeling). The change is the loaded eye minus the IOP-only eye, the document's geometry being taken as stress-free; primary gaze only; muscle forces come from the length-proxy activation, torque-balanced (torque balancing changes the lateral and medial rectus forces by about half, and the induced astigmatism depends strongly on it), with the orbit taking their net pull; fixed optic-nerve cap; the lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the posterior pole. Both eyes are refracted relaxed, on the visual axis, at 555 nm, by the paraxial method (spherical aberration does not bias the difference). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.";
+}
+
+/** Hover text for the displacement heat map. */
+export function heatMapTooltip(exaggeration: number): string {
+  return `Approximation: displacement magnitude of the globe's outer surface, loaded minus IOP-only, drawn ×${exaggeration} for visibility (elastic). Displacements are relative to the fixed optic-nerve cap and an assumed orbital reaction, and include rigid motion of the anterior segment, which can dominate the color scale. Without a .deformation.json file a loaded document shows its refraction but no map.`;
+}

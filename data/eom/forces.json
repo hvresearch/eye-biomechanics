@@ -1,0 +1,38 @@
+{
+  "name": "eom-forces-default",
+  "label": "Extraocular muscle force capacity for the insertion-force export (Milestone 4)",
+  "verified": false,
+  "equation": "forceN = activation x maxForceN, activation from the length proxy (data/eom/activation.json); an approximation",
+  "gramForceToN": 0.00980665,
+  "muscles": {
+    "lateralRectus": {
+      "maxForceGf": 59.1,
+      "citation": "Collins, Carlson et al., Extraocular muscle forces in normal human subjects, Invest Ophthalmol Vis Sci 1981 (PubMed 7216678): mean active fixation force at 50 deg extreme gaze, 29 subjects aged 18-33 (excerpt); individual maxima ranged 48-103 gf."
+    },
+    "medialRectus": {
+      "maxForceGf": 74.8,
+      "citation": "Collins et al. 1981, as for the lateral rectus (excerpt)."
+    },
+    "superiorRectus": {
+      "maxForceGf": 66.95,
+      "citation": "assumption: mean of the two horizontal recti (Collins et al. 1981 measured the horizontal recti only)."
+    },
+    "inferiorRectus": {
+      "maxForceGf": 66.95,
+      "citation": "assumption: mean of the two horizontal recti."
+    },
+    "superiorOblique": {
+      "maxForceGf": 59.1,
+      "citation": "assumption: equal to the lateral rectus (no excerpt gave oblique forces)."
+    },
+    "inferiorOblique": {
+      "maxForceGf": 59.1,
+      "citation": "assumption: equal to the lateral rectus (no excerpt gave oblique forces)."
+    }
+  },
+  "insertionFootprintLengthMm": {
+    "value": 1.0,
+    "citation": "assumption: the extent along the pull direction over which a tendon's force is spread on the sclera at its insertion (the insertion line is a narrow band; the FEM needs a finite footprint)."
+  },
+  "note": "Collins et al. report force at extreme gaze, which this model takes as activation 1; with the activation table's primary-position baseline (0.2) a horizontal rectus carries about 12-15 gf in primary position."
+}

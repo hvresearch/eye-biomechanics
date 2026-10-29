@@ -1,0 +1,437 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/eye-parameters.schema.json",
+  "title": "EyeParameters",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "id": {
+      "type": "string"
+    },
+    "label": {
+      "type": "string"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "surfaces": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Surface"
+      },
+      "minItems": 2
+    },
+    "pupil": {
+      "type": "object",
+      "properties": {
+        "model": {
+          "type": "string"
+        },
+        "params": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "model",
+        "params"
+      ],
+      "additionalProperties": false
+    },
+    "axialLengthMm": {
+      "type": "number"
+    },
+    "retina": {
+      "type": "object",
+      "properties": {
+        "radiusMm": {
+          "type": "number"
+        },
+        "conic": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "radiusMm",
+        "conic"
+      ],
+      "additionalProperties": false
+    },
+    "age": {
+      "type": "number"
+    },
+    "interpupillaryDistanceMm": {
+      "type": "number"
+    },
+    "lensAccommodationModel": {
+      "type": "object",
+      "properties": {
+        "coefficients": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "visualAxis": {
+      "type": "object",
+      "properties": {
+        "alphaDeg": {
+          "type": "number"
+        },
+        "kappaDeg": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "alphaDeg",
+        "kappaDeg"
+      ],
+      "additionalProperties": false
+    },
+    "pupilDecenterMm": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "extraocularMuscles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/MuscleGeometry"
+      },
+      "minItems": 6,
+      "maxItems": 6
+    },
+    "eyelid": {
+      "oneOf": [
+        {
+          "type": "object",
+          "properties": {
+            "upperPressureKPa": {
+              "type": "number"
+            },
+            "lowerPressureKPa": {
+              "type": "number"
+            },
+            "apertureMm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "upperPressureKPa",
+            "lowerPressureKPa",
+            "apertureMm"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "label",
+    "provenance",
+    "surfaces",
+    "pupil",
+    "axialLengthMm",
+    "retina",
+    "age",
+    "interpupillaryDistanceMm"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "Provenance": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "string"
+        },
+        "citation": {
+          "type": "string"
+        },
+        "generatedBy": {
+          "type": "string"
+        },
+        "gitHash": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string"
+        },
+        "verified": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "source",
+        "citation",
+        "generatedBy",
+        "gitHash",
+        "date",
+        "verified"
+      ],
+      "additionalProperties": false
+    },
+    "Medium": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "index555": {
+          "type": "number"
+        },
+        "dispersion": {
+          "type": "object"
+        }
+      },
+      "required": [
+        "name",
+        "index555"
+      ],
+      "additionalProperties": false
+    },
+    "Surface": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "conic",
+            "toric",
+            "zernike"
+          ]
+        },
+        "radiusMm": {
+          "type": "number"
+        },
+        "rxMm": {
+          "type": "number"
+        },
+        "ryMm": {
+          "type": "number"
+        },
+        "axisDeg": {
+          "type": "number"
+        },
+        "conic": {
+          "type": "number",
+          "default": 0
+        },
+        "conicX": {
+          "type": "number"
+        },
+        "conicY": {
+          "type": "number"
+        },
+        "zernikeHeight": {
+          "type": "object",
+          "properties": {
+            "normRadiusMm": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "coeffsMicrons": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              }
+            }
+          },
+          "required": [
+            "normRadiusMm",
+            "coeffsMicrons"
+          ],
+          "additionalProperties": false
+        },
+        "tilt": {
+          "type": "object",
+          "properties": {
+            "xDeg": {
+              "type": "number"
+            },
+            "yDeg": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "xDeg",
+            "yDeg"
+          ],
+          "additionalProperties": false
+        },
+        "decenter": {
+          "type": "object",
+          "properties": {
+            "xMm": {
+              "type": "number"
+            },
+            "yMm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "xMm",
+            "yMm"
+          ],
+          "additionalProperties": false
+        },
+        "thicknessToNextMm": {
+          "type": "number",
+          "minimum": 0
+        },
+        "mediumAfter": {
+          "$ref": "#/$defs/Medium"
+        },
+        "apertureSemiDiamMm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "thicknessToNextMm",
+        "mediumAfter",
+        "apertureSemiDiamMm"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "conic"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "radiusMm"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "toric"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "rxMm",
+              "ryMm",
+              "axisDeg"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "zernike"
+              }
+            },
+            "required": [
+              "type"
+            ]
+          },
+          "then": {
+            "required": [
+              "radiusMm",
+              "zernikeHeight"
+            ]
+          }
+        }
+      ]
+    },
+    "MuscleGeometry": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "originMm": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "pulleyMm": {
+          "oneOf": [
+            {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 3,
+              "maxItems": 3
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "insertionDistFromLimbusMm": {
+          "type": "number"
+        },
+        "insertionWidthMm": {
+          "type": "number"
+        },
+        "tendon": {
+          "type": "object",
+          "properties": {
+            "stiffnessNPerMm": {
+              "type": "number"
+            },
+            "slackLengthMm": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "stiffnessNPerMm",
+            "slackLengthMm"
+          ],
+          "additionalProperties": false
+        }
+      },
+      "required": [
+        "name",
+        "originMm",
+        "pulleyMm",
+        "insertionDistFromLimbusMm",
+        "insertionWidthMm",
+        "tendon"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

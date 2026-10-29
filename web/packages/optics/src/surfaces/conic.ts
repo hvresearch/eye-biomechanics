@@ -1,5 +1,5 @@
 import { normalize, type Vec3 } from "../math/vec3";
-import type { ConicSurface, Surface } from "./types";
+import type { ConicSurface } from "./types";
 
 /** Smallest ray parameter accepted as a forward hit, in mm (numerical). */
 export const T_EPS = 1e-9;
@@ -11,12 +11,6 @@ export type Intersection = { point: Vec3; t: number } | null | "miss";
 
 function curvature(radiusMm: number): number {
   return Number.isFinite(radiusMm) ? 1 / radiusMm : 0;
-}
-
-export function assertNoTilt(s: Surface): void {
-  if (s.tilt.xDeg !== 0 || s.tilt.yDeg !== 0) {
-    throw new Error(`Surface "${s.name}" has a non-zero tilt; tilt is not supported`);
-  }
 }
 
 /** Conic sag at radial distance² `r2` from the vertex axis, mm; NaN beyond the conic's edge. */
@@ -123,11 +117,12 @@ export function conicRoots(
 }
 
 /**
- * Intersect a ray with the conic: the first forward hit on the vertex branch, `null` when
- * that hit lies outside the aperture, `"miss"` when there is no forward hit on the branch.
+ * Intersect a ray with the untilted conic: the first forward hit on the vertex branch, `null`
+ * when that hit lies outside the aperture, `"miss"` when there is no forward hit on the branch.
+ * Tilted surfaces go through `intersect` (surfaces/geometry), which moves the ray into the
+ * surface's own frame first.
  */
 export function conicIntersect(s: ConicSurface, origin: Vec3, dir: Vec3): Intersection {
-  assertNoTilt(s);
   const roots = conicRoots(s.radiusMm, s.conic, s.vertexZMm, s.decenter, origin, dir);
   if (roots.length === 0) return "miss";
   for (const r of roots) {

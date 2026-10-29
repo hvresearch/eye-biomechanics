@@ -103,10 +103,9 @@ describe("conic intersect", () => {
     expect(hit.point).toEqual([3, 0, 0]);
     expect(intersect(s, [0, 0, -1], [0, 0, 1])).toBeNull();
   });
-  it("rejects tilted surfaces loudly in this milestone", () => {
-    expect(() => intersect(conic({ tilt: { xDeg: 1, yDeg: 0 } }), [0, 0, -1], [0, 0, 1])).toThrow(
-      /tilt/,
-    );
+  it("intersects tilted surfaces in their own frame (tilt.test.ts covers the geometry)", () => {
+    const hit = intersect(conic({ tilt: { xDeg: 1, yDeg: 0 } }), [0, 0, -1], [0, 0, 1]);
+    expect(hit === null || hit === "miss").toBe(false);
   });
 });
 

@@ -4,6 +4,7 @@
 |---|---|---|
 | `geometry-default.json` | Right-eye origins, insertions, tendons, globe radius | partial transcription from search excerpts; `verified: false` |
 | `activation.json` | Length-proxy activation constants (baseline, gain) | approximation by design (spec §4.4 v1); `verified: false` |
+| `forces.json` | Force capacity per muscle (gram-force, converted to N) and the insertion footprint length for the M4 force export | horizontal recti from Collins et al. 1981 by excerpt; vertical recti and obliques assumed; footprint length assumed; `verified: false` |
 | `dynamics.json` | Saccade main sequence, vergence and accommodation latencies and time constants | partly confirmed by excerpt (main sequence, vergence latency); the time constants are the master plan's values; `verified: false` |
 
 ## Frame
@@ -31,7 +32,8 @@ Right eye, origin at the globe center (taken as the center of rotation, an appro
 
 The cloud session that wrote this table could reach only search-engine excerpts, not the papers (see Deviation 1 of `docs/superpowers/plans/2026-10-27-m2-muscles-gaze-dynamics.md`).
 
-- Excerpt-confirmed: rectus insertion distances from the limbus (BCSC); medial and lateral rectus widths, muscle and tendon lengths, and arcs of contact; the 12 mm globe and the common annulus origin of Trujillo Suárez 2018; the 51° trochlear angle; Volkmann's medial rectus row.
-- Assumed: the limbus radius, insertion meridians, superior and inferior rectus widths and tendon lengths, oblique insertions and origins (by construction), every tendon stiffness, and the absence of pulleys.
+- Excerpt-confirmed: rectus insertion distances from the limbus (BCSC); the superior oblique insertion width (Korean cadaver study, M4 search); medial and lateral rectus widths, muscle and tendon lengths, and arcs of contact; the 12 mm globe and the common annulus origin of Trujillo Suárez 2018; the 51° trochlear angle; Volkmann's medial rectus row.
+- Assumed: the limbus radius, insertion meridians, superior and inferior rectus widths and tendon lengths, oblique insertions and origins (by construction), and the absence of pulleys.
+- Tendon stiffness (M4): `E·A/L` with the transverse modulus of bovine extraocular tendon fiber bundles (Yoo, Shin & Demer 2014, excerpt) and an assumed 0.5 mm tendon thickness, a lower bound. It sets only the tendon elongation reported by the force export; in static equilibrium the tendon carries the muscle's force unchanged (M4 plan, Deviation 5).
 
 Every entry stays `verified: false` until a session with document access checks it against the papers (Volkmann 1869 via Eggers' Table 2 or Helmholtz; Clark, Miller & Demer 2000 for pulleys; Miller & Robinson's Orbit for tendon stiffness).
