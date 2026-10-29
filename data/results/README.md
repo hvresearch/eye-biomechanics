@@ -165,101 +165,118 @@ the rate at 0.01 / 90 years ≈ 1.1 × 10⁻⁴ per year, against the 0.033–0.
 committed posterior. The validation is on the coarse mesh only. The production mesh resolves the
 clamp edge more finely, and its runaway may start at a different exposure (follow-up).
 
-## The calibration (M5, Task 5.10)
+## The calibration (M5, Task 5.10; recalibrated in Task 5.14 Step 5)
 
 Least squares from the priors' starting values, then the ensemble sampler from around the
-least-squares optimum: 24 walkers, 1 500 steps, 500 discarded, acceptance 0.39, 52 min. The
-cohort is 1 000 synthetic subjects (common random numbers). The fitted targets are the
-axis-class proportions among astigmatic eyes of the Zibo City children (6–12 years) and of the
-two adult bands of Read, Collins & Carney's review (21–30, 61–80; with-the-rule and
-against-the-rule only), and the two mean J0 slopes over 30–80 years; 9 targets, 6 parameters
-(3 degrees of freedom), cost 22.3 (sum of squared standardized residuals over 2).
+least-squares optimum: 24 walkers, 1 500 steps, 500 discarded, acceptance 0.41, 67 min, on the
+Krylov-enriched library. The cohort is 1 000 synthetic subjects (common random numbers). The
+fitted targets are the axis-class proportions among astigmatic eyes of the Zibo City children
+(6–12 years) and of the two adult bands of Read, Collins & Carney's review (21–30, 61–80;
+with-the-rule and against-the-rule only), and the two mean J0 slopes over 30–80 years. That is
+9 targets and 6 parameters (3 degrees of freedom), with a cost of 46.7 (sum of squared
+standardized residuals over 2). The growth rate is capped at 1.1 × 10⁻⁴ per year so that the
+growth exposure from birth to 90 stays within the library's validated r·t ≤ 0.01 (above, "The
+growth basis against the FEM").
 
 | Parameter | Best | Median | 90% interval |
 |---|---|---|---|
-| `rate_per_year` | 0.048 | 0.051 | 0.033–0.079 |
-| `lid_pressure_scale` | 0.95 | 0.78 | 0.54–1.15 |
-| `eom_tone_scale` | 0.47 | 0.34 | 0.13–0.74 |
-| `stiffness_age_slope` (per year) | 0.0116 | 0.0108 | 0.0017–0.0238 |
-| `baseline_j0_mean` (D) | −0.50 (bound) | −0.47 | −0.50 to −0.37 |
-| `baseline_j_sd` (D) | 0.47 | 0.41 | 0.20–0.66 |
+| `rate_per_year` | 1.0 × 10⁻⁵ (lower bound) | 1.2 × 10⁻⁵ | 1.0–1.7 × 10⁻⁵ |
+| `lid_pressure_scale` | 2.36 | 2.12 | 1.76–2.42 |
+| `eom_tone_scale` | 1.04 | 0.75 | 0.28–1.67 |
+| `stiffness_age_slope` (per year) | 0.045 | 0.047 | 0.039–0.057 |
+| `baseline_j0_mean` (D) | −0.50 (bound) | −0.48 | −0.50 to −0.41 |
+| `baseline_j_sd` (D) | 0.245 | 0.234 | 0.199–0.274 |
 
-Correlations: lid pressure and muscle tone 0.93 (the targets constrain mainly their
-difference, as Deviation 8 expected), lid pressure and the baseline spread 0.82, muscle tone and
-the spread 0.77, rate and stiffness slope 0.60, rate and muscle tone −0.55.
+Correlations above 0.5 in magnitude: lid pressure with the baseline J0 −0.72, lid pressure with
+muscle tone 0.55, and the stiffness slope with the baseline spread 0.59. The chain's integrated
+autocorrelation time is 59–77 steps per parameter (`autocorrelationSteps`). The 1 000 kept steps
+are therefore 13–17 autocorrelation times, under the usual 50, so the intervals are indicative
+(about 350 effective samples). `lsqConverged` is SciPy's least-squares flag, not a statement on
+the chain.
 
 | Target | Data | Model |
 |---|---|---|
-| with-the-rule, 6–12 y | 0.63 | 0.68 |
-| against-the-rule, 6–12 y | 0.27 | 0.13 |
-| oblique, 6–12 y | 0.10 | 0.18 |
-| with-the-rule, 21–30 y | 0.55 | 0.55 |
-| against-the-rule, 21–30 y | 0.20 | 0.17 |
-| with-the-rule, 61–80 y | 0.12 | 0.12 |
+| with-the-rule, 6–12 y | 0.63 | 0.62 |
+| against-the-rule, 6–12 y | 0.27 | 0.14 |
+| oblique, 6–12 y | 0.10 | 0.24 |
+| with-the-rule, 21–30 y | 0.55 | 0.64 |
+| against-the-rule, 21–30 y | 0.20 | 0.13 |
+| with-the-rule, 61–80 y | 0.12 | 0.13 |
 | against-the-rule, 61–80 y | 0.57 | 0.60 |
-| mean J0 slope, 30–80 y (two sources) | −0.014, −0.015 D/yr | −0.0114 D/yr |
+| mean J0 slope, 30–80 y (two sources) | −0.014, −0.015 D/yr | −0.0096 D/yr |
+
+(Model values with hard classes.)
 
 **Does the mechanism reproduce the with-the-rule to against-the-rule shift?** In the fitted
-targets, largely yes: the with-the-rule share falls from 0.68 to 0.12 and the against-the-rule
-share rises from 0.13 to 0.60, and the mean J0 declines at about 80% of the observed rate. In the
-model the lids' elastic with-the-rule load supplies the children's with-the-rule astigmatism
-(the unloaded baseline J0 goes to its bound, −0.5 D, against the rule), and the decline comes
-from growth and from the age stiffening that shrinks the elastic lid response.
+targets, largely yes, but **not through remodeling**. The with-the-rule share falls from 0.62
+to 0.13 and the against-the-rule share rises from 0.14 to 0.60. The mean J0 declines at about
+two thirds of the observed rate, and the children's against-the-rule share is half the observed
+one. The growth rate goes to its lower bound, and switching growth off at the best fit changes
+no trajectory by more than 0.09 D. The shift comes from the elastic loads and the age
+stiffening:
+- The lids' elastic with-the-rule load (scaled by 2.4 from the Shaw et al. pressure) holds the
+  young eye with the rule, against an unloaded baseline J0 at its bound, −0.5 D against the rule.
+- The age stiffening is clamped below 50 years, so little changes before 50 (at the best fit,
+  the elastic J0 of a subject without near work is +0.56 D at 6 and +0.59 D at 50).
+- After 50 the fitted slope stiffens the tissue 6-fold by 90 (stiffness 0.63 to 3.8 times the
+  library's unit). The elastic lid response shrinks with it (J0 +0.59 D at 50, +0.35 at 70,
+  +0.22 at 90 at distance), which unmasks the baseline.
 
-**But only with large spherical changes, which the data contradict.** The fitted growth rate
-moves the spherical equivalent by several diopters: at the best fit a subject with no near work
-changes by −4.4 D by age 20 and −8.2 D by 50 (one with every waking hour at near by −4.4 and
-−7.0 D),
-and a profile of a 12-year-old with 4 h of near work (`eyebiomech predict --profile
-age=12,nearHours=4,sphere=0,cyl=-0.5`) reaches −4.6 D (90% band −8.6 to −1.7) at 50. Adult
-population spherical equivalent changes by a fraction of a diopter per decade (the Guangzhou
-six-year changes in `data/population/refraction-by-age.json`: +0.24, +0.51, +0.26, and −0.05 D
-from baseline ages 35–44 to 65 and over). The spherical equivalent is not a fitted target (adult changes are mostly lenticular,
-which the model lacks), but a mechanical change of this size would dominate any lens change. An
-exploratory scan with the rate held fixed and the other parameters refitted (least squares, same
-targets) shows the trade-off:
+**Which conditions this answer.**
+- The baseline J0 sits at its bound, so the data want an even more against-the-rule unloaded
+  eye than the prior allows.
+- The stiffness slope is 2.3 prior SDs above the Elsheikh et al. mean (0.0217 per year).
+- The lid pressure is 2.4 times the tabled one, within the methods' 3.8–55 mmHg spread but
+  above the between-subject spread.
+- At the 90% interval's upper end the slope puts the stiffness below 50 years at the library's
+  lowest tabled scale, where `Library._interp` clamps (follow-up).
 
-| Rate (per year) | Cost | Mean J0 slope (D/yr) | Largest absolute ΔM over 6–90 y, no near work or all-day near work (D) |
-|---|---|---|---|
-| 0.0001 | 216.5 | −0.0012 | 0.3 |
-| 0.0003 | 83.0 | −0.0088 | 2.8 |
-| 0.001 | 82.8 | −0.0099 | 3.4 |
-| 0.003 | 107.5 | −0.0090 | 10.4 |
-| 0.01 | 50.6 | −0.0158 | 8.7 |
-| 0.048 (best) | 22.3 | −0.0114 | 8.4 |
-| 0.2 | 22.4 | −0.0029 | 3.3 |
+The secondary target behaves: the mechanical spherical-equivalent change stays within a few
+hundredths of a diopter per six years (the bounding fit below). So the first calibration's
+large spherical drift is gone, together with the growth that caused it.
 
-With growth slow enough to keep the spherical equivalent within a few tenths of a diopter, the
-model reproduces almost none of the J0 decline and none of the class shift (the classes stay
-near a third each). The cost is not monotone in the rate, and r = 0.2 fits the classes as well as
-the best fit with a much smaller J0 slope: the likelihood has several modes, and the sampler,
-started at the least-squares optimum, describes only the one around it.
+**The first calibration (superseded).** On the load-pattern basis (Krylov depth 0), without the
+exposure cap, the fit chose a growth rate of 0.048 per year (cost 22.3). It reproduced the
+shift through growth that moved the spherical equivalent by −8 D by 50. That basis misses the
+FEM's J0 growth and hides the unstable spherical mode, so the result is withdrawn. The exploratory
+fixed-rate scan that went with it (rates 10⁻⁴ to 0.2 per year) used the same basis and is
+withdrawn too.
 
-**Answer so far.** In this model, muscle and lid loading can reproduce the population's
-with-the-rule to against-the-rule shift only through a growth response whose spherical side
-effect is an order of magnitude larger than observed. The hypothesis is therefore not supported
-in its current form. The weakly restored spherical mode of the in-plane growth law (the response
-library above) is the proximate cause, so the conclusion is conditional on that law; a law with
-thickening, or the spherical equivalent as a constraint, is the next test (follow-ups). Every
-input is unverified or a stand-in (SyntEyes baseline, population tables from excerpts, the
-acuity metric), and the induced astigmatism carries about ±15% of mesh uncertainty.
+**Answer so far.**
+- Within the growth exposures its reduced model is validated for, stress-driven remodeling
+  contributes nothing to the fit.
+- Elastic lid loading on a cornea and sclera that stiffen with age reproduces most of the
+  population's axis shift without spherical side effects. This needs an against-the-rule
+  unloaded eye, a steep age stiffening, and lid pressures at the high end of the published
+  estimates.
+- The hypothesis that muscle, tendon, and eyelid loading predict the shift is thus supported in
+  its elastic form, conditional on those three, and **untested in its remodeling form**. Longer
+  growth exposures need a growth law that the FEM can integrate past the clamp-edge runaway, and
+  whose spherical mode does not grow (follow-ups).
+- Every input is unverified or a stand-in (the SyntEyes baseline, the population tables from
+  excerpts, the acuity metric). The induced astigmatism carries about ±15% of mesh uncertainty.
 
-## The prediction grid (M5, Task 5.11)
+## The prediction grid (M5, Task 5.11; regenerated in Task 5.14 Step 5)
 
-200 posterior draws, 416 kB, 22 s. It inherits the calibration's spherical drift: a child
-emmetropic at 6 without cylinder reaches a median of −3.0 D sphere by 20 and about −6.9 D in
-the late fifties (no near work; −2.7 and −6.2 D with 8 h a day), so every subject of the grid
-crosses the refraction onset (|sphere| > 0.5 D or cylinder ≥ 0.75 D) between 6 and 7 years,
-and the acuity onset (worse than 20/40 on the stand-in metric) by 9. The cylinder of that child
-first grows with the rule (−1.3 D at 12 without near work, −2.1 D with 8 h), then shrinks to
-about −0.4 D by 50; without near work its axis turns through oblique (148° at 54) into the
-against-the-rule range (within 30° of 90°) from 64, with about −0.4 D, while with any near work
-it stays with the rule. Only the grid's subjects without near work and without baseline cylinder
-reach the against-the-rule range: the subjects start from their observed refraction at 6, so
-they do not carry the cohort's intrinsic against-the-rule baseline that the calibration fitted,
-and a baseline with-the-rule cylinder keeps the axis. These are the outputs of a model whose calibration the section
-above finds inconsistent with spherical refraction data; the viewer shows them as a hypothesis
-test, labeled "remodeled", with bands that are parameter uncertainty only.
+200 posterior draws, 395 kB, 28 s.
+- **Before 50.** Each subject starts from its observed refraction at 6, and the grid moves it
+  by the model's change since then. Nothing changes before 50: the elastic loads are constant
+  there, and growth is negligible.
+- **After 50.** The stiffening tissue loses the elastic with-the-rule lid load. A child
+  emmetropic at 6 without cylinder reaches cylinder −0.19 D at 60 and −0.61 D at 90 (5–95%
+  −0.47 to −0.72) with no near work, and −0.41 and −1.00 D with 8 h a day. Its axis is against
+  the rule (89°) from 60. The sphere moves hyperopic by +0.33 D by 90 (+0.75 D with 8 h).
+- **Onsets.** The refraction onset (cylinder ≥ 0.75 D or |sphere| > 0.5 D) comes only late, at
+  84, 75, and 71 years with 4, 6, and 8 h of near work, and not by 90 with less. Subjects whose
+  baseline already exceeds a threshold have their onset at 6. 7 of the 90 grid nodes never
+  cross the refraction threshold and 15 never cross the acuity one (worse than 20/40 on the
+  stand-in metric).
+- **The PR's example profile.** `eyebiomech predict --profile
+  age=12,nearHours=4,sphere=0,cyl=-0.5` keeps −0.5 D with the rule to 50. It falls through zero cylinder
+  around 70 and reaches −0.32 D against the rule (88°) at 90, crossing neither threshold.
+
+The viewer shows the grid as a hypothesis test, labeled "remodeled" (the model has a growth
+layer, even though the fit leaves it negligible), with bands that are parameter uncertainty only.
 
 ## The M4 elastic FEM result (2026-10-28, replaced)
 

@@ -49,9 +49,8 @@ async function clickAge(page: Page, age: number, ages: number[]) {
 
 /**
  * A copy of the grid in which one node has no onset of either kind, served in place of the
- * committed grid's chunk: every subject of the committed grid crosses a threshold (the
- * calibrated model drifts the sphere by several diopters; data/results/README.md), so the
- * "no onset" path needs a node the data do not contain.
+ * committed grid's chunk when the committed grid has no such node (the grid changes with each
+ * calibration; data/results/README.md).
  */
 function withQuietNode(g: Grid): { grid: Grid; node: { nearHours: number; sphere: number; cylinder: number } } {
   const copy = JSON.parse(JSON.stringify(g)) as Grid;
@@ -74,7 +73,7 @@ test("the timeline's age cursor changes the predicted cylinder, and an onset mar
   await timeline.scrollIntoViewIfNeeded();
   await expect(page.getByTestId("timeline-chart")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("timeline-stance")).toContainText("a hypothesis test, not a clinical prediction");
-  await expect(page.getByTestId("timeline-stance")).toContainText("spherical drift is far larger than population spherical-equivalent data show");
+  await expect(page.getByTestId("timeline-stance")).toContainText("the shift comes from the elastic lid and muscle loads on tissue that stiffens with age");
   await expect(page.getByTestId("timeline-stance")).toContainText("Onsets: cylinder of 0.75 D or more, sphere beyond ±0.50 D, or acuity worse than 20/40.");
 
   const maxHours = grid.axes.nearHours[grid.axes.nearHours.length - 1]!;

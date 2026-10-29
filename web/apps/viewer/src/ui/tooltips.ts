@@ -115,7 +115,7 @@ export function heatMapTooltip(exaggeration: number): string {
 
 /** Hover text for the prediction timeline. */
 export function timelineTooltip(): string {
-  return "Approximation: model responses of the reference eye (Navarro 1985 schematic eye) for every subject; linear superposition about the pressurized eye; remodeled (growth of the corneoscleral shell under muscle, lid, and ciliary loads, calibrated to the population's astigmatism axis shift and J0 slope only; the calibration's spherical drift is far larger than population spherical-equivalent data show, see data/results/README.md); bands are parameter uncertainty only (5–95% over posterior draws), not subject variability; acuity is a stand-in MTF-threshold metric. A hypothesis test, not a clinical prediction.";
+  return "Approximation: model responses of the reference eye (Navarro 1985 schematic eye) for every subject; linear superposition about the pressurized eye; remodeled (growth of the corneoscleral shell under muscle, lid, and ciliary loads, calibrated to the population's astigmatism axis shift and J0 slope only; growth is held to the exposure the reduced growth model is validated for, where the calibration finds it negligible, so the fitted shift comes from the elastic loads and the age stiffening, see data/results/README.md); bands are parameter uncertainty only (5–95% over posterior draws), not subject variability; acuity is a stand-in MTF-threshold metric. A hypothesis test, not a clinical prediction.";
 }
 
 /** Hover text for applying the predicted refraction to the eye. */

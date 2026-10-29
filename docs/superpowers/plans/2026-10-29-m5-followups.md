@@ -76,21 +76,24 @@ gave bibliographic records but not these numbers.
   +0.102, +0.132 D at `n_face` 12, 16, 20). Integrate the lid bands exactly (or normalize their
   resultant, as the muscle contact bands are), refine the cornea locally, and repeat the study;
   rebuild the library at the converged mesh. (M6)
-- The growth law's spherical mode is barely restored at the calibrated stiffness (least stable
-  feedback eigenvalue −0.42) and grows at half of it (+0.31; `data/results/README.md`, the
-  response library): in-plane growth enlarges and thins the pressurized shell, which raises its
-  stress. Add growth in thickness (or a volumetric or isochoric constraint) to the law, rebuild
-  the library, and recalibrate. (M6)
+- The growth law's spherical mode grows at every tabled stiffness on the Krylov-enriched basis
+  (+0.84 to +1.06 per unit r·t; `data/results/README.md`, the response library): in-plane
+  growth enlarges and thins the pressurized shell, which raises its stress. Add growth in
+  thickness (or a volumetric or isochoric constraint) to the law, rebuild the library, and
+  recalibrate. With the current law the calibration is confined to negligible growth, so the
+  remodeling form of the hypothesis is untested. (M6)
 - The reduced growth model's validated exposure (`VALID_RATE_TIME`, r·t = 0.01) comes from the
   coarse test mesh. Repeat the FEM comparison on the production mesh (`n_face 20`) and set the
   bound from it. The explicit FEM growth runs away at the edge of the clamped optic-nerve cap
   shortly beyond r·t = 0.01: model the lamina and nerve-head support (or let the cap grow), so
   that longer exposures can be validated. (M6)
-- The calibration reproduces the with-the-rule to against-the-rule shift only with growth that
-  moves the spherical equivalent by several diopters (`data/results/README.md`, the
-  calibration). Add the adult spherical-equivalent change as a bounding target (or an envelope
-  on the mechanical change) and refit; start the sampler from several modes (the likelihood is
-  multimodal in the rate). (M6)
+- The recalibrated fit (Task 5.14) reproduces the shift elastically, with the unloaded baseline
+  J0 at its −0.5 D bound, the stiffness slope 2.3 prior SDs above the Elsheikh et al. mean, and
+  lid pressure 2.4 times the table: widen or justify the baseline bound once SyntEyes is
+  transcribed, and check the age stiffening against a source with document access. Its chain
+  spans only 13–17 autocorrelation times: run it longer (or with more walkers) before relying on
+  the intervals. Once growth can be validated longer, start the sampler from several modes (the
+  first calibration's likelihood was multimodal in the rate). (M6)
 
 ## Review round 1 (PR #16, head 2d355a1), Minor findings not fixed in the fix round
 
@@ -116,7 +119,9 @@ Minor 4, 5, 9, and 14 (posterior schema check) are steps of plan Task 5.14 or fi
 - `predict/acuity.py` clips |M| at 4 D while the grid's median sphere reaches −10 D, so logMAR
   saturates; extend the table or document the clip in the grid metadata. (M6)
 - `Library._interp` clamps the stiffness silently to the tabled 0.5–4×, while the prior's slope
-  bound allows 0.46× below 50 years: warn or refuse outside the table, or tighten the bound. (M6)
+  bound allows 0.46× below 50 years, and the recalibrated posterior's 90% upper slope
+  (0.057/yr) reaches that edge: warn or refuse outside the table, table 0.25×, or tighten the
+  bound. (M6)
 - `calib/forward.py` hard-codes the axis-class boundaries cos 2α = ±0.5 (the 30° comes from the
   data file's definition text); read them from data. The two J0-slope targets cover the same
   window with assumed SEs, which double-weights the slope; state it or merge them. (M6)
