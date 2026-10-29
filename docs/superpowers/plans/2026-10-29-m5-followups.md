@@ -47,6 +47,10 @@ gave bibliographic records but not these numbers.
   derived from Shin et al. 2023's ratios applied to the Collins 1981 horizontal mean;
   tendon stiffness is a lower bound from a transverse modulus. (M6, or any session with
   document access)
+- `data/synteyes/rozema-2016-params.json` is a stand-in (one Gaussian over M, J0, J45 with
+  assumed values): transcribe the SyntEyes mixture (Rozema et al. 2016, IOVS 57:683-691, doi
+  10.1167/iovs.15-18067, and its supplement) and re-run the calibration. (M6, or any session
+  with document access)
 
 ## Verification
 

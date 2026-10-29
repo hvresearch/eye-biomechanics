@@ -288,10 +288,10 @@ Master plan Task 5.3 (Deviation 1).
 - `calib/data.py`: `load_axis_shift() -> list[AxisShiftSource]`, `load_refraction_by_age() -> list[RefractionSource]` (validated shapes, proportions sum to 1 within rounding); `download_nhanes.py`: `main(out_dir)` downloads the NHANES 1999–2008 VIX files into `data/large/nhanes/` and `summarize(path) -> dict` (tested on a 20-row synthetic file).
 - `synteyes.py`: `sample(n: int, age: float, seed: int) -> list[dict]` (EyeParameters-like dicts with `refraction: {M, J0, J45}` and the biometric variables; the full EyeParameters document only when the table has the surface variables) and `sample_vectors(n, age, seed) -> NDArray (n, 3)` (M, J0, J45) for the forward model.
 
-- [ ] **Step 1:** Search excerpts for: WTR/ATR/oblique prevalence by age group (candidates: Hoffmann & Hütz 2010; Attebo, Ivers & Mitchell 1999 Blue Mountains; Hashemi et al. 2014 Tehran; Leung, Lam & Yap 2012), mean spherical equivalent by age (candidates: Vitale et al. 2008 NHANES; Wang, Klein et al. 1994 Beaver Dam; Attebo 1999), and the SyntEyes parameters (Rozema et al. 2016 and its supplement). Transcribe with sources, licenses, and `verified: false`.
-- [ ] **Step 2:** Failing tests: both population tables load, each decade's proportions sum to 1 within 0.02, ages are increasing and within 6–90 or flagged; `sample_vectors(2000, 30, seed)` means match the tabled means within 2 standard errors and its covariance the tabled covariance within 10%; the sampler is reproducible for a seed; `summarize` on the synthetic NHANES file returns the expected counts.
-- [ ] **Step 3:** Run; FAIL. Implement; PASS.
-- [ ] **Step 4:** Full gate. Commit: `feat(calib): population tables and SyntEyes sampler`.
+- [x] **Step 1:** Search excerpts for: WTR/ATR/oblique prevalence by age group (candidates: Hoffmann & Hütz 2010; Attebo, Ivers & Mitchell 1999 Blue Mountains; Hashemi et al. 2014 Tehran; Leung, Lam & Yap 2012), mean spherical equivalent by age (candidates: Vitale et al. 2008 NHANES; Wang, Klein et al. 1994 Beaver Dam; Attebo 1999), and the SyntEyes parameters (Rozema et al. 2016 and its supplement). Transcribe with sources, licenses, and `verified: false`.
+- [x] **Step 2:** Failing tests: both population tables load, each decade's proportions sum to 1 within 0.02, ages are increasing and within 6–90 or flagged; `sample_vectors(2000, 30, seed)` means match the tabled means within 2 standard errors and its covariance the tabled covariance within 10%; the sampler is reproducible for a seed; `summarize` on the synthetic NHANES file returns the expected counts.
+- [x] **Step 3:** Run; FAIL. Implement; PASS.
+- [x] **Step 4:** Full gate. Commit: `feat(calib): population tables and SyntEyes sampler`.
 
 ### Task 5.10: Forward model and calibration
 

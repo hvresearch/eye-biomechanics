@@ -1,0 +1,23 @@
+{
+  "name": "synteyes-standin",
+  "label": "Baseline refraction of the synthetic calibration cohort (stand-in for the SyntEyes mixture)",
+  "citation": "Rozema JJ, Rodriguez P, Navarro R, Tassignon MJ, SyntEyes: a higher-order statistical eye model for healthy eyes, Invest Ophthalmol Vis Sci 57(2):683-691, 2016, doi 10.1167/iovs.15-18067 (abstract by search excerpt, 2026-10-29): the corneal shape as Zernike eigenvectors and 18 further biometric parameters of 312 right eyes (40.8 +/- 11.0 years) modeled as a sum of two multivariate Gaussians. The fitted means and covariances are in the paper's supplement, which the cloud session could not reach.",
+  "transcribed": false,
+  "transcriptionNote": "Stand-in: one Gaussian component over the clinical power vector (M, J0, J45) of the cohort at its baseline age. The J0 mean and the astigmatic spread are calibration nuisance parameters (data/calibration/priors.json), fitted to the youngest axis-class band, because no excerpt gave a population distribution that reproduces it (adolescents in one excerpt: J0 0.01 +/- 0.11 D, cylinder -0.09 +/- 0.27 D, too little astigmatism for the 63% WTR among astigmatic children of another). Replace with the SyntEyes mixture (its refraction marginal) when the supplement can be transcribed.",
+  "form": "gaussian-mixture",
+  "variables": ["M", "J0", "J45"],
+  "referenceAgeYears": 6,
+  "components": [
+    {
+      "weight": 1.0,
+      "mean": [0.5, 0.15, 0.0],
+      "cov": [
+        [1.0, 0.0, 0.0],
+        [0.0, 0.0625, 0.0],
+        [0.0, 0.0, 0.0625]
+      ]
+    }
+  ],
+  "componentCitation": "assumption: M mean +0.5 D and SD 1.0 D (school-age children are mildly hyperopic on average; no excerpt value), J0 mean +0.15 D and J0/J45 SD 0.25 D (starting values of the nuisance parameters), M independent of J0 and J45 (assumption: independence).",
+  "verified": false
+}

@@ -1,0 +1,56 @@
+{
+  "name": "axis-shift-by-age",
+  "label": "Axis class of astigmatism (with-the-rule, against-the-rule, oblique) among astigmatic eyes by age: the primary calibration target (spec §8)",
+  "definition": {
+    "classes": "WTR: minus-cylinder axis within 30 deg of 180; ATR: within 30 deg of 90; oblique: otherwise (the usual convention; each source's own definition is noted where the excerpt states it)",
+    "cylinderThresholdD": 0.5,
+    "thresholdCitation": "assumption: the excerpts do not state the sources' astigmatism thresholds; 0.5 D is a common screening threshold. The forward model classifies modeled eyes with this threshold."
+  },
+  "sources": [
+    {
+      "id": "zibo-children",
+      "label": "Primary school children, Zibo City, China",
+      "citation": "Exploring the prevalence and biological features of astigmatism in primary school children in Zibo City, China (PMC12657078; search excerpt, 2026-10-29): among children with astigmatism, WTR about 63%, ATR about 27%, oblique about 10%.",
+      "measure": "refractive",
+      "useInFit": true,
+      "bands": [{ "ageFrom": 6, "ageTo": 12, "n": null, "wtr": 0.63, "atr": 0.27, "oblique": 0.10 }],
+      "verified": false
+    },
+    {
+      "id": "read-2007-summary",
+      "label": "Adult age bands summarized from Read, Collins & Carney's review",
+      "citation": "Read SA, Collins MJ, Carney LG, A review of astigmatism and its possible genesis, Clin Exp Optom 90:5-19, 2007, as summarized in Beesley & Elliott, Changes in ocular astigmatism with age: a longitudinal study, Ophthalmic Physiol Opt 2024, doi 10.1111/opo.13234 (search excerpt, 2026-10-29): WTR about 55% at ages 21-30 and about 12% over 60; ATR about 20% at 21-30 and about 57% over 60; oblique 'roughly 10-20%' and stable. Oblique is set to the remainder (25% and 31%), outside the quoted range, so only WTR and ATR are fitted from this source.",
+      "measure": "unknown",
+      "useInFit": true,
+      "fitClasses": ["wtr", "atr"],
+      "bands": [
+        { "ageFrom": 21, "ageTo": 30, "n": null, "wtr": 0.55, "atr": 0.20, "oblique": 0.25 },
+        { "ageFrom": 61, "ageTo": 80, "n": null, "wtr": 0.12, "atr": 0.57, "oblique": 0.31 }
+      ],
+      "bandNote": "'over 60' is represented as 61-80 (assumption).",
+      "verified": false
+    },
+    {
+      "id": "northern-china-cataract",
+      "label": "Corneal astigmatism of cataract-surgery patients, northern China",
+      "citation": "Prevalence and age-related changes of corneal astigmatism in patients undergoing cataract surgery in northern China (PMC7542495; search excerpt, 2026-10-29): under 65 years WTR 49.6%, ATR 33.6%, oblique 16.8%; 65 and over WTR about 30% (the other classes not in the excerpt).",
+      "measure": "corneal",
+      "useInFit": false,
+      "useNote": "Corneal astigmatism of a cataract population; the model predicts refraction and the internal (lenticular) astigmatism is not modeled. Kept for comparison.",
+      "bands": [{ "ageFrom": 40, "ageTo": 64, "n": null, "wtr": 0.496, "atr": 0.336, "oblique": 0.168 }],
+      "verified": false
+    },
+    {
+      "id": "hoffmann-hutz-2010",
+      "label": "Corneal astigmatism of 23,239 eyes before cataract surgery, Germany",
+      "citation": "Hoffmann PC, Hutz WW, Analysis of biometry and prevalence data for corneal astigmatism in 23,239 eyes, J Cataract Refract Surg 36(9):1479-1485, 2010, doi 10.1016/j.jcrs.2010.02.025 (search excerpt, 2026-10-29): WTR 46.8%, ATR 34.4%, oblique 18.9%; median age 74 years; the axis was associated with age (bands not in the excerpt).",
+      "measure": "corneal",
+      "useInFit": false,
+      "useNote": "Corneal, cataract population, one age band around the median age; kept for comparison.",
+      "bands": [{ "ageFrom": 64, "ageTo": 84, "n": 23239, "wtr": 0.468, "atr": 0.344, "oblique": 0.189 }],
+      "verified": false
+    }
+  ],
+  "license": "Proportions quoted from published abstracts and summaries (facts, not copyrightable data tables); see each citation.",
+  "verified": false
+}

@@ -24,7 +24,7 @@ Used for: wide-field model, angle alpha and lens tilt and decentration defaults.
 
 Rozema JJ, Rodriguez P, Navarro R, Tassignon MJ. SyntEyes: a higher-order statistical eye model for healthy eyes. *Invest Ophthalmol Vis Sci* 57(2):683-691, 2016.
 DOI: 10.1167/iovs.15-18067 (search excerpt of the Zaguan repository record, 2026-10-29)
-Used for: population biometry variability, synthetic subjects for the prediction grid.
+Used for: population biometry variability, synthetic subjects for the prediction grid. In M5 the mixture parameters were not in any excerpt, so `data/synteyes/rozema-2016-params.json` is a labeled stand-in (one Gaussian over M, J0, J45 at age 6; `transcribed: false`), its J0 mean and astigmatic spread fitted as calibration nuisance parameters.
 
 ## Anderson et al. 2008
 
@@ -114,3 +114,9 @@ Used for: eyelid load defaults in `data/eyelid/shaw-2010.json` (M4): upper-lid p
 Bahill AT, Clark MR, Stark L, 1975 (main sequence); Rashbass C, Westheimer G, 1961 (vergence); Kasthurirangan S, Glasser A, 2005 (accommodation dynamics).
 DOI: to be added
 Used for: animation constants for saccades, vergence, and accommodation.
+
+## Population astigmatism and refraction by age
+
+Read SA, Collins MJ, Carney LG. A review of astigmatism and its possible genesis. *Clin Exp Optom* 90:5-19, 2007 (as summarized in Beesley & Elliott 2024, doi 10.1111/opo.13234); Hoffmann PC, Hütz WW. Analysis of biometry and prevalence data for corneal astigmatism in 23,239 eyes. *J Cataract Refract Surg* 36:1479-1485, 2010; the Zibo City school-children study (PMC12657078), the northern-China cataract study (PMC7542495), the corneal-geometry study PMC6221551, a Hong Kong Polytechnic University study (handle 10397/25994), the Guangzhou six-year study, and NHANES 1999–2004 (PMC2772054). All by search excerpt, 2026-10-29.
+DOI: as in each file entry where the excerpt gave one
+Used for: the calibration targets of M5 (`data/population/`): the with-the-rule, against-the-rule, and oblique proportions among astigmatic eyes by age band, and the mean J0 slope of −0.014 to −0.015 D per year between 30 and 80; the cataract-population corneal bands and the spherical-equivalent changes are kept for comparison only. `verified: false`.
