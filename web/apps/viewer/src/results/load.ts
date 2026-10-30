@@ -75,6 +75,14 @@ export function parseDeformation(raw: unknown): Deformation {
   };
 }
 
+/** Check that a sidecar was written for this document (their ids agree); returns it. */
+export function pairDeformation(eye: EyeParameters, deformation: Deformation | null): Deformation | null {
+  if (deformation !== null && deformation.id !== eye.id) {
+    throw new LoadError(`The deformation file belongs to "${deformation.id}", not to the EyeParameters document "${eye.id}"`);
+  }
+  return deformation;
+}
+
 async function readJson(file: File): Promise<unknown> {
   try {
     return JSON.parse(await file.text()) as unknown;
@@ -92,6 +100,6 @@ export async function parseFiles(files: readonly File[]): Promise<{ eye: EyePara
   const eyeFile = files.find((f) => f !== side);
   if (!eyeFile) throw new LoadError("Choose an EyeParameters file (.eye.json), optionally with its .deformation.json");
   const eye = parseEyeDocument(await readJson(eyeFile));
-  const deformation = side ? parseDeformation(await readJson(side)) : null;
+  const deformation = pairDeformation(eye, side ? parseDeformation(await readJson(side)) : null);
   return { eye, deformation };
 }

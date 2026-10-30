@@ -138,9 +138,10 @@ export function heatMapTooltip(exaggeration: number): string {
   return `Approximation: displacement magnitude of the globe's outer surface, loaded minus IOP-only, drawn ×${exaggeration} for visibility (elastic). Displacements are relative to the lens: the scleral-spur ring's rigid motion (its lateral shift and tilt, the globe's pivot about the fixed optic-nerve cap) is removed, as for the corneal maps; files written before Milestone 5 show the raw field, pivot included. The orbital reaction that holds the globe is assumed. Without a .deformation.json file a loaded document shows its refraction but no map.`;
 }
 
-/** Hover text for the prediction timeline. */
-export function timelineTooltip(): string {
-  return "Approximation: model responses of the reference eye (Navarro 1985 schematic eye) for every subject; linear superposition about the pressurized eye; remodeled (growth of the corneoscleral shell under muscle, lid, and ciliary loads, calibrated to the population's astigmatism axis shift and J0 slope only; growth is held to the exposure the reduced growth model is validated for, where the calibration pushes the growth rate to its prior's floor, so the fitted shift comes from the elastic loads and the age stiffening, only in part and not as a confirmation, see data/results/README.md); bands are parameter uncertainty only (5–95% over posterior draws), not subject variability; acuity is a stand-in MTF-threshold metric. A hypothesis test, not a clinical prediction.";
+/** Hover text for the prediction timeline; `summary` is the grid's (what its calibration was fitted to and found). */
+export function timelineTooltip(summary?: { stance: string; finding: string }): string {
+  const calibration = summary ? ` ${summary.stance} ${summary.finding}` : " A hypothesis test, not a clinical prediction.";
+  return `Approximation: model responses of the reference eye (Navarro 1985 schematic eye) for every subject; linear superposition about the pressurized eye; remodeled (growth of the corneoscleral shell under muscle, lid, and ciliary loads); bands are parameter uncertainty only (5–95% over posterior draws), not subject variability; onset markers are where the plotted median crosses the grid's thresholds, the shaded span the 5–95% onset range over the draws at the nearest grid node; acuity is a stand-in MTF-threshold metric.${calibration}`;
 }
 
 /** Hover text for applying the predicted refraction to the eye. */

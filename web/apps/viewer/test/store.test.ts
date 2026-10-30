@@ -332,6 +332,29 @@ describe("the prediction timeline in the store", () => {
     expect(store.getState().eyes.right).toEqual(before.right);
   });
 
+  it("restores the eyes from before the prediction when a result loaded over it is cleared", async () => {
+    const { RESULTS } = await import("../src/results/catalog");
+    const store = createSceneStore();
+    const before = store.getState().eyes;
+    store.getState().setPredictionGrid(synthetic());
+    store.getState().setPredictionProfile({ nearHours: 4, baselineSphereD: 0, baselineCylinderD: -1 });
+    await store.getState().setPredictionApplied(true);
+    expect(store.getState().eyes.right).not.toEqual(before.right);
+    await store.getState().loadResult(RESULTS.find((r) => r.id === "emmetrope-right-primary-15mmHg")!);
+    expect(store.getState().prediction.applied).toBe(false);
+    // The left eye drops the prediction too (it mirrored the predicted cornea).
+    expect(store.getState().eyes.left).toEqual(before.left);
+    await store.getState().clearLoadedResult();
+    const s = store.getState();
+    expect(s.loadedResult).toBeNull();
+    expect(s.prediction.applied).toBe(false);
+    expect(s.eyes.right).toEqual(before.right);
+    expect(s.eyes.left).toEqual(before.left);
+    // Nothing stale: switching the (already off) prediction off again changes nothing.
+    await store.getState().setPredictionApplied(false);
+    expect(store.getState().eyes.right).toEqual(before.right);
+  });
+
   it("stops applying the prediction when a refractive preset is chosen", async () => {
     const store = createSceneStore();
     store.getState().setPredictionGrid(synthetic());

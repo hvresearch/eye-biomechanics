@@ -36,6 +36,8 @@ export interface PredictionsDocument {
   logMAR?: { p50: Grid4 };
   onset: { refraction: OnsetBands; acuity: OnsetBands };
   thresholds?: Record<string, unknown>;
+  /** Since 1.1.0: the calibration's stance and finding in words, shown by the timeline. */
+  summary?: { stance: string; finding: string };
   citation?: string;
   date?: string;
 }
@@ -46,18 +48,21 @@ const SUPPORTED_MAJOR = 1;
 
 export type PredictionsValidation = { ok: true; value: PredictionsDocument } | { ok: false; errors: string[] };
 
-function dims(x: unknown, depth: number): number[] {
-  const out: number[] = [];
-  let v = x;
-  for (let i = 0; i < depth; i++) {
-    if (!Array.isArray(v)) return out;
-    out.push(v.length);
-    v = v[0];
+/** The first place where nested arrays `x` differ from `shape` (every row is checked), or null. */
+function shapeError(x: unknown, shape: readonly number[], path: string): string | null {
+  if (shape.length === 0) return null;
+  if (!Array.isArray(x)) return `${path} is not an array`;
+  if (x.length !== shape[0]) return `${path} has length ${x.length}, expected ${shape[0]}`;
+  for (let i = 0; i < x.length; i++) {
+    const e = shapeError(x[i], shape.slice(1), `${path}/${i}`);
+    if (e !== null) return e;
   }
-  return out;
+  return null;
 }
 
-/** Validate a prediction grid: its schema (major version 1) and the array shapes. */
+const QUANTILES = ["p05", "p50", "p95"] as const;
+
+/** Validate a prediction grid: its schema (major version 1) and the shape of every row. */
 export function validatePredictions(doc: unknown): PredictionsValidation {
   const v = (doc as { schemaVersion?: unknown } | null)?.schemaVersion;
   const m = typeof v === "string" ? /^(\d+)\.\d+\.\d+$/.exec(v) : null;
@@ -70,14 +75,16 @@ export function validatePredictions(doc: unknown): PredictionsValidation {
   const value = doc as unknown as PredictionsDocument;
   const a = value.axes;
   const shape = [a.nearHours.length, a.baselineSphereD.length, a.baselineCylinderD.length];
-  const full = [...shape, a.ages.length].join(",");
-  const errors: string[] = [];
+  const full = [...shape, a.ages.length];
+  const checks: Array<[string, unknown, number[]]> = [];
   for (const [name, bands] of [["sphere", value.sphere], ["cylinder", value.cylinder]] as const) {
-    for (const q of ["p05", "p50", "p95"] as const) if (dims(bands[q], 4).join(",") !== full) errors.push(`/${name}/${q} has the wrong shape`);
+    for (const q of QUANTILES) checks.push([`/${name}/${q}`, bands[q], full]);
   }
-  if (dims(value.axisDeg.p50, 4).join(",") !== full) errors.push("/axisDeg/p50 has the wrong shape");
+  checks.push(["/axisDeg/p50", value.axisDeg.p50, full]);
+  if (value.logMAR) checks.push(["/logMAR/p50", value.logMAR.p50, full]);
   for (const name of ["refraction", "acuity"] as const) {
-    for (const q of ["p05", "p50", "p95"] as const) if (dims(value.onset[name][q], 3).join(",") !== shape.join(",")) errors.push(`/onset/${name}/${q} has the wrong shape`);
+    for (const q of QUANTILES) checks.push([`/onset/${name}/${q}`, value.onset[name][q], shape]);
   }
+  const errors = checks.map(([path, x, sh]) => shapeError(x, sh, path)).filter((e): e is string => e !== null);
   return errors.length ? { ok: false, errors } : { ok: true, value };
 }

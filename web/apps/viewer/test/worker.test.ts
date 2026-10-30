@@ -315,6 +315,7 @@ describe("induced refraction of a biomechanics result", () => {
     const ind = res.eyes[0]!.induced!;
     expect(Number.isFinite(ind.delta.cylinderD)).toBe(true);
     expect(ind.delta.cylinderD).toBeLessThanOrEqual(0); // minus cylinder
+    expect(Math.abs(ind.delta.cylinderD)).toBeGreaterThan(1e-3); // and the loads do induce some
     expect(ind.delta.axisDeg).toBeGreaterThan(0);
     expect(ind.delta.axisDeg).toBeLessThanOrEqual(180);
     expect(handle(request({}, 0)).eyes[0]!.induced).toBeNull();

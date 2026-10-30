@@ -1,7 +1,7 @@
 import { RESULTS } from "../results/catalog";
 import { EXAGGERATION_RANGE, eyeOptics, useScene } from "../store/scene";
 import { heatMapRamp } from "../scene/DeformationMap";
-import { formatSigned } from "./format";
+import { inducedReadouts } from "./format";
 import { heatMapTooltip, inducedTooltip } from "./tooltips";
 
 const STOPS = 6;
@@ -23,6 +23,7 @@ export function Biomechanics() {
   const setExaggeration = useScene((s) => s.setExaggeration);
   const setShowHeatMap = useScene((s) => s.setShowHeatMap);
   const deformation = loaded?.deformation ?? null;
+  const readouts = inducedReadouts(induced, deformation !== null);
   const gradient = `linear-gradient(to right, ${Array.from({ length: STOPS }, (_, i) => heatMapRamp(i / (STOPS - 1))).join(", ")})`;
 
   return (
@@ -78,25 +79,19 @@ export function Biomechanics() {
               <span className="k">
                 <abbr title={inducedTooltip()}>ΔSphere</abbr>
               </span>
-              <span className="v">{induced ? formatSigned(induced.delta.sphereD, 3) : "…"}</span>
+              <span className="v">{readouts.sphere}</span>
             </div>
             <div className="stat" data-testid="induced-cylinder">
               <span className="k">
                 <abbr title={inducedTooltip()}>ΔCylinder × axis</abbr>
               </span>
-              <span className="v">{induced ? `${formatSigned(induced.delta.cylinderD, 3)} × ${Math.round(induced.delta.axisDeg)}` : "…"}</span>
+              <span className="v">{readouts.cylinder}</span>
             </div>
             <div className="stat wide" data-testid="induced-vectors">
               <span className="k">
                 <abbr title={inducedTooltip()}>ΔM, J0, J45 (D)</abbr>
               </span>
-              <span className="v">
-                {induced
-                  ? `${formatSigned(induced.delta.M, 3)} ${formatSigned(induced.delta.J0, 3)} ${formatSigned(induced.delta.J45, 3)}`
-                  : deformation
-                    ? "…"
-                    : "no reference"}
-              </span>
+              <span className="v">{readouts.vectors}</span>
             </div>
           </div>
           {deformation ? (

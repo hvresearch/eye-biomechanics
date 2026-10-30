@@ -24,7 +24,8 @@ from eyebiomech.predict.acuity import acuity_pupil_mm, logmar_lookup
 from eyebiomech.predict.onset import onset_ages
 from eyebiomech.remodel.history import load_duty_cycle, near_fraction
 
-SCHEMA_VERSION = "1.0.0"
+# Predictions schema version; 1.1.0 adds the optional `summary` (M6 Task 6.4).
+SCHEMA_VERSION = "1.1.0"
 # Draws of the parameter posterior used for the bands (numerical).
 DEFAULT_DRAWS = 200
 

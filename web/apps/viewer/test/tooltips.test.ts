@@ -106,7 +106,13 @@ describe("prediction tooltips", () => {
     expect(t).toMatch(/remodeled/);
     expect(t).toMatch(/linear superposition about the pressurized eye/);
     expect(t).toMatch(/parameter uncertainty only/);
-    expect(t).toMatch(/growth is held to the exposure the reduced growth model is validated for/);
+    expect(t).toMatch(/A hypothesis test, not a clinical prediction/);
+    expect(t).toMatch(/onset markers are where the plotted median crosses/);
+  });
+  it("carries the grid's calibration summary instead of hard-coded findings", () => {
+    const t = timelineTooltip({ stance: "Calibrated to X only.", finding: "Found Y." });
+    expect(t.endsWith(" Calibrated to X only. Found Y.")).toBe(true);
+    expect(t).not.toMatch(/prior's floor/);
   });
   it("says the applied prediction is a corneal change", () => {
     const t = appliedPredictionTooltip();

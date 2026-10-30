@@ -25,7 +25,7 @@ import { create } from "zustand";
 import { at, loadPredictionGrid, trajectoryFor, type PredictionGrid, type Trajectory } from "../data/predictions";
 import type { ResultEntry } from "../results/catalog";
 import { animatedKeys, sceneAt, toSceneState, type ScenarioInput } from "../scenario/scenario";
-import { parseDeformation, parseEyeDocument, parseFiles, type Deformation } from "../results/load";
+import { pairDeformation, parseDeformation, parseEyeDocument, parseFiles, type Deformation } from "../results/load";
 import { OpticsClient, StaleRequestError } from "../worker/client";
 import { runEyesJob, type EyesJob, type EyesJobResult } from "../worker/jobs";
 import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
@@ -404,18 +404,22 @@ export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner } = {})
       return r.eyes;
     };
 
+    /** The eyes and decomposition shown before the prediction was applied (restored when it is cleared). */
+    let beforePrediction: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
     /** The eyes and decomposition shown before the first result was loaded (restored on clear). */
     let beforeResult: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
     /** Put a loaded result in the right eye (the left eye keeps its document). */
     const showResult = (result: LoadedResult) => {
       cancelJobs();
-      if (get().loadedResult === null) beforeResult = { eyes: get().eyes, decomposition: get().decomposition };
-      set({ loadedResult: result, loadError: null, decomposition: null, prediction: { ...get().prediction, applied: false } });
-      update(get().scene, { left: get().eyes.left, right: result.eye });
+      const s = get();
+      // A result replaces an applied prediction in both eyes: clearing the result returns to the eyes from before both.
+      const unpredicted = s.prediction.applied ? beforePrediction : null;
+      if (s.loadedResult === null) beforeResult = unpredicted ?? { eyes: s.eyes, decomposition: s.decomposition };
+      beforePrediction = null;
+      set({ loadedResult: result, loadError: null, decomposition: null, prediction: { ...s.prediction, applied: false } });
+      update(s.scene, { left: (unpredicted?.eyes ?? s.eyes).left, right: result.eye });
     };
 
-    /** The eyes and decomposition shown before the prediction was applied (restored when it is cleared). */
-    let beforePrediction: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
 
     /** Move the scene fields and correction a scenario's timeline drives to their values at `timeS`. */
     const playScenario = (sc: { doc: Scenario; startS: number }, timeS: number) => {
@@ -633,7 +637,7 @@ export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner } = {})
         try {
           const raw = await entry.load();
           const eye = parseEyeDocument(raw.eye);
-          const deformation = raw.deformation === null ? null : parseDeformation(raw.deformation);
+          const deformation = pairDeformation(eye, raw.deformation === null ? null : parseDeformation(raw.deformation));
           showResult({ id: entry.id, label: entry.label, eye, deformation });
         } catch (e) {
           set({ loadError: message(e) });

@@ -22,12 +22,28 @@ export interface Bands {
   p95: number[];
 }
 
+export interface Onsets {
+  refraction: number | null;
+  acuity: number | null;
+}
+
+/** 5% and 95% onset ages over the posterior draws; null at 95% means later than the last age (or never). */
+export interface OnsetRange {
+  refraction: [number | null, number | null];
+  acuity: [number | null, number | null];
+}
+
 export interface Trajectory {
   ages: number[];
   sphere: Bands;
   cylinder: Bands;
   axisDeg: number[];
-  onset: { refraction: number | null; acuity: number | null };
+  /** Median logMAR (the grid's, blended like the bands); null when the grid has none or the trajectory was re-anchored. */
+  logMAR: number[] | null;
+  /** Onsets of the displayed median (`onsetFromCurve`). */
+  onset: Onsets;
+  /** The grid's 5–95% onset range at the nearest node; null after re-anchoring. */
+  onsetRange: OnsetRange | null;
   /** Profile inputs that fell outside the grid and were clamped to its edge. */
   clamped: string[];
 }
@@ -79,12 +95,10 @@ function refraction(v: readonly number[]): { sphereD: number; cylinderD: number;
 }
 
 /**
- * Trilinear interpolation over (nearHours, baselineSphereD, baselineCylinderD) at every age.
- * Bands interpolate linearly; the median trajectory interpolates as power vectors (so the axis
- * blends without wrapping); onsets take the nearest grid node. Inputs outside the grid clamp
- * and are reported in `clamped`.
+ * The interpolation corners of a profile: grid indices with trilinear weights over
+ * (nearHours, baselineSphereD, baselineCylinderD), and the axes the profile was clamped on.
  */
-export function interpolate(grid: PredictionGrid, p: Omit<PredictionProfile, "anchorAgeYears">): Trajectory {
+function cornersOf(grid: PredictionGrid, p: PredictionInputs) {
   const a = grid.axes;
   const loc = [
     ["nearHours", locate(a.nearHours, p.nearHours)],
@@ -109,6 +123,33 @@ export function interpolate(grid: PredictionGrid, p: Omit<PredictionProfile, "an
       }
     }
   }
+  const nearest = corners.reduce((best, c) => (c.w > best.w ? c : best), corners[0]!);
+  return { corners, nearest: nearest.idx, clamped: loc.filter(([, l]) => l.clamped).map(([name]) => name) };
+}
+
+/** The profile inputs the grid is indexed by. */
+export type PredictionInputs = Omit<PredictionProfile, "anchorAgeYears">;
+
+/**
+ * The grid's 5–95% onset ages over the posterior draws at the profile's nearest node (onset
+ * ages do not blend: a node without an onset has none to average).
+ */
+export function onsetRange(grid: PredictionGrid, p: PredictionInputs): OnsetRange {
+  const [i, j, k] = cornersOf(grid, p).nearest;
+  const pick = (b: PredictionGrid["onset"]["refraction"]): [number | null, number | null] => [b.p05[i]![j]![k]! ?? null, b.p95[i]![j]![k]! ?? null];
+  return { refraction: pick(grid.onset.refraction), acuity: pick(grid.onset.acuity) };
+}
+
+/**
+ * Trilinear interpolation over (nearHours, baselineSphereD, baselineCylinderD) at every age.
+ * Bands and logMAR interpolate linearly; the median trajectory interpolates as power vectors
+ * (so the axis blends without wrapping). Onsets are those of the displayed median and the
+ * grid's thresholds; the 5–95% onset range is the nearest node's. Inputs outside the grid
+ * clamp and are reported in `clamped`.
+ */
+export function interpolate(grid: PredictionGrid, p: PredictionInputs): Trajectory {
+  const a = grid.axes;
+  const { corners, clamped } = cornersOf(grid, p);
   const n = a.ages.length;
   const blend = (field: number[][][][]) => {
     const out = new Array<number>(n).fill(0);
@@ -127,18 +168,16 @@ export function interpolate(grid: PredictionGrid, p: Omit<PredictionProfile, "an
     }
   }
   const med = Array.from({ length: n }, (_, t) => refraction([vec[0]![t]!, vec[1]![t]!, vec[2]![t]!]));
-  const nearest = corners.reduce((best, c) => (c.w > best.w ? c : best), corners[0]!);
-  const [ni, nj, nk] = nearest.idx;
+  const logMAR = grid.logMAR ? blend(grid.logMAR.p50) : null;
   return {
     ages: [...a.ages],
     sphere: { p05: blend(grid.sphere.p05), p50: med.map((r) => r.sphereD), p95: blend(grid.sphere.p95) },
     cylinder: { p05: blend(grid.cylinder.p05), p50: med.map((r) => r.cylinderD), p95: blend(grid.cylinder.p95) },
     axisDeg: med.map((r) => r.axisDeg),
-    onset: {
-      refraction: grid.onset.refraction.p50[ni]![nj]![nk]! ?? null,
-      acuity: grid.onset.acuity.p50[ni]![nj]![nk]! ?? null,
-    },
-    clamped: loc.filter(([, l]) => l.clamped).map(([name]) => name),
+    logMAR,
+    onset: onsetFromCurve(a.ages, med, logMAR, grid.thresholds),
+    onsetRange: onsetRange(grid, p),
+    clamped,
   };
 }
 
@@ -165,25 +204,33 @@ export function at(traj: Trajectory, ageYears: number): { sphereD: number; cylin
  * Re-anchor a trajectory so that its median passes through `baseline` at `ageYears` (Deviation 7:
  * the predicted change since the grid's baseline age is subtracted as a power vector, and the
  * bands are shifted by the same sphere and cylinder offsets; an approximation for the bands).
- * Onset ages before the anchor age are dropped (the subject is described from there on).
+ * The refraction onset is recomputed on the re-anchored median with `thresholds`, from the
+ * anchor age on (the subject is described from there on). The grid's logMAR, acuity onset, and
+ * draw ranges belong to the unshifted refraction, so they are dropped (null).
  */
-export function reanchor(traj: Trajectory, ageYears: number, baseline: { sphereD: number; cylinderD: number; axisDeg: number }): Trajectory {
+export function reanchor(
+  traj: Trajectory,
+  ageYears: number,
+  baseline: { sphereD: number; cylinderD: number; axisDeg: number },
+  thresholds?: PredictionGrid["thresholds"],
+): Trajectory {
   const now = at(traj, ageYears);
   const shift = vector(baseline.sphereD, baseline.cylinderD, baseline.axisDeg).map((x, q) => x - vector(now.sphereD, now.cylinderD, now.axisDeg)[q]!);
-  if (shift.every((x) => Math.abs(x) < 1e-12)) return traj;
+  if (shift.every((x) => Math.abs(x) < 1e-12) && ageYears <= traj.ages[0]!) return traj;
   const med = traj.ages.map((_, t) => {
     const v = vector(traj.sphere.p50[t]!, traj.cylinder.p50[t]!, traj.axisDeg[t]!);
     return refraction(v.map((x, q) => x + shift[q]!));
   });
   const dS = med.map((r, t) => r.sphereD - traj.sphere.p50[t]!);
   const dC = med.map((r, t) => r.cylinderD - traj.cylinder.p50[t]!);
-  const keep = (x: number | null) => (x === null || x < ageYears ? null : x);
   return {
     ...traj,
     sphere: { p05: traj.sphere.p05.map((x, t) => x + dS[t]!), p50: med.map((r) => r.sphereD), p95: traj.sphere.p95.map((x, t) => x + dS[t]!) },
     cylinder: { p05: traj.cylinder.p05.map((x, t) => Math.min(0, x + dC[t]!)), p50: med.map((r) => r.cylinderD), p95: traj.cylinder.p95.map((x, t) => Math.min(0, x + dC[t]!)) },
     axisDeg: med.map((r) => r.axisDeg),
-    onset: { refraction: keep(traj.onset.refraction), acuity: keep(traj.onset.acuity) },
+    logMAR: null,
+    onset: { refraction: onsetFromCurve(traj.ages, med, null, thresholds, ageYears).refraction, acuity: null },
+    onsetRange: null,
   };
 }
 
@@ -191,7 +238,73 @@ export function reanchor(traj: Trajectory, ageYears: number, baseline: { sphereD
 export function trajectoryFor(grid: PredictionGrid, p: PredictionProfile): Trajectory {
   const traj = interpolate(grid, p);
   if (p.anchorAgeYears === grid.baselineAgeYears) return traj;
-  return reanchor(traj, p.anchorAgeYears, { sphereD: p.baselineSphereD, cylinderD: -Math.abs(p.baselineCylinderD), axisDeg: grid.baselineAxisDeg });
+  return reanchor(traj, p.anchorAgeYears, { sphereD: p.baselineSphereD, cylinderD: -Math.abs(p.baselineCylinderD), axisDeg: grid.baselineAxisDeg }, grid.thresholds);
+}
+
+/** A finite numeric threshold of the grid, or null. */
+function threshold(thresholds: PredictionGrid["thresholds"], key: string): number | null {
+  const v = thresholds?.[key];
+  return typeof v === "number" && Number.isFinite(v) ? v : null;
+}
+
+/**
+ * First age at which `value` reaches `limit` (≥, or > when strict), linearly interpolated
+ * between ages; the first age when already there; null if never (eyebiomech.predict.onset).
+ */
+function firstCrossing(ages: readonly number[], value: readonly number[], limit: number, strict: boolean): number | null {
+  const over = (v: number) => (strict ? v > limit : v >= limit);
+  const i = value.findIndex(over);
+  if (i < 0) return null;
+  if (i === 0) return ages[0]!;
+  const v0 = value[i - 1]!;
+  const v1 = value[i]!;
+  return ages[i - 1]! + ((limit - v0) * (ages[i]! - ages[i - 1]!)) / (v1 - v0);
+}
+
+/**
+ * Onset ages of a median curve as it is drawn (straight between ages), with the criteria of spec
+ * §8 and the grid's `thresholds`: refraction when |cylinder| reaches the cylinder threshold or
+ * |sphere| exceeds the sphere threshold, whichever comes first; acuity when logMAR exceeds its
+ * threshold. A criterion without a threshold is left out. With `fromAge`, the search starts
+ * there (the curve is cut at that age, interpolated).
+ */
+export function onsetFromCurve(
+  ages: readonly number[],
+  median: readonly { sphereD: number; cylinderD: number }[],
+  logMAR: readonly number[] | null,
+  thresholds: PredictionGrid["thresholds"],
+  fromAge?: number,
+): Onsets {
+  let a = [...ages];
+  let s = median.map((m) => m.sphereD);
+  let c = median.map((m) => m.cylinderD);
+  let l = logMAR ? [...logMAR] : null;
+  if (fromAge !== undefined && fromAge > a[0]!) {
+    const cut = (v: number[]) => [sample(a, v, fromAge), ...v.filter((_, t) => a[t]! > fromAge)];
+    [s, c] = [cut(s), cut(c)];
+    if (l) l = cut(l);
+    a = [Math.min(fromAge, a[a.length - 1]!), ...a.filter((x) => x > fromAge)];
+  }
+  const cyl = threshold(thresholds, "cylinderD");
+  const sph = threshold(thresholds, "sphereD");
+  const lm = threshold(thresholds, "logMAR");
+  const found = [
+    cyl === null ? null : firstCrossing(a, c.map(Math.abs), cyl, false),
+    sph === null ? null : firstCrossing(a, s.map(Math.abs), sph, true),
+  ].filter((x): x is number => x !== null);
+  return {
+    refraction: found.length ? Math.min(...found) : null,
+    acuity: l === null || lm === null ? null : firstCrossing(a, l, lm, true),
+  };
+}
+
+/** The Snellen fraction of a logMAR value (20/20 at 0). */
+const snellen = (logMAR: number) => `20/${Math.round(20 * 10 ** logMAR)}`;
+
+/** The acuity onset's label from the grid's threshold, e.g. "acuity 20/40"; "acuity" without one. */
+export function thresholdLabel(thresholds: PredictionGrid["thresholds"]): string {
+  const lm = threshold(thresholds, "logMAR");
+  return lm === null ? "acuity" : `acuity ${snellen(lm)}`;
 }
 
 /**
@@ -199,18 +312,14 @@ export function trajectoryFor(grid: PredictionGrid, p: PredictionProfile): Traje
  * the cylinder threshold, sphere strictly beyond the sphere threshold, acuity worse than the
  * logMAR threshold, shown as a Snellen fraction). Thresholds the grid does not carry are left out.
  */
-export function onsetCriteria(thresholds: Record<string, unknown> | undefined): string[] {
-  const num = (key: string): number | null => {
-    const v = thresholds?.[key];
-    return typeof v === "number" && Number.isFinite(v) ? v : null;
-  };
+export function onsetCriteria(thresholds: PredictionGrid["thresholds"]): string[] {
   const d = (x: number) => x.toFixed(2);
   const out: string[] = [];
-  const cyl = num("cylinderD");
-  const sph = num("sphereD");
-  const logMAR = num("logMAR");
+  const cyl = threshold(thresholds, "cylinderD");
+  const sph = threshold(thresholds, "sphereD");
+  const logMAR = threshold(thresholds, "logMAR");
   if (cyl !== null) out.push(`cylinder of ${d(cyl)} D or more`);
   if (sph !== null) out.push(`sphere beyond ±${d(sph)} D`);
-  if (logMAR !== null) out.push(`acuity worse than 20/${Math.round(20 * 10 ** logMAR)}`);
+  if (logMAR !== null) out.push(`acuity worse than ${snellen(logMAR)}`);
   return out;
 }

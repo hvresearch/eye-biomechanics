@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/predictions.schema.json",
   "title": "Predictions",
-  "description": "Prediction grid written by `eyebiomech grid` (M5 plan, Task 5.11): remodeled trajectories of sphere, minus cylinder, and axis by age from a baseline refraction at the first age, over near-work hours, baseline sphere, and baseline cylinder, with 5-95% bands from the calibrated parameters' posterior and the onset ages of needing correction. Arrays are nested in C order over (nearHours, baselineSphereD, baselineCylinderD, ages); onsets over the first three. Diopters, degrees (TABO, right eye), years.",
+  "description": "Prediction grid written by `eyebiomech grid` (M5 plan, Task 5.11): remodeled trajectories of sphere, minus cylinder, and axis by age from a baseline refraction at the first age, over near-work hours, baseline sphere, and baseline cylinder, with 5-95% bands from the calibrated parameters' posterior and the onset ages of needing correction. Arrays are nested in C order over (nearHours, baselineSphereD, baselineCylinderD, ages); onsets over the first three. Diopters, degrees (TABO, right eye), years. Version 1.1.0 adds the optional `summary`; readers accept any 1.x.",
   "type": "object",
   "$defs": {
     "grid4": {
@@ -68,6 +68,13 @@
       "additionalProperties": false
     },
     "thresholds": { "type": "object" },
+    "summary": {
+      "description": "Since 1.1.0: what the calibration behind this grid was fitted to and what it found, in words, shown by the viewer's timeline (copied from data/results/calibration/summary-v1.json by `eyebiomech grid`).",
+      "type": "object",
+      "properties": { "stance": { "type": "string", "minLength": 1 }, "finding": { "type": "string", "minLength": 1 } },
+      "required": ["stance", "finding"],
+      "additionalProperties": false
+    },
     "citation": { "type": "string" },
     "date": { "type": "string" }
   },

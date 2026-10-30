@@ -833,6 +833,12 @@ table.figures td.rx {
   stroke-dasharray: 3 2;
 }
 
+.timeline-chart .onset-range {
+  fill: var(--text-dim);
+  opacity: 0.12;
+  stroke: none;
+}
+
 .timeline-chart .cursor {
   stroke: var(--text);
   stroke-width: 1;

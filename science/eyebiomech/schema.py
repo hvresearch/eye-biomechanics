@@ -14,6 +14,7 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 _SUPPORTED_MAJOR = 1
+BANDS = ("p05", "p50", "p95")
 
 
 def _load(name: str) -> dict:
@@ -110,28 +111,37 @@ def validate_scenario(doc: dict) -> None:
         raise SchemaError(errors)
 
 
+def _shape_error(x, shape: tuple[int, ...], path: str) -> str | None:
+    """The first place where nested lists `x` differ from `shape` (every row is checked, so
+    ragged and empty inner arrays are found), or None."""
+    if not shape:
+        return None
+    if not isinstance(x, list):
+        return f"{path} is not an array"
+    if len(x) != shape[0]:
+        return f"{path} has length {len(x)}, expected {shape[0]}"
+    for i, row in enumerate(x):
+        err = _shape_error(row, shape[1:], f"{path}/{i}")
+        if err:
+            return err
+    return None
+
+
 def validate_predictions(doc: dict) -> None:
     """Validate a prediction grid (schemas/predictions.schema.json) and the array shapes the
-    schema cannot state: (nearHours, baselineSphereD, baselineCylinderD, ages)."""
+    schema cannot state: (nearHours, baselineSphereD, baselineCylinderD, ages), every row."""
     _validate(_PREDICTIONS_VALIDATOR, doc)
     ax = doc["axes"]
     shape = tuple(len(ax[k]) for k in ("nearHours", "baselineSphereD", "baselineCylinderD"))
-
-    def dims(x, depth):
-        out = []
-        for _ in range(depth):
-            out.append(len(x))
-            x = x[0]
-        return tuple(out)
-
-    errors = []
-    for name in ("sphere", "cylinder"):
-        for q in ("p05", "p50", "p95"):
-            if dims(doc[name][q], 4) != (*shape, len(ax["ages"])):
-                errors.append(f"/{name}/{q} has shape {dims(doc[name][q], 4)}")
-    for name in ("refraction", "acuity"):
-        for q in ("p05", "p50", "p95"):
-            if dims(doc["onset"][name][q], 3) != shape:
-                errors.append(f"/onset/{name}/{q} has shape {dims(doc['onset'][name][q], 3)}")
+    full = (*shape, len(ax["ages"]))
+    checks = [(f"/{n}/{q}", doc[n][q], full) for n in ("sphere", "cylinder") for q in BANDS]
+    checks.append(("/axisDeg/p50", doc["axisDeg"]["p50"], full))
+    if "logMAR" in doc:
+        checks.append(("/logMAR/p50", doc["logMAR"]["p50"], full))
+    onset = doc["onset"]
+    checks += [
+        (f"/onset/{n}/{q}", onset[n][q], shape) for n in ("refraction", "acuity") for q in BANDS
+    ]
+    errors = [e for path, x, sh in checks if (e := _shape_error(x, sh, path))]
     if errors:
         raise SchemaError(errors)
