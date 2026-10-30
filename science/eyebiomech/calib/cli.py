@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 
-from eyebiomech.calib.fit import fit
+from eyebiomech.calib.fit import fit, with_rate_floor
 from eyebiomech.calib.forward import load_priors, make_cohort, targets
 from eyebiomech.fem.cli import _git_hash
 from eyebiomech.fem.data import data_root
@@ -32,6 +32,13 @@ def add_arguments(p: argparse.ArgumentParser) -> None:
         "--bound-sphere",
         action="store_true",
         help="also bound the adult spherical-equivalent change by the observed one (envelope)",
+    )
+    p.add_argument(
+        "--rate-floor",
+        type=float,
+        default=None,
+        help="override the growth rate's lower bound in data/calibration/priors.json "
+        "(sensitivity fit; the committed calibration uses the priors' bound)",
     )
 
 
@@ -69,6 +76,8 @@ def run(args: argparse.Namespace, argv: list[str]) -> int:
     lib_path = args.library or data_root() / "results" / "response" / "library-v1.json"
     library = load_library(lib_path)
     priors = load_priors()
+    if args.rate_floor is not None:
+        priors = with_rate_floor(priors, args.rate_floor)
     data = targets(priors, bound_sphere=args.bound_sphere)
     post = fit(
         None,

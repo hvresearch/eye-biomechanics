@@ -1,0 +1,260 @@
+{
+ "schema": "eye-posterior/1",
+ "remodeled": true,
+ "names": [
+  "rate_per_year",
+  "lid_pressure_scale",
+  "eom_tone_scale",
+  "stiffness_age_slope",
+  "baseline_j0_mean",
+  "baseline_j_sd"
+ ],
+ "best": {
+  "rate_per_year": 1.0000393724385473e-09,
+  "lid_pressure_scale": 2.721654421986365,
+  "eom_tone_scale": 1.2903157938162937,
+  "stiffness_age_slope": 0.03908178706586162,
+  "baseline_j0_mean": -0.49999993118194686,
+  "baseline_j_sd": 0.26429147293750727
+ },
+ "samples": null,
+ "cov": [
+  [
+   374075388.826345,
+   3136.7967469445757,
+   -234.18581512133997,
+   18.839723887797465,
+   -3568.3640766827575,
+   -1911.4225145970531
+  ],
+  [
+   3136.797094446416,
+   0.11916001957906631,
+   0.044691878364752045,
+   -0.0020615584665384856,
+   -0.06914135998296816,
+   0.005116350587122687
+  ],
+  [
+   -234.18576677512687,
+   0.04469187898771295,
+   0.48250323445979193,
+   0.0002246562202452737,
+   0.010331382491474111,
+   -0.0035254994156318107
+  ],
+  [
+   18.83971353609615,
+   -0.0020615585708433515,
+   0.00022465622429131618,
+   8.809450018517102e-05,
+   0.0006852391551830993,
+   9.812186750058655e-05
+  ],
+  [
+   -3568.3642231886292,
+   -0.0691413578966148,
+   0.010331383044376127,
+   0.0006852390490582348,
+   0.05320090493881095,
+   0.004761477387224818
+  ],
+  [
+   -1911.422475541913,
+   0.00511635269026719,
+   -0.003525499193041225,
+   9.812181657286796e-05,
+   0.004761476266063076,
+   0.036241054031937156
+  ]
+ ],
+ "corr": [
+  [
+   1.0,
+   0.4698,
+   -0.0174,
+   0.1038,
+   -0.7999,
+   -0.5191
+  ],
+  [
+   0.4698,
+   1.0,
+   0.1864,
+   -0.6363,
+   -0.8684,
+   0.0779
+  ],
+  [
+   -0.0174,
+   0.1864,
+   1.0,
+   0.0345,
+   0.0645,
+   -0.0267
+  ],
+  [
+   0.1038,
+   -0.6363,
+   0.0345,
+   1.0,
+   0.3165,
+   0.0549
+  ],
+  [
+   -0.7999,
+   -0.8684,
+   0.0645,
+   0.3165,
+   1.0,
+   0.1084
+  ],
+  [
+   -0.5191,
+   0.0779,
+   -0.0267,
+   0.0549,
+   0.1084,
+   1.0
+  ]
+ ],
+ "method": "lsq",
+ "lsqConverged": true,
+ "acceptance": null,
+ "autocorrelationSteps": null,
+ "chainStepsAfterBurn": null,
+ "fit": {
+  "cost": 44.194931879759004,
+  "dof": 3,
+  "perTarget": [
+   {
+    "source": "zibo-children",
+    "kind": "class",
+    "band": [
+     6.0,
+     12.0
+    ],
+    "class": "wtr",
+    "data": 0.63,
+    "se": 0.034139420030223126,
+    "model": 0.6285148383507692,
+    "modelHardClasses": 0.6389684813753582
+   },
+   {
+    "source": "zibo-children",
+    "kind": "class",
+    "band": [
+     6.0,
+     12.0
+    ],
+    "class": "atr",
+    "data": 0.27,
+    "se": 0.03139267430468452,
+    "model": 0.127131804203521,
+    "modelHardClasses": 0.1303724928366762
+   },
+   {
+    "source": "zibo-children",
+    "kind": "class",
+    "band": [
+     6.0,
+     12.0
+    ],
+    "class": "oblique",
+    "data": 0.1,
+    "se": 0.021213203435596427,
+    "model": 0.24435335744570713,
+    "modelHardClasses": 0.23065902578796563
+   },
+   {
+    "source": "read-2007-summary",
+    "kind": "class",
+    "band": [
+     21.0,
+     30.0
+    ],
+    "class": "wtr",
+    "data": 0.55,
+    "se": 0.03517811819867572,
+    "model": 0.6285168587435289,
+    "modelHardClasses": 0.6389684813753582
+   },
+   {
+    "source": "read-2007-summary",
+    "kind": "class",
+    "band": [
+     21.0,
+     30.0
+    ],
+    "class": "atr",
+    "data": 0.2,
+    "se": 0.028284271247461905,
+    "model": 0.12713080022046494,
+    "modelHardClasses": 0.1303724928366762
+   },
+   {
+    "source": "read-2007-summary",
+    "kind": "class",
+    "band": [
+     61.0,
+     80.0
+    ],
+    "class": "wtr",
+    "data": 0.12,
+    "se": 0.022978250586152115,
+    "model": 0.1267912283622574,
+    "modelHardClasses": 0.12417559038366073
+   },
+   {
+    "source": "read-2007-summary",
+    "kind": "class",
+    "band": [
+     61.0,
+     80.0
+    ],
+    "class": "atr",
+    "data": 0.57,
+    "se": 0.03500714212842859,
+    "model": 0.5949895037296528,
+    "modelHardClasses": 0.5990355293950783
+   },
+   {
+    "source": "j0-slope-pmc6221551",
+    "kind": "j0slope",
+    "band": [
+     30.0,
+     80.0
+    ],
+    "data": -0.014,
+    "se": 0.003,
+    "model": -0.010320860405150406,
+    "modelHardClasses": -0.010320860405150406
+   },
+   {
+    "source": "hong-kong-polyu",
+    "kind": "j0slope",
+    "band": [
+     30.0,
+     80.0
+    ],
+    "data": -0.015,
+    "se": 0.003,
+    "model": -0.010320860405150406,
+    "modelHardClasses": -0.010320860405150406
+   }
+  ]
+ },
+ "data": [
+  "hong-kong-polyu",
+  "j0-slope-pmc6221551",
+  "read-2007-summary",
+  "zibo-children"
+ ],
+ "library": "data/results/response/library-v1.json",
+ "provenance": {
+  "generatedBy": "eyebiomech calibrate --method lsq --rate-floor 1e-9 --out ../data/results/calibration/posterior-v1-rate-floor.json",
+  "gitHash": "56893c1622fa787e1f4c0f08dec4f013cd5916dc-dirty",
+  "date": "2026-10-30"
+ },
+ "citation": "Calibration of the remodeled corneoscleral model (M5 plan, Task 5.10): parameters of data/calibration/priors.json fitted to the axis-class and J0-slope targets of data/population (excerpt transcriptions, unverified) through the reduced-order response library. Uncertainty is parameter uncertainty only."
+}

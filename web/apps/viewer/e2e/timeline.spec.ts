@@ -73,7 +73,7 @@ test("the timeline's age cursor changes the predicted cylinder, and an onset mar
   await timeline.scrollIntoViewIfNeeded();
   await expect(page.getByTestId("timeline-chart")).toBeVisible({ timeout: 30_000 });
   await expect(page.getByTestId("timeline-stance")).toContainText("a hypothesis test, not a clinical prediction");
-  await expect(page.getByTestId("timeline-stance")).toContainText("the shift comes from the elastic lid and muscle loads on tissue that stiffens with age");
+  await expect(page.getByTestId("timeline-stance")).toContainText("The shift comes only in part, with a poor fit to children, from the elastic lid load on tissue that stiffens with age: not a confirmation");
   await expect(page.getByTestId("timeline-stance")).toContainText("Onsets: cylinder of 0.75 D or more, sphere beyond ±0.50 D, or acuity worse than 20/40.");
 
   const maxHours = grid.axes.nearHours[grid.axes.nearHours.length - 1]!;

@@ -12,6 +12,7 @@ least-squares optimum.
 
 from __future__ import annotations
 
+import copy
 import math
 from dataclasses import dataclass, field
 
@@ -96,6 +97,16 @@ class Space:
             elif s["prior"] == "log-normal":
                 out.append((v - math.log(s["median"])) / s["sigmaLn"])
         return np.array(out)
+
+
+def with_rate_floor(priors: dict, floor: float) -> dict:
+    """A copy of the priors with the growth rate's lower bound set to `floor` (a sensitivity fit:
+    the posterior sits on the prior's floor, review round 3); nothing else changes."""
+    if not floor > 0:
+        raise ValueError(f"the rate floor must be positive (log transform), got {floor:g}")
+    out = copy.deepcopy(priors)
+    out["parameters"]["rate_per_year"]["bounds"][0] = float(floor)
+    return out
 
 
 def start_params(priors: dict) -> dict:

@@ -224,18 +224,35 @@ about two thirds of the observed rate. The fit is poor in absolute terms, though
   (`cornea-sclera.json` `ageStiffening`: no excerpt covers younger corneas). So the decline
   between childhood and young adulthood cannot be produced.
 
-The growth rate goes to its lower bound, and switching growth off at the best fit changes
-no trajectory by more than 0.09 D. The shift comes from the elastic loads and the age
-stiffening:
+**The growth rate sits on its prior's floor, and growth there works against the fit** (review
+round 3). With the exposure cap the log-uniform prior spans only one decade (10⁻⁵ to
+1.1 × 10⁻⁴ per year), so the best fit and the 90% interval (1.0–1.7 × 10⁻⁵) are the floor
+itself. At the floor, growth is not neutral. It moves J0 with the rule: switching it off at the
+best fit lowers the distance-gaze J0 at 90 from +0.216 to +0.123 D (at most 0.09 D on any
+trajectory), about a fifth of the elastic decline from 50 to 90, pushing against the shift. The
+sensitivity fit under "Which conditions" lowers only the floor and improves the cost. Within
+the validated exposure, then, the data push stress-driven growth as low as the prior allows: a
+negative result for the remodeling form at small exposures. The shift comes from the elastic
+loads and the age stiffening:
 - The lids' elastic with-the-rule load (scaled by 2.4 from the Shaw et al. pressure) holds the
   young eye with the rule, against an unloaded baseline J0 at its bound, −0.5 D against the rule.
-- The age stiffening is clamped below 50 years, so little changes before 50 (at the best fit,
-  the elastic J0 of a subject without near work is +0.56 D at 6 and +0.59 D at 50).
+- The age stiffening is clamped below 50 years, so the elastic response does not change before
+  50 (at the best fit, the elastic J0 of a subject without near work is +0.554 D from 6 to 50;
+  with the floor-rate growth it is +0.558 D at 6 and +0.587 D at 50).
 - After 50 the fitted slope stiffens the tissue 6-fold by 90 (stiffness 0.63 to 3.8 times the
-  library's unit). The elastic lid response shrinks with it (J0 +0.59 D at 50, +0.35 at 70,
-  +0.22 at 90 at distance), which unmasks the baseline.
+  library's unit). The elastic lid response shrinks with it (elastic J0 +0.554 D at 50, +0.285 at 70,
+  +0.123 at 90 at distance; +0.587, +0.349 and +0.216 with the floor-rate growth), which unmasks
+  the baseline.
 
 **Which conditions this answer.**
+- The values below depend on the growth rate's floor, which binds. The sensitivity fit with the
+  floor lowered to 10⁻⁹ per year (`calibration/posterior-v1-rate-floor.json`: least squares,
+  `eyebiomech calibrate --method lsq --rate-floor 1e-9`) sends the rate to the new floor and
+  lowers the cost from 46.7 to 44.2. Its parameters: lid pressure 2.72 times the tabled one
+  (2.36 at the committed floor), stiffness slope 0.039 per year (0.045; 1.7 instead of 2.3 prior
+  SDs above the Elsheikh et al. mean), muscle tone 1.29 (1.04), baseline spread 0.264 D (0.245),
+  and the baseline J0 still at −0.5 D. Its worst residuals are the same children's-band ones
+  (oblique +6.8σ, against-the-rule −4.6σ). The posterior and the grid keep the committed floor.
 - The baseline J0 sits at its bound, so the data want an even more against-the-rule unloaded
   eye than the prior allows.
 - The stiffness slope is 2.3 prior SDs above the Elsheikh et al. mean (0.0217 per year).
@@ -262,12 +279,13 @@ withdrawn too.
 
 **Answer so far.**
 - Within the growth exposures its reduced model is validated for, stress-driven remodeling
-  contributes nothing to the fit.
+  does not help the fit: it moves J0 with the rule, and the data push its rate to the prior's
+  floor (removing it lowers the cost from 46.7 to 44.2).
 - Elastic lid loading on a cornea and sclera that stiffen with age can reproduce the endpoint
   axis-class proportions and about two thirds of the J0 slope without spherical side effects.
   It does so only with three parameters at or beyond their prior ranges (an against-the-rule
   unloaded eye at its bound, a stiffening slope 2.3 prior SDs high, lid pressure 2.4 times the
-  tabled one) and with a poor fit to the children's band (target χ² 86 on 3 degrees of freedom).
+  tabled one; 1.7 SDs and 2.7 times without growth) and with a poor fit to the children's band (target χ² 86 on 3 degrees of freedom).
 - This is **not a confirmation** of the hypothesis that muscle, tendon, and eyelid loading
   predict the shift. In its elastic form the mechanism is compatible with the endpoints under
   those conditions but misses the childhood-to-adult change. The hypothesis is **untested in its
@@ -296,8 +314,8 @@ every envelope. The grid keeps the axis-shift posterior.
 200 posterior draws, 395 kB, 28 s.
 - **Before 50.** Each subject starts from its observed refraction at 6, and the grid moves it
   by the model's change since then. Little changes before 50 (under 0.1 D: at most 0.071 D in
-  sphere and 0.069 D in cylinder): the elastic loads are constant there, and growth is
-  negligible.
+  sphere and 0.069 D in cylinder): the elastic response is constant there, so this
+  change is the floor-rate growth (J0 +0.03 D by 50).
 - **After 50.** The stiffening tissue loses the elastic with-the-rule lid load. A child
   emmetropic at 6 without cylinder reaches cylinder −0.19 D at 60 and −0.61 D at 90 (5–95%
   −0.47 to −0.72) with no near work, and −0.41 and −1.00 D with 8 h a day. Its axis is against
@@ -312,7 +330,7 @@ every envelope. The grid keeps the axis-shift posterior.
   around 70 and reaches −0.32 D against the rule (88°) at 90, crossing neither threshold.
 
 The viewer shows the grid as a hypothesis test, labeled "remodeled" (the model has a growth
-layer, even though the fit leaves it negligible), with bands that are parameter uncertainty only.
+layer, which the fit holds at its prior's floor), with bands that are parameter uncertainty only.
 
 ## The M4 elastic FEM result (2026-10-28, replaced)
 

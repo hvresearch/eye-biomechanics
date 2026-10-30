@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 
 from eyebiomech.calib.data import CLASSES
-from eyebiomech.calib.fit import Space, fit, residuals, start_params
+from eyebiomech.calib.fit import Space, fit, residuals, start_params, with_rate_floor
 from eyebiomech.calib.forward import PARAM_NAMES, load_priors, make_cohort, predict_targets
 from eyebiomech.remodel.library import Library
 
@@ -68,6 +68,21 @@ def test_the_growth_rate_is_bounded_by_the_validated_exposure():
     short = Library(LIBRARY.groups, LIBRARY.levels, {**LIBRARY.meta, "validRateTime": 1e-4})
     with pytest.raises(ValueError, match="lower bound"):
         Space(PRIORS).bounds(short)
+
+
+def test_a_rate_floor_lowers_only_the_growth_rate_bound():
+    """The sensitivity fit of review round 3 (`eyebiomech calibrate --rate-floor`) lowers the
+    rate's lower bound and leaves the priors and every other bound as they were."""
+    i = PARAM_NAMES.index("rate_per_year")
+    lowered = with_rate_floor(PRIORS, 1e-9)
+    assert np.exp(Space(lowered).bounds(LIBRARY)[0][i]) == pytest.approx(1e-9)
+    assert PRIORS["parameters"]["rate_per_year"]["bounds"][0] == 1e-05
+    lo, hi = Space(lowered).bounds(LIBRARY)
+    lo0, hi0 = Space(PRIORS).bounds(LIBRARY)
+    assert np.delete(lo, i) == pytest.approx(np.delete(lo0, i))
+    assert hi == pytest.approx(hi0)
+    with pytest.raises(ValueError, match="positive"):
+        with_rate_floor(PRIORS, 0.0)
 
 
 def test_a_sphere_bound_costs_only_beyond_the_envelope(monkeypatch):

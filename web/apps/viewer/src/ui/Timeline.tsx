@@ -228,7 +228,7 @@ export function Timeline() {
         !error && <p className="note">Loading the prediction grid…</p>
       )}
       <p className="note" data-testid="timeline-stance">
-        Remodeled model, calibrated to the population's astigmatism axis shift only: a hypothesis test, not a clinical prediction. Growth is held to the range its reduced model is validated for, where the fit finds it negligible: the shift comes from the elastic lid and muscle loads on tissue that stiffens with age (see data/results/README.md).
+        Remodeled model, calibrated to the population's astigmatism axis shift only: a hypothesis test, not a clinical prediction. Growth is held to the range its reduced model is validated for, where the fit pushes it to its prior's floor. The shift comes only in part, with a poor fit to children, from the elastic lid load on tissue that stiffens with age: not a confirmation (see data/results/README.md).
         {onsetText} Drag the chart or use the arrow keys to set the age.
       </p>
     </section>

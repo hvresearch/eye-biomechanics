@@ -151,3 +151,15 @@ Minor 10 is the owner decision asked in the PR body.
 - `test_library.py` `test_the_library_is_enriched_bounded_and_labeled` asserts only finite
   feedback eigenvalues; assert the documented structure (one eigenvalue with positive real
   part, its eigenvector's refraction mostly in M). (M6)
+
+## Review round 3 (PR #16, head 56893c1), Minor findings not fixed in the fix round
+
+Minor 1, 2 and 4 are fixed in plan Task 5.16.
+
+- `web/apps/viewer/src/ui/Timeline.tsx` labels the acuity onset "acuity 20/40" by hand while the
+  criteria text comes from `grid.thresholds.logMAR`; a grid with another threshold would show a
+  wrong label. Build the label from `thresholds` with the same Snellen conversion as
+  `onsetCriteria`. (M6)
+- The growth rate's prior spans one decade under the exposure cap and binds at its floor; with a
+  growth law validated for longer exposures (Model follow-ups), widen it again or fit r = 0 as a
+  nested model and report both. (M6)
