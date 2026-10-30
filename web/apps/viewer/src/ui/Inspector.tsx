@@ -6,6 +6,7 @@ import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
 import { Scenarios } from "./Scenarios";
 import { Spectacles } from "./Spectacles";
+import { StagePanel } from "./StagePanel";
 import { Timeline } from "./Timeline";
 
 const MIN_M = 0.1;
@@ -52,6 +53,8 @@ export function Inspector() {
       )}
 
       <Scenarios />
+
+      <StagePanel />
 
       <section className="panel">
         <h2>Scene</h2>

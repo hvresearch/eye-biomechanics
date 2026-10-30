@@ -1,12 +1,15 @@
 import { OrbitControls } from "@react-three/drei";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { MUSCLE_NAMES } from "@eye/eye-model";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useCallback, useEffect, useRef } from "react";
+import { Vector3 } from "three";
 import { useScene } from "../store/scene";
-import { muscleLabel, muscleTooltip } from "../ui/tooltips";
+import { InfoCard, Pins, useHoverInfo } from "../ui/Pins";
+import { useShortcuts, type ShortcutAction } from "../ui/shortcuts";
+import { Transport } from "../ui/Transport";
 import { Globe } from "./Globe";
 import { PALETTE } from "./palette";
 import { Target } from "./Target";
-import { Transport } from "../ui/Transport";
+import { VIEW_TRANSITION_S, cameraFor } from "./views";
 
 /** Advances the oculomotor dynamics once per rendered frame while the transport plays. */
 function Animator() {
@@ -18,35 +21,85 @@ function Animator() {
   return null;
 }
 
-function HoverLabel() {
+interface Controls {
+  target: Vector3;
+  update: () => void;
+}
+
+function isControls(c: unknown): c is Controls {
+  return typeof c === "object" && c !== null && "target" in c && c.target instanceof Vector3 && "update" in c;
+}
+
+const smoothstep = (t: number) => t * t * (3 - 2 * t);
+
+/** Moves the camera to the snapped clinical view over VIEW_TRANSITION_S, then hands it back to the orbit controls. */
+function CameraRig() {
+  const view = useScene((s) => s.view);
+  const side = useScene((s) => s.cut.side);
+  const ipd = useScene((s) => s.scene.ipdMm);
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls);
+  const move = useRef<{ from: Vector3; fromTarget: Vector3; to: Vector3; toTarget: Vector3; up: Vector3; t: number } | null>(null);
+
+  useEffect(() => {
+    if (!view) {
+      // Back to free orbiting: the orbit controls assume a head-up camera.
+      camera.up.set(0, 1, 0);
+      move.current = null;
+      return;
+    }
+    if (!isControls(controls)) return;
+    const pose = cameraFor(view, side, ipd);
+    move.current = {
+      from: camera.position.clone(),
+      fromTarget: controls.target.clone(),
+      to: new Vector3(...pose.position),
+      toTarget: new Vector3(...pose.target),
+      up: new Vector3(...pose.up),
+      t: 0,
+    };
+    camera.up.copy(move.current.up);
+  }, [view, side, ipd, camera, controls]);
+
+  useFrame((_, delta) => {
+    const m = move.current;
+    if (!m || !isControls(controls)) return;
+    m.t = Math.min(1, m.t + delta / VIEW_TRANSITION_S);
+    const k = smoothstep(m.t);
+    camera.position.lerpVectors(m.from, m.to, k);
+    controls.target.lerpVectors(m.fromTarget, m.toTarget, k);
+    controls.update();
+    if (m.t >= 1) move.current = null;
+  });
+  return null;
+}
+
+function HoverCard() {
   const hovered = useScene((s) => s.hovered);
-  const binocular = useScene((s) => s.binocular);
-  if (!hovered) return null;
-  if (hovered.kind === "structure") return <div className="hover-label">{hovered.label}</div>;
-  const e = binocular[hovered.side];
-  const i = hovered.index;
-  const name = MUSCLE_NAMES[i];
-  if (!name) return null;
-  const len = e.eomLengthMm[i] ?? Number.NaN;
-  const rest = e.eomRestLengthMm[i] ?? Number.NaN;
+  const info = useHoverInfo(hovered);
+  if (!hovered || !info) return null;
   return (
-    <div className="hover-label muscle" data-testid="muscle-hover">
-      <strong>
-        {muscleLabel(name)} ({hovered.side} eye)
-      </strong>
-      <span>
-        Length {len.toFixed(1)} mm ({len - rest >= 0 ? "+" : "−"}
-        {Math.abs(len - rest).toFixed(2)} mm), activation {(e.eomActivation[i] ?? 0).toFixed(2)}
-      </span>
-      <small>{muscleTooltip()}</small>
+    <div className="hover-label" data-testid={hovered.kind === "muscle" ? "muscle-hover" : "hover-readout"}>
+      <InfoCard info={info} testId="hover-card" />
     </div>
   );
 }
 
 export function Stage() {
   const preset = useScene((s) => s.eyes.right.label);
+  const view = useScene((s) => s.view);
+  const setView = useScene((s) => s.setView);
+  const run = useCallback((a: ShortcutAction) => {
+    const s = useScene.getState();
+    if (a.kind === "view") s.setView(a.view);
+    else if (a.kind === "togglePlay") s.setPlaying(!s.playing);
+    else s.unpinAll();
+  }, []);
+  useShortcuts(run);
+  const cutSide = useScene((s) => s.cut.side);
+
   return (
-    <div className="stage" data-testid="stage">
+    <div className="stage" data-testid="stage" data-view={view ?? "free"}>
       <Canvas
         camera={{ position: [0, 175, 120], fov: 32, near: 1, far: 5000 }}
         gl={{ localClippingEnabled: true, antialias: true, preserveDrawingBuffer: true }}
@@ -57,16 +110,29 @@ export function Stage() {
         <directionalLight position={[60, 120, -80]} intensity={1.4} />
         <directionalLight position={[-80, -20, -60]} intensity={0.5} />
         <Animator />
-        <Globe side="right" cut />
-        <Globe side="left" cut={false} />
+        <Globe side="right" />
+        <Globe side="left" />
         <Target />
-        <OrbitControls makeDefault target={[0, 0, -5]} enableDamping dampingFactor={0.12} minDistance={40} maxDistance={900} />
+        <OrbitControls
+          makeDefault
+          target={[0, 0, -5]}
+          enableDamping
+          dampingFactor={0.12}
+          minDistance={40}
+          maxDistance={900}
+          onStart={() => {
+            // A drag leaves the snapped view; the camera's roll returns to head-up.
+            if (useScene.getState().view !== null) setView(null);
+          }}
+        />
+        <CameraRig />
       </Canvas>
       <div className="stage-title">
-        <h1>Both eyes from above, right eye in axial section</h1>
+        <h1>Both eyes, {cutSide} eye in section</h1>
         <p>{preset}</p>
       </div>
-      <HoverLabel />
+      <HoverCard />
+      <Pins />
       <Transport />
     </div>
   );

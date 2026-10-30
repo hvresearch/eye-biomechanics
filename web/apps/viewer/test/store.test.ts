@@ -1,6 +1,6 @@
 import { MIN_TARGET_DISTANCE_M, loadPreset } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
-import { DEFAULT_LENS, MAX_DIRECTION_DEG, autoRxKey, clampDirectionDeg, createSceneStore, eyeOptics, mirrorLens } from "../src/store/scene";
+import { DEFAULT_LENS, MAX_DIRECTION_DEG, MAX_PINS, autoRxKey, clampDirectionDeg, createSceneStore, eyeOptics, mirrorLens } from "../src/store/scene";
 import { handle } from "../src/worker/handle";
 import { synthetic } from "./syntheticGrid";
 
@@ -291,5 +291,41 @@ describe("the prediction timeline in the store", () => {
     store.getState().setPredictionApplied(true);
     store.getState().setRefractivePreset("emmetrope");
     expect(store.getState().prediction.applied).toBe(false);
+  });
+});
+
+describe("stage controls in the store", () => {
+  it("pins up to four distinct readouts and unpins them", () => {
+    const store = createSceneStore();
+    const lens = { kind: "structure", key: "lens", side: "right" } as const;
+    store.getState().setPinned(lens, true);
+    store.getState().setPinned({ ...lens }, true);
+    expect(store.getState().pinned).toHaveLength(1);
+    for (let i = 0; i < 6; i++) store.getState().setPinned({ kind: "muscle", side: "left", index: i }, true);
+    const pinned = store.getState().pinned;
+    expect(pinned).toHaveLength(MAX_PINS);
+    // The oldest pins give way to the newest.
+    expect(pinned[pinned.length - 1]).toEqual({ kind: "muscle", side: "left", index: 5 });
+    store.getState().setPinned({ kind: "muscle", side: "left", index: 5 }, false);
+    expect(store.getState().pinned).toHaveLength(MAX_PINS - 1);
+    store.getState().unpinAll();
+    expect(store.getState().pinned).toEqual([]);
+  });
+
+  it("snaps the camera, and the sagittal view cuts the eye sagittally", () => {
+    const store = createSceneStore();
+    expect(store.getState().view).toBeNull();
+    store.getState().setView("anterior");
+    expect(store.getState().view).toBe("anterior");
+    store.getState().setView("sagittal");
+    expect(store.getState().cut.orientation).toBe("sagittal");
+  });
+
+  it("clamps the cut depth to half the axial length", () => {
+    const store = createSceneStore();
+    store.getState().setCut({ depthMm: 100 });
+    expect(store.getState().cut.depthMm).toBeCloseTo(store.getState().eyes.right.axialLengthMm / 2, 12);
+    store.getState().setCut({ side: "left", orientation: "frontal" });
+    expect(store.getState().cut).toMatchObject({ side: "left", orientation: "frontal" });
   });
 });

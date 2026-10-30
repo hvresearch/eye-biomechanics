@@ -33,6 +33,9 @@ import { parseDeformation, parseEyeDocument, parseFiles, type Deformation } from
 import { OpticsClient, StaleRequestError } from "../worker/client";
 import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
 import { throttle } from "./throttle";
+import { DEFAULT_CUT, clampDepthMm, type CutSettings } from "../scene/cut";
+import type { ViewName } from "../scene/views";
+import { sameTarget, type HoverTarget } from "../ui/hoverInfo";
 
 export const DEFAULT_PRESET: PresetName = "navarro-1985";
 /** Rays in the drawn fan of the cutaway (right) eye; odd so the chief ray is included. A drawing choice. */
@@ -116,7 +119,10 @@ export interface PredictionState {
   error: string | null;
 }
 
-export type Hover = { kind: "structure"; label: string } | { kind: "muscle"; side: Side; index: number };
+export type Hover = HoverTarget;
+
+/** Most readouts pinned at once (a UI bound: four cards fit beside the stage). */
+export const MAX_PINS = 4;
 
 export interface SceneStore {
   scene: SceneState;
@@ -172,6 +178,17 @@ export interface SceneStore {
   tick: (dtS: number) => void;
   scrub: (timeS: number | null) => void;
   setHovered: (h: Hover | null) => void;
+  /** The clinical view the camera last snapped to; null once the user moves the camera. */
+  view: ViewName | null;
+  setView: (v: ViewName | null) => void;
+  cut: CutSettings;
+  setCut: (c: Partial<CutSettings>) => void;
+  /** Pinned readouts, oldest first, at most MAX_PINS and without duplicates. */
+  pinned: HoverTarget[];
+  setPinned: (t: HoverTarget, on: boolean) => void;
+  /** Pin the target, or unpin it if it is already pinned (a click on the stage). */
+  togglePin: (t: HoverTarget) => void;
+  unpinAll: () => void;
   /** The biomechanics result in the right eye, if one is loaded. */
   loadedResult: LoadedResult | null;
   /** Why the last result or file could not be loaded (cleared by the next successful load). */
@@ -445,6 +462,9 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       history: [],
       scrubS: null,
       hovered: null,
+      view: null,
+      cut: DEFAULT_CUT,
+      pinned: [],
       loadedResult: null,
       loadError: null,
       exaggeration: DEFAULT_EXAGGERATION,
@@ -592,6 +612,23 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       },
 
       setHovered: (h) => set({ hovered: h }),
+
+      // The sagittal-section view looks at a sagittal cut, so choosing it cuts the eye that way.
+      setView: (v) => set(v === "sagittal" ? { view: v, cut: { ...get().cut, orientation: "sagittal" } } : { view: v }),
+
+      setCut: (c) => {
+        const next = { ...get().cut, ...c };
+        set({ cut: { ...next, depthMm: clampDepthMm(next.depthMm, get().eyes[next.side].axialLengthMm) } });
+      },
+
+      setPinned: (t, on) => {
+        const rest = get().pinned.filter((p) => !sameTarget(p, t));
+        set({ pinned: on ? [...rest, t].slice(-MAX_PINS) : rest });
+      },
+
+      togglePin: (t) => get().setPinned(t, !get().pinned.some((p) => sameTarget(p, t))),
+
+      unpinAll: () => set({ pinned: [] }),
 
       loadResult: async (entry) => {
         try {

@@ -47,3 +47,24 @@ describe("dragToTarget", () => {
     expect(dragToTarget([0, 0, 0], [0, 0, 1], -300)).toBeNull();
   });
 });
+
+describe("insertionArc", () => {
+  it("spans the insertion width across the muscle on the globe", async () => {
+    const { insertionArc, MARKER_LIFT } = await import("../src/scene/markers");
+    const { musclePath, defaultMuscles, QUAT_IDENTITY, GLOBE_RADIUS_MM } = await import("@eye/eye-model");
+    const m = defaultMuscles()[0]!;
+    const path = musclePath(m, QUAT_IDENTITY);
+    const arc = insertionArc(path, m.insertionWidthMm);
+    const R = GLOBE_RADIUS_MM * MARKER_LIFT;
+    for (const p of arc) expect(Math.hypot(...p)).toBeCloseTo(R, 9);
+    let len = 0;
+    for (let i = 1; i < arc.length; i++) len += Math.hypot(arc[i]![0] - arc[i - 1]![0], arc[i]![1] - arc[i - 1]![1], arc[i]![2] - arc[i - 1]![2]);
+    expect(len).toBeCloseTo(m.insertionWidthMm * MARKER_LIFT, 2);
+    // Across the muscle: the arc's chord is perpendicular to the muscle's last segment.
+    const n = path.points.length;
+    const [p, q] = [path.points[n - 1]!, path.points[n - 2]!];
+    const chord = arc[arc.length - 1]!.map((v, i) => v - arc[0]![i]!);
+    const seg = q.map((v, i) => v - p[i]!);
+    expect(Math.abs(chord[0]! * seg[0]! + chord[1]! * seg[1]! + chord[2]! * seg[2]!) / (Math.hypot(...chord) * Math.hypot(...seg))).toBeLessThan(1e-6);
+  });
+});

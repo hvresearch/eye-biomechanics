@@ -1,5 +1,5 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
-import { BufferAttribute, BufferGeometry, DoubleSide } from "three";
+import { BufferAttribute, BufferGeometry, DoubleSide, type Plane } from "three";
 import { useScene } from "../store/scene";
 import { sequentialColor } from "../ui/optics/colormap";
 
@@ -16,13 +16,15 @@ export function heatMapRamp(t: number): string {
  * The loaded result's outer surface colored by displacement magnitude, drawn at
  * `position + exaggeration × displacement` in the right globe's frame. The FEM frame is the
  * eye's local frame with its origin at the globe center (data/eom); the mesh is shifted along
- * the optical axis so its undeformed apex meets the drawn cornea.
+ * the optical axis so its undeformed apex meets the drawn cornea. `clip` is the eye's cut plane,
+ * so the map does not hide the cutaway.
  */
-export function DeformationMap({ apexOffsetMm }: { apexOffsetMm: number }) {
+export function DeformationMap({ apexOffsetMm, clip }: { apexOffsetMm: number; clip: Plane | null }) {
   const deformation = useScene((s) => s.loadedResult?.deformation ?? null);
   const exaggeration = useScene((s) => s.exaggeration);
   const show = useScene((s) => s.showHeatMap);
   const setHovered = useScene((s) => s.setHovered);
+  const togglePin = useScene((s) => s.togglePin);
   const ref = useRef<BufferGeometry>(null);
 
   const colors = useMemo(() => {
@@ -58,12 +60,16 @@ export function DeformationMap({ apexOffsetMm }: { apexOffsetMm: number }) {
       position={[0, 0, apexOffsetMm - deformation.apexZMm]}
       onPointerOver={(e) => {
         e.stopPropagation();
-        setHovered({ kind: "structure", label: `Displacement heat map, ×${exaggeration} (elastic; 0 to ${deformation.maxUm.toFixed(1)} µm)` });
+        setHovered({ kind: "heatMap", side: "right" });
       }}
       onPointerOut={() => setHovered(null)}
+      onClick={(e) => {
+        e.stopPropagation();
+        togglePin({ kind: "heatMap", side: "right" });
+      }}
     >
       <bufferGeometry ref={ref} />
-      <meshStandardMaterial vertexColors side={DoubleSide} roughness={0.55} metalness={0} />
+      <meshStandardMaterial vertexColors side={DoubleSide} roughness={0.55} metalness={0} clippingPlanes={clip ? [clip] : []} />
     </mesh>
   );
 }

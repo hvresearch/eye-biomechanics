@@ -56,6 +56,7 @@ export function Muscle({ side, index }: { side: Side; index: number }) {
   );
   const hovered = useScene((s) => s.hovered?.kind === "muscle" && s.hovered.side === side && s.hovered.index === index);
   const setHovered = useScene((s) => s.setHovered);
+  const togglePin = useScene((s) => s.togglePin);
   const isSO = MUSCLE_NAMES[index] === "superiorOblique";
   // The superior oblique's modeled path (trochlea to insertion) is all tendon.
   const mirror = side === "left";
@@ -85,6 +86,10 @@ export function Muscle({ side, index }: { side: Side; index: number }) {
         setHovered({ kind: "muscle", side, index });
       }}
       onPointerOut={() => setHovered(null)}
+      onClick={(e) => {
+        e.stopPropagation();
+        togglePin({ kind: "muscle", side, index });
+      }}
     >
       <mesh geometry={geometry} name={`${side} ${MUSCLE_NAMES[index]}`}>
         {material}

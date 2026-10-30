@@ -103,32 +103,113 @@ body {
   position: absolute;
   left: var(--space-5);
   bottom: calc(var(--space-4) + 52px);
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--bg-panel);
-  color: var(--text-dim);
-  font-size: var(--fs-sm);
+  max-width: 420px;
   pointer-events: none;
 }
 
-.hover-label.muscle {
+.info-card {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  max-width: 420px;
-  border-radius: var(--radius);
+  gap: var(--space-1);
   padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  color: var(--text-dim);
+  font-size: var(--fs-sm);
 }
 
-.hover-label.muscle strong {
+.info-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.info-card strong {
   color: var(--text);
   font-weight: 600;
 }
 
-.hover-label.muscle small {
+.info-card dl {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 1px var(--space-3);
+  margin: 0;
+}
+
+.info-card dl > div {
+  display: contents;
+}
+
+.info-card dt {
+  color: var(--text-dim);
+}
+
+.info-card dd {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.info-card small {
   color: var(--text-faint);
   font-size: var(--fs-xs);
+}
+
+.info-card .unpin {
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-size: var(--fs-md);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pins {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 300px;
+  max-height: calc(100% - 2 * var(--space-4) - 52px);
+  overflow: auto;
+}
+
+.structure-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.structure-list button {
+  padding: 2px var(--space-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--text-dim);
+  font-size: var(--fs-xs);
+  cursor: pointer;
+}
+
+.structure-list button[aria-pressed="true"],
+.view-buttons button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.field output {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  text-align: right;
 }
 
 .side {
