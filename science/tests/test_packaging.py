@@ -10,7 +10,9 @@ import pytest
 ROOT = Path(__file__).resolve().parents[2]
 
 
-@pytest.mark.parametrize("name", ["eye-parameters.schema.json", "deformation.schema.json"])
+@pytest.mark.parametrize(
+    "name", ["eye-parameters.schema.json", "deformation.schema.json", "scenario.schema.json"]
+)
 def test_package_schemas_equal_the_repository_schemas(name):
     packaged = files("eyebiomech").joinpath("schemas", name)
     assert packaged.is_file()
@@ -26,7 +28,7 @@ def test_the_wheel_contains_the_schemas(tmp_path):
     )
     wheel = next(tmp_path.glob("*.whl"))
     names = zipfile.ZipFile(wheel).namelist()
-    for name in ("eye-parameters.schema.json", "deformation.schema.json"):
+    for name in ("eye-parameters.schema.json", "deformation.schema.json", "scenario.schema.json"):
         assert f"eyebiomech/schemas/{name}" in names
 
 

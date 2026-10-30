@@ -49,7 +49,7 @@ export function Stage() {
     <div className="stage" data-testid="stage">
       <Canvas
         camera={{ position: [0, 175, 120], fov: 32, near: 1, far: 5000 }}
-        gl={{ localClippingEnabled: true, antialias: true }}
+        gl={{ localClippingEnabled: true, antialias: true, preserveDrawingBuffer: true }}
         dpr={[1, 2]}
         onCreated={({ gl }) => gl.setClearColor(PALETTE.bg)}
       >

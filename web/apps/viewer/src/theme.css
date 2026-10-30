@@ -756,3 +756,32 @@ table.figures td.rx {
   stroke: var(--text);
   stroke-width: 1;
 }
+
+/* Scenarios panel: bundled scenarios as a compact list of toggle buttons. */
+.scenario-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-3);
+  padding: 0;
+  list-style: none;
+}
+
+.scenario-list button {
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.scenario-list button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--bg);
+}
+
+.scenario-current p {
+  margin: 0 0 var(--space-2);
+}

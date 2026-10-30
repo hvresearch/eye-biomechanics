@@ -1,6 +1,8 @@
 export { validateEyeParameters } from "./schema/validate";
 export { validateDeformation } from "./schema/deformation";
 export { validatePredictions } from "./schema/predictions";
+export { validateScenario } from "./schema/scenario";
+export type { Scenario, ScenarioKeyframe, ScenarioLens, ScenarioScene, ScenarioValidation } from "./schema/scenario";
 export type { PredictionsDocument, PredictionsValidation } from "./schema/predictions";
 export type { DeformationDocument, DeformationValidation } from "./schema/deformation";
 export type { EyeParameters, MuscleGeometry, Medium, Provenance, Surface } from "./schema/types";

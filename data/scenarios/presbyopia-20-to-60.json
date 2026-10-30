@@ -1,0 +1,427 @@
+{
+  "schemaVersion": "1.0.0",
+  "name": "Presbyopia 20 to 60",
+  "description": "An emmetrope reading at 0.4 m while the subject's age sweeps from 20 to 60 years over 12 s of playback. The eye is re-derived at each age (accommodative amplitude and pupil from their age tables); no growth or remodeling is involved. The accommodation readout clips to the amplitude once it falls below the 2.5 D demand.",
+  "scene": {
+    "targetDistanceM": 0.4,
+    "targetDirectionDeg": {
+      "x": 0,
+      "y": 0
+    },
+    "luminanceCdM2": 100,
+    "ageYears": 20,
+    "ipdMm": 63,
+    "preset": "navarro-1985"
+  },
+  "eyes": {
+    "left": {
+      "schemaVersion": "1.0.0",
+      "id": "navarro-1985-relaxed-emmetrope-left",
+      "label": "Emmetrope, left eye (Navarro, Santamaría & Bescós 1985 accommodation-dependent schematic eye (regression fixture))",
+      "provenance": {
+        "source": "data/schematic-eyes/navarro-1985.json",
+        "citation": "Navarro R, Santamaría J, Bescós J. Accommodation-dependent model of the human eye with aspherics. J Opt Soc Am A 2(8):1273-1281, 1985. Table 1 (relaxed surfaces, indices) and Table 4 (accommodation dependence).",
+        "generatedBy": "eye-model loadPreset",
+        "gitHash": "",
+        "date": "2026-10-26",
+        "verified": true
+      },
+      "surfaces": [
+        {
+          "name": "cornea.anterior",
+          "type": "conic",
+          "radiusMm": 7.72,
+          "conic": -0.26,
+          "thicknessToNextMm": 0.55,
+          "mediumAfter": {
+            "name": "cornea",
+            "index555": 1.376
+          },
+          "apertureSemiDiamMm": 6
+        },
+        {
+          "name": "cornea.posterior",
+          "type": "conic",
+          "radiusMm": 6.5,
+          "conic": 0,
+          "thicknessToNextMm": 3.05,
+          "mediumAfter": {
+            "name": "aqueous",
+            "index555": 1.3374
+          },
+          "apertureSemiDiamMm": 6
+        },
+        {
+          "name": "lens.anterior",
+          "type": "conic",
+          "radiusMm": 10.2,
+          "conic": -3.1316,
+          "thicknessToNextMm": 4,
+          "mediumAfter": {
+            "name": "lens",
+            "index555": 1.42
+          },
+          "apertureSemiDiamMm": 5
+        },
+        {
+          "name": "lens.posterior",
+          "type": "conic",
+          "radiusMm": -6,
+          "conic": -1,
+          "thicknessToNextMm": 16.4,
+          "mediumAfter": {
+            "name": "vitreous",
+            "index555": 1.336
+          },
+          "apertureSemiDiamMm": 5
+        }
+      ],
+      "pupil": {
+        "model": "watsonYellott2012",
+        "params": {
+          "fieldAreaDeg2": 3600,
+          "eyes": 2,
+          "note": "Viewer defaults, assumptions: binocular viewing of a 60° × 60° adapting field (a room-sized scene)."
+        }
+      },
+      "axialLengthMm": 24,
+      "retina": {
+        "radiusMm": -12,
+        "conic": 0
+      },
+      "age": 30,
+      "interpupillaryDistanceMm": 63,
+      "extraocularMuscles": [
+        {
+          "name": "lateralRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 6.9,
+          "insertionWidthMm": 9.2,
+          "tendon": {
+            "stiffnessNPerMm": 36.11,
+            "slackLengthMm": 7.5
+          }
+        },
+        {
+          "name": "medialRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 5.5,
+          "insertionWidthMm": 10.3,
+          "tendon": {
+            "stiffnessNPerMm": 81.95,
+            "slackLengthMm": 3.7
+          }
+        },
+        {
+          "name": "superiorRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 7.7,
+          "insertionWidthMm": 10.5,
+          "tendon": {
+            "stiffnessNPerMm": 51.52,
+            "slackLengthMm": 6
+          }
+        },
+        {
+          "name": "inferiorRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 6.5,
+          "insertionWidthMm": 8.4,
+          "tendon": {
+            "stiffnessNPerMm": 41.22,
+            "slackLengthMm": 6
+          }
+        },
+        {
+          "name": "superiorOblique",
+          "originMm": [
+            -9.180103,
+            17.370341,
+            -9.055217
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 16,
+          "insertionWidthMm": 10.32,
+          "tendon": {
+            "stiffnessNPerMm": 15.19,
+            "slackLengthMm": 20
+          }
+        },
+        {
+          "name": "inferiorOblique",
+          "originMm": [
+            -7.688174,
+            -16.828871,
+            -11.210758
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 17,
+          "insertionWidthMm": 9.4,
+          "tendon": {
+            "stiffnessNPerMm": 276.74,
+            "slackLengthMm": 1
+          }
+        }
+      ],
+      "visualAxis": {
+        "alphaDeg": 5,
+        "kappaDeg": 5
+      },
+      "pupilDecenterMm": {
+        "x": 0,
+        "y": 0
+      },
+      "lensAccommodationModel": {
+        "form": "navarro1985",
+        "description": "Lens and anterior chamber as functions of accommodation A (diopters), Table 4. L = ln(1 + A). anteriorRadius = R_a0 + anteriorRadiusPerLn * L; posteriorRadius = R_p0 + posteriorRadiusPerLn * L; thickness = t0 + thicknessPerLn * L; anteriorChamberDepth = ACD0 + chamberDepthPerLn * L; index = n0 + indexCoeff * (10 A + A^2); anteriorConic = Q_a0 + anteriorConicPerLn * L; posteriorConic = Q_p0 + posteriorConicPerLn * L. The retina stays at axialLengthMm and the vitreous absorbs the change in anterior chamber depth and lens thickness (buildSurfaces).",
+        "coefficients": {
+          "anteriorRadiusPerLn": -1.75,
+          "posteriorRadiusPerLn": 0.2294,
+          "thicknessPerLn": 0.1,
+          "chamberDepthPerLn": -0.05,
+          "indexCoeff": 0.00009,
+          "anteriorConicPerLn": -0.34,
+          "posteriorConicPerLn": -0.125
+        },
+        "unverified": [
+          "anteriorConicPerLn",
+          "posteriorConicPerLn"
+        ],
+        "unverifiedNote": "Radius, thickness, chamber depth, and index coefficients were confirmed against excerpts of Table 4 on 2026-10-26. The two conic coefficients could not be confirmed from the reachable excerpts and are retained from the secondary literature; confirm against the paper before relying on them."
+      }
+    },
+    "right": {
+      "schemaVersion": "1.0.0",
+      "id": "navarro-1985-relaxed-emmetrope-right",
+      "label": "Emmetrope, right eye (Navarro, Santamaría & Bescós 1985 accommodation-dependent schematic eye (regression fixture))",
+      "provenance": {
+        "source": "data/schematic-eyes/navarro-1985.json",
+        "citation": "Navarro R, Santamaría J, Bescós J. Accommodation-dependent model of the human eye with aspherics. J Opt Soc Am A 2(8):1273-1281, 1985. Table 1 (relaxed surfaces, indices) and Table 4 (accommodation dependence).",
+        "generatedBy": "eye-model loadPreset",
+        "gitHash": "",
+        "date": "2026-10-26",
+        "verified": true
+      },
+      "surfaces": [
+        {
+          "name": "cornea.anterior",
+          "type": "conic",
+          "radiusMm": 7.72,
+          "conic": -0.26,
+          "thicknessToNextMm": 0.55,
+          "mediumAfter": {
+            "name": "cornea",
+            "index555": 1.376
+          },
+          "apertureSemiDiamMm": 6
+        },
+        {
+          "name": "cornea.posterior",
+          "type": "conic",
+          "radiusMm": 6.5,
+          "conic": 0,
+          "thicknessToNextMm": 3.05,
+          "mediumAfter": {
+            "name": "aqueous",
+            "index555": 1.3374
+          },
+          "apertureSemiDiamMm": 6
+        },
+        {
+          "name": "lens.anterior",
+          "type": "conic",
+          "radiusMm": 10.2,
+          "conic": -3.1316,
+          "thicknessToNextMm": 4,
+          "mediumAfter": {
+            "name": "lens",
+            "index555": 1.42
+          },
+          "apertureSemiDiamMm": 5
+        },
+        {
+          "name": "lens.posterior",
+          "type": "conic",
+          "radiusMm": -6,
+          "conic": -1,
+          "thicknessToNextMm": 16.4,
+          "mediumAfter": {
+            "name": "vitreous",
+            "index555": 1.336
+          },
+          "apertureSemiDiamMm": 5
+        }
+      ],
+      "pupil": {
+        "model": "watsonYellott2012",
+        "params": {
+          "fieldAreaDeg2": 3600,
+          "eyes": 2,
+          "note": "Viewer defaults, assumptions: binocular viewing of a 60° × 60° adapting field (a room-sized scene)."
+        }
+      },
+      "axialLengthMm": 24,
+      "retina": {
+        "radiusMm": -12,
+        "conic": 0
+      },
+      "age": 30,
+      "interpupillaryDistanceMm": 63,
+      "extraocularMuscles": [
+        {
+          "name": "lateralRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 6.9,
+          "insertionWidthMm": 9.2,
+          "tendon": {
+            "stiffnessNPerMm": 36.11,
+            "slackLengthMm": 7.5
+          }
+        },
+        {
+          "name": "medialRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 5.5,
+          "insertionWidthMm": 10.3,
+          "tendon": {
+            "stiffnessNPerMm": 81.95,
+            "slackLengthMm": 3.7
+          }
+        },
+        {
+          "name": "superiorRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 7.7,
+          "insertionWidthMm": 10.5,
+          "tendon": {
+            "stiffnessNPerMm": 51.52,
+            "slackLengthMm": 6
+          }
+        },
+        {
+          "name": "inferiorRectus",
+          "originMm": [
+            -15,
+            0,
+            32
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 6.5,
+          "insertionWidthMm": 8.4,
+          "tendon": {
+            "stiffnessNPerMm": 41.22,
+            "slackLengthMm": 6
+          }
+        },
+        {
+          "name": "superiorOblique",
+          "originMm": [
+            -9.180103,
+            17.370341,
+            -9.055217
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 16,
+          "insertionWidthMm": 10.32,
+          "tendon": {
+            "stiffnessNPerMm": 15.19,
+            "slackLengthMm": 20
+          }
+        },
+        {
+          "name": "inferiorOblique",
+          "originMm": [
+            -7.688174,
+            -16.828871,
+            -11.210758
+          ],
+          "pulleyMm": null,
+          "insertionDistFromLimbusMm": 17,
+          "insertionWidthMm": 9.4,
+          "tendon": {
+            "stiffnessNPerMm": 276.74,
+            "slackLengthMm": 1
+          }
+        }
+      ],
+      "visualAxis": {
+        "alphaDeg": 5,
+        "kappaDeg": 5
+      },
+      "pupilDecenterMm": {
+        "x": 0,
+        "y": 0
+      },
+      "lensAccommodationModel": {
+        "form": "navarro1985",
+        "description": "Lens and anterior chamber as functions of accommodation A (diopters), Table 4. L = ln(1 + A). anteriorRadius = R_a0 + anteriorRadiusPerLn * L; posteriorRadius = R_p0 + posteriorRadiusPerLn * L; thickness = t0 + thicknessPerLn * L; anteriorChamberDepth = ACD0 + chamberDepthPerLn * L; index = n0 + indexCoeff * (10 A + A^2); anteriorConic = Q_a0 + anteriorConicPerLn * L; posteriorConic = Q_p0 + posteriorConicPerLn * L. The retina stays at axialLengthMm and the vitreous absorbs the change in anterior chamber depth and lens thickness (buildSurfaces).",
+        "coefficients": {
+          "anteriorRadiusPerLn": -1.75,
+          "posteriorRadiusPerLn": 0.2294,
+          "thicknessPerLn": 0.1,
+          "chamberDepthPerLn": -0.05,
+          "indexCoeff": 0.00009,
+          "anteriorConicPerLn": -0.34,
+          "posteriorConicPerLn": -0.125
+        },
+        "unverified": [
+          "anteriorConicPerLn",
+          "posteriorConicPerLn"
+        ],
+        "unverifiedNote": "Radius, thickness, chamber depth, and index coefficients were confirmed against excerpts of Table 4 on 2026-10-26. The two conic coefficients could not be confirmed from the reachable excerpts and are retained from the secondary literature; confirm against the paper before relying on them."
+      }
+    }
+  },
+  "prescription": null,
+  "corrected": false,
+  "result": null,
+  "timeline": [
+    {
+      "timeS": 0,
+      "scene": {
+        "ageYears": 20
+      }
+    },
+    {
+      "timeS": 12,
+      "scene": {
+        "ageYears": 60
+      }
+    }
+  ]
+}

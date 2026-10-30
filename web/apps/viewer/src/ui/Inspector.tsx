@@ -4,6 +4,7 @@ import { Biomechanics } from "./Biomechanics";
 import { Decomposition } from "./Decomposition";
 import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
+import { Scenarios } from "./Scenarios";
 import { Spectacles } from "./Spectacles";
 import { Timeline } from "./Timeline";
 
@@ -49,6 +50,8 @@ export function Inspector() {
           Optics worker: {workerError}
         </div>
       )}
+
+      <Scenarios />
 
       <section className="panel">
         <h2>Scene</h2>

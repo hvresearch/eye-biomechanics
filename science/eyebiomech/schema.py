@@ -1,4 +1,5 @@
-"""Validation of EyeParameters and deformation documents against the shared schemas.
+"""Validation of EyeParameters, deformation, prediction, and scenario documents against the
+shared schemas.
 
 The schemas ship as package data (`eyebiomech/schemas/`, byte-identical copies of the
 repository's `schemas/`, checked by tests/test_packaging.py), so the package validates
@@ -22,12 +23,15 @@ def _load(name: str) -> dict:
 _EYE_SCHEMA = _load("eye-parameters.schema.json")
 _DEFORMATION_SCHEMA = _load("deformation.schema.json")
 _PREDICTIONS_SCHEMA = _load("predictions.schema.json")
+_SCENARIO_SCHEMA = _load("scenario.schema.json")
 _REGISTRY = Registry().with_resources(
-    (s["$id"], Resource.from_contents(s)) for s in (_EYE_SCHEMA, _DEFORMATION_SCHEMA)
+    (s["$id"], Resource.from_contents(s))
+    for s in (_EYE_SCHEMA, _DEFORMATION_SCHEMA, _SCENARIO_SCHEMA)
 )
 _VALIDATOR = Draft202012Validator(_EYE_SCHEMA, registry=_REGISTRY)
 _DEFORMATION_VALIDATOR = Draft202012Validator(_DEFORMATION_SCHEMA, registry=_REGISTRY)
 _PREDICTIONS_VALIDATOR = Draft202012Validator(_PREDICTIONS_SCHEMA)
+_SCENARIO_VALIDATOR = Draft202012Validator(_SCENARIO_SCHEMA, registry=_REGISTRY)
 
 
 class SchemaError(ValueError):
@@ -81,6 +85,27 @@ def validate_deformation(doc: dict) -> None:
     bad = [i for i, t in enumerate(doc["triangles"]) if max(t) >= n]
     if bad:
         errors.append(f"/triangles/{bad[0]} has a triangle index beyond the {n} vertices")
+    if errors:
+        raise SchemaError(errors)
+
+
+def validate_scenario(doc: dict) -> None:
+    """Validate a Scenario (schemas/scenario.schema.json, which references the EyeParameters
+    schema through the registry), each embedded eye's major version, and what the schema
+    cannot state: keyframe times in non-decreasing order (as the viewer's reader does)."""
+    _validate(_SCENARIO_VALIDATOR, doc)
+    errors = []
+    for side in ("left", "right"):
+        try:
+            validate_eye_parameters(doc["eyes"][side])
+        except SchemaError as e:
+            errors += [f"/eyes/{side}{m if m.startswith('/') else ' ' + m}" for m in e.errors]
+    times = [k["timeS"] for k in doc["timeline"]]
+    errors += [
+        f"/timeline/{i} timeS {t} is earlier than the previous keyframe's {times[i - 1]}"
+        for i, t in enumerate(times)
+        if i > 0 and t < times[i - 1]
+    ]
     if errors:
         raise SchemaError(errors)
 

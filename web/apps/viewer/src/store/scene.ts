@@ -20,6 +20,7 @@ import {
   type EyeParameters,
   type PerEye,
   type PresetName,
+  type Scenario,
   type SceneState,
   validateEyeParameters,
 } from "@eye/eye-model";
@@ -27,6 +28,7 @@ import { SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
 import { create } from "zustand";
 import { at, loadPredictionGrid, trajectoryFor, type PredictionGrid, type Trajectory } from "../data/predictions";
 import type { ResultEntry } from "../results/catalog";
+import { animatedKeys, sceneAt, toSceneState, type ScenarioInput } from "../scenario/scenario";
 import { parseDeformation, parseEyeDocument, parseFiles, type Deformation } from "../results/load";
 import { OpticsClient, StaleRequestError } from "../worker/client";
 import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
@@ -195,6 +197,15 @@ export interface SceneStore {
   setPredictionGrid: (grid: PredictionGrid) => void;
   setPredictionProfile: (p: Partial<PredictionInputs>) => void;
   setPredictionApplied: (on: boolean) => void;
+  /** The loaded scenario and the dynamics time its timeline starts at (spec §6.5). */
+  scenario: { doc: Scenario; startS: number } | null;
+  /** Apply a parsed scenario (with its biomechanics result's catalog entry when it names one). */
+  loadScenario: (doc: Scenario, result?: ResultEntry) => Promise<void>;
+  /** Restart the loaded scenario's timeline at the current dynamics time. */
+  restartScenario: () => void;
+  clearScenario: () => void;
+  /** What an exported scenario captures; a loaded result's right eye is the one before it was loaded. */
+  scenarioInput: () => ScenarioInput;
 }
 
 /** The optics of one eye from a response, if present. */
@@ -387,6 +398,29 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
     /** The eyes and decomposition shown before the prediction was applied (restored when it is cleared). */
     let beforePrediction: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
 
+    /** Move the scene fields and correction a scenario's timeline drives to their values at `timeS`. */
+    const playScenario = (sc: { doc: Scenario; startS: number }, timeS: number) => {
+      const s = get();
+      const at = sceneAt(sc.doc, timeS - sc.startS);
+      const next: SceneState = { ...s.scene };
+      for (const k of animatedKeys(sc.doc)) {
+        if (k === "targetDistanceM") next.targetDistanceM = at.scene.targetDistanceM === null ? Number.POSITIVE_INFINITY : clampDistance(at.scene.targetDistanceM);
+        else if (k === "targetDirectionDeg") next.targetDirectionDeg = clampDirectionDeg(at.scene.targetDirectionDeg);
+        else next[k] = at.scene[k];
+      }
+      const drivesCorrection = sc.doc.timeline.some((f) => f.corrected !== undefined);
+      if (drivesCorrection && at.corrected !== s.corrected) {
+        set({ corrected: at.corrected && s.spectacles !== null });
+        schedule();
+      }
+      if (JSON.stringify(next) === JSON.stringify(s.scene)) return;
+      try {
+        set({ scene: next, staticBinocular: deriveBinocular(next, s.eyes, { farPointD: s.farPointD }) });
+      } catch (e) {
+        set({ paramError: message(e) });
+      }
+    };
+
     if (typeof Worker !== "undefined") queueMicrotask(schedule);
 
     return {
@@ -416,6 +450,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       exaggeration: DEFAULT_EXAGGERATION,
       showHeatMap: true,
       prediction: { grid: null, profile: DEFAULT_PREDICTION_INPUTS, trajectory: null, applied: false, error: null },
+      scenario: null,
 
       setTargetDistance: (m) => update({ ...get().scene, targetDistanceM: clampDistance(m) }),
       setTargetDirection: (deg) => update({ ...get().scene, targetDirectionDeg: clampDirectionDeg(deg) }),
@@ -512,10 +547,14 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       },
 
       tick: (dtS) => {
-        const s = get();
+        let s = get();
         if (!s.playing) return;
         const dt = Math.min(MAX_TICK_S, Math.max(0, dtS));
         if (dt === 0) return;
+        if (s.scenario) {
+          playScenario(s.scenario, s.dynamics.timeS + dt);
+          s = get();
+        }
         const dynamics = stepDynamics(s.dynamics, staticTargets(s.scene, s.staticBinocular), dt);
         const sample: HistorySample = {
           timeS: dynamics.timeS,
@@ -662,6 +701,42 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
         beforePrediction = null;
         set({ prediction: { ...prediction, applied: false }, decomposition: before.decomposition });
         update(scene, before.eyes);
+      },
+
+      loadScenario: async (doc, result) => {
+        if (doc.result !== null && result?.id !== doc.result.id) {
+          set({ loadError: `The scenario's biomechanics result "${doc.result.id}" is not available` });
+          return;
+        }
+        const start = sceneAt(doc, 0);
+        const scene = toSceneState(start.scene, get().scene.timeS);
+        beforeResult = null;
+        beforePrediction = null;
+        set({
+          scenario: { doc, startS: get().dynamics.timeS },
+          loadedResult: null,
+          loadError: null,
+          spectacles: doc.prescription ? { right: { ...doc.prescription.right }, left: { ...doc.prescription.left } } : null,
+          corrected: start.corrected,
+          decomposition: decompose(doc.eyes.right, scene.preset),
+          prediction: { ...get().prediction, applied: false },
+        });
+        update(scene, { left: doc.eyes.left, right: doc.eyes.right });
+        if (result) await get().loadResult(result);
+      },
+      restartScenario: () => {
+        const sc = get().scenario;
+        if (!sc) return;
+        const next = { doc: sc.doc, startS: get().dynamics.timeS };
+        set({ scenario: next });
+        playScenario(next, next.startS);
+        update(get().scene);
+      },
+      clearScenario: () => set({ scenario: null }),
+      scenarioInput: () => {
+        const { scene, eyes, spectacles, corrected, loadedResult } = get();
+        const base = loadedResult && beforeResult ? { left: eyes.left, right: beforeResult.eyes.right } : eyes;
+        return { scene, eyes: base, spectacles, corrected, loadedResult };
       },
     };
   });
