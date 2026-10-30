@@ -1,0 +1,394 @@
+{
+ "schema": "eye-forces/1",
+ "frame": "right eye, origin at the globe center (taken as the center of rotation, an approximation), x temporal, y superior, z posterior (toward the retina), mm",
+ "muscles": [
+  "lateralRectus",
+  "medialRectus",
+  "superiorRectus",
+  "inferiorRectus",
+  "superiorOblique",
+  "inferiorOblique"
+ ],
+ "gazes": [
+  {
+   "label": "distance",
+   "xDeg": 0,
+   "yDeg": 0,
+   "quaternion": [
+    0,
+    0,
+    0,
+    1
+   ],
+   "entries": [
+    {
+     "name": "lateralRectus",
+     "insertionMm": [
+      10.553397486624247,
+      0,
+      -5.71189998943548
+     ],
+     "tangentPointMm": [
+      8.490593648071016,
+      0,
+      8.479965772533289
+     ],
+     "pullDir": [
+      -0.706663814377774,
+      0,
+      0.7075494706725847
+     ],
+     "insertionDir": [
+      0.47599166578629015,
+      0,
+      0.8794497905520205
+     ],
+     "arcOfContactMm": 15.370358349842205,
+     "forceN": 0.115914603,
+     "activation": 0.2,
+     "pathLengthMm": 48.61189862703153,
+     "tendonElongationMm": 0.0032100416228191637,
+     "insertionWidthMm": 9.2
+    },
+    {
+     "name": "medialRectus",
+     "insertionMm": [
+      -9.816779534941858,
+      1.2022087635401789e-15,
+      -6.901509948000271
+     ],
+     "tangentPointMm": [
+      -11.949360661681904,
+      1.1482060005772824e-15,
+      -1.1012628101633926
+     ],
+     "pullDir": [
+      -0.09177190084694947,
+      -3.454129956081466e-17,
+      0.9957800551401588
+     ],
+     "insertionDir": [
+      -0.5751258290000227,
+      1.7653632510852184e-17,
+      0.8180649612451547
+     ],
+     "arcOfContactMm": 6.250280913251222,
+     "forceN": 0.146707484,
+     "activation": 0.2,
+     "pathLengthMm": 39.49182119044055,
+     "tendonElongationMm": 0.0017902072483221476,
+     "insertionWidthMm": 10.3
+    },
+    {
+     "name": "superiorRectus",
+     "insertionMm": [
+      6.680733327737977e-16,
+      10.91046550301583,
+      -4.996172785993448
+     ],
+     "tangentPointMm": [
+      -3.6792391507493822,
+      11.079738027025574,
+      2.7753566480862273
+     ],
+     "pullDir": [
+      -0.34056065858714246,
+      -0.33331000713672104,
+      0.8791603249494433
+     ],
+     "insertionDir": [
+      -0.4582435190935556,
+      0.37006097487905953,
+      0.8081260743722566
+     ],
+     "arcOfContactMm": 8.795701790933446,
+     "forceN": 0.16792907460000003,
+     "activation": 0.2,
+     "pathLengthMm": 42.037242068122765,
+     "tendonElongationMm": 0.003259492907608696,
+     "insertionWidthMm": 10.5
+    },
+    {
+     "name": "inferiorRectus",
+     "insertionMm": [
+      -1.9025819285196223e-15,
+      -10.357173621239333,
+      -6.060441780885625
+     ],
+     "tangentPointMm": [
+      -4.1927335089326,
+      -10.954291571556587,
+      2.5346561676878445
+     ],
+     "pullDir": [
+      -0.32511328900374253,
+      0.32953622125246496,
+      0.8864012794416619
+     ],
+     "insertionDir": [
+      -0.47725793730543786,
+      -0.44380779635413503,
+      0.758458635110871
+     ],
+     "arcOfContactMm": 9.856571779887412,
+     "forceN": 0.08486674910000001,
+     "activation": 0.2,
+     "pathLengthMm": 43.09811205707673,
+     "tendonElongationMm": 0.002058873098010675,
+     "insertionWidthMm": 8.4
+    },
+    {
+     "name": "superiorOblique",
+     "insertionMm": [
+      5.794866977692336,
+      10.037004028466228,
+      3.11095915167712
+     ],
+     "tangentPointMm": [
+      3.9649063861689213,
+      11.21397865107131,
+      1.5894024544569447
+     ],
+     "pullDir": [
+      -0.7302783077244966,
+      0.3420201344736169,
+      -0.5913677543472374
+     ],
+     "insertionDir": [
+      -0.6397488761413832,
+      0.5391394025997366,
+      -0.5477682722102808
+     ],
+     "arcOfContactMm": 2.660470852739216,
+     "forceN": 0.115914603,
+     "activation": 0.2,
+     "pathLengthMm": 20.6604706434053,
+     "tendonElongationMm": 0.007630981105990784,
+     "insertionWidthMm": 10.32
+    },
+    {
+     "name": "inferiorOblique",
+     "insertionMm": [
+      9.777919109756823,
+      -5.645284230132495,
+      4.064857173883199
+     ],
+     "tangentPointMm": [
+      5.4568359790990595,
+      -10.67250805311868,
+      -0.5661386343705326
+     ],
+     "pullDir": [
+      -0.7302783169315761,
+      -0.34202015657781554,
+      -0.5913677301933806
+     ],
+     "insertionDir": [
+      -0.2759514008619156,
+      -0.8286451270401115,
+      -0.48702985308400143
+     ],
+     "arcOfContactMm": 8.247854440010824,
+     "forceN": 0.115914603,
+     "activation": 0.2,
+     "pathLengthMm": 26.247854815663068,
+     "tendonElongationMm": 0.0004188574221290742,
+     "insertionWidthMm": 9.4
+    }
+   ]
+  },
+  {
+   "label": "near",
+   "xDeg": -5.470873092366975,
+   "yDeg": -19.91607345788419,
+   "quaternion": [
+    -0.17311803615730775,
+    0.0455546948277896,
+    0,
+    0.9838469979301578
+   ],
+   "entries": [
+    {
+     "name": "lateralRectus",
+     "insertionMm": [
+      9.997594453026814,
+      -2.112175924575948,
+      -6.291805624496773
+     ],
+     "tangentPointMm": [
+      7.973022351030297,
+      -3.546393933018121,
+      8.237354227045453
+     ],
+     "pullDir": [
+      -0.6910937988873702,
+      0.1066856079304993,
+      0.7148479154337115
+     ],
+     "insertionDir": [
+      0.4742913028839806,
+      -0.2602696881105238,
+      0.841015724858618
+     ],
+     "arcOfContactMm": 15.871254801152459,
+     "forceN": 0.0749745596478431,
+     "activation": 0.1293617157932087,
+     "pathLengthMm": 49.11279507834178,
+     "tendonElongationMm": 0.002076282460477516,
+     "insertionWidthMm": 9.2
+    },
+    {
+     "name": "medialRectus",
+     "insertionMm": [
+      -10.39467085460388,
+      -2.1961163553051595,
+      -5.579237472846072
+     ],
+     "tangentPointMm": [
+      -11.776260093184188,
+      -2.0685863503141397,
+      -1.020121918680088
+     ],
+     "pullDir": [
+      -0.09697925787837137,
+      0.06222895609123216,
+      0.9933391065316798
+     ],
+     "insertionDir": [
+      -0.47129723618857977,
+      -0.009773202889861882,
+      0.8819202909936248
+     ],
+     "arcOfContactMm": 4.797447864179575,
+     "forceN": 0.19852330875027643,
+     "activation": 0.2706382842067913,
+     "pathLengthMm": 38.0389881413689,
+     "tendonElongationMm": 0.002422493090302336,
+     "insertionWidthMm": 10.3
+    },
+    {
+     "name": "superiorRectus",
+     "insertionMm": [
+      -0.6199327007140614,
+      8.554582490232583,
+      -8.392544421353485
+     ],
+     "tangentPointMm": [
+      -6.166927072141203,
+      10.167561923996278,
+      1.6092529349338114
+     ],
+     "pullDir": [
+      -0.26572393620160073,
+      -0.3058691576627501,
+      0.914240038567666
+     ],
+     "insertionDir": [
+      -0.5762329729868226,
+      0.5506970928832375,
+      0.6038942562508096
+     ],
+     "arcOfContactMm": 12.050135839370741,
+     "forceN": 0,
+     "activation": 0,
+     "pathLengthMm": 45.29167611656006,
+     "tendonElongationMm": 0,
+     "insertionWidthMm": 10.5
+    },
+    {
+     "name": "inferiorRectus",
+     "insertionMm": [
+      -0.3798836883039897,
+      -11.800816660359484,
+      -2.1439250294594245
+     ],
+     "tangentPointMm": [
+      -2.809252098834661,
+      -11.223884152100698,
+      3.183163078671253
+     ],
+     "pullDir": [
+      -0.36673234150737444,
+      0.3376463322249432,
+      0.8668923485805845
+     ],
+     "insertionDir": [
+      -0.43393005086621494,
+      -0.1475030174859196,
+      0.8887899475060417
+     ],
+     "arcOfContactMm": 5.943817755496923,
+     "forceN": 0.19192934204520115,
+     "activation": 0.4523075152060965,
+     "pathLengthMm": 39.185358032686246,
+     "tendonElongationMm": 0.004656218875429431,
+     "insertionWidthMm": 8.4
+    },
+    {
+     "name": "superiorOblique",
+     "insertionMm": [
+      5.89136439434348,
+      10.403715809283794,
+      -1.026899670230914
+     ],
+     "tangentPointMm": [
+      5.533186971992505,
+      10.578010536192394,
+      -1.2204650872413685
+     ],
+     "pullDir": [
+      -0.817405007950172,
+      0.3773516968222285,
+      -0.43526400021523054
+     ],
+     "insertionDir": [
+      -0.7998338369591919,
+      0.40962197943382067,
+      -0.4387204887167402
+     ],
+     "arcOfContactMm": 0.4428990348296602,
+     "forceN": 0.26896077158187454,
+     "activation": 0.4640671056465155,
+     "pathLengthMm": 18.442898825495746,
+     "tendonElongationMm": 0.017706436575501944,
+     "insertionWidthMm": 10.32
+    },
+    {
+     "name": "inferiorOblique",
+     "insertionMm": [
+      10.190741942974858,
+      -4.076465068073153,
+      4.850897978773866
+     ],
+     "tangentPointMm": [
+      5.4802231252291485,
+      -10.658483376789864,
+      -0.6032301421495756
+     ],
+     "pullDir": [
+      -0.7315776028005766,
+      -0.34279930524648927,
+      -0.5893070909153274
+     ],
+     "insertionDir": [
+      -0.15026037028337808,
+      -0.8893948348754153,
+      -0.43173909808961564
+     ],
+     "arcOfContactMm": 10.051362796674749,
+     "forceN": 0,
+     "activation": 0,
+     "pathLengthMm": 28.051363172326994,
+     "tendonElongationMm": 0,
+     "insertionWidthMm": 9.4
+    }
+   ]
+  }
+ ],
+ "provenance": {
+  "generatedBy": "pnpm --filter @eye/eye-model export-forces --duty-cycle --out ../data/results/forces/duty-cycle.json",
+  "gitHash": "9791e336a7f8fa27a0616717ef921036af827253-dirty",
+  "date": "2026-10-29",
+  "citation": "Eye model (web/packages/eye-model) with data/eom/geometry-default.json, activation.json, and forces.json; forceN = activation x maxForceN, activation from the length proxy (data/eom/activation.json); an approximation. Not verified (see those tables)."
+ }
+}

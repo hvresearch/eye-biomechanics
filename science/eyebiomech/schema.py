@@ -21,11 +21,13 @@ def _load(name: str) -> dict:
 
 _EYE_SCHEMA = _load("eye-parameters.schema.json")
 _DEFORMATION_SCHEMA = _load("deformation.schema.json")
+_PREDICTIONS_SCHEMA = _load("predictions.schema.json")
 _REGISTRY = Registry().with_resources(
     (s["$id"], Resource.from_contents(s)) for s in (_EYE_SCHEMA, _DEFORMATION_SCHEMA)
 )
 _VALIDATOR = Draft202012Validator(_EYE_SCHEMA, registry=_REGISTRY)
 _DEFORMATION_VALIDATOR = Draft202012Validator(_DEFORMATION_SCHEMA, registry=_REGISTRY)
+_PREDICTIONS_VALIDATOR = Draft202012Validator(_PREDICTIONS_SCHEMA)
 
 
 class SchemaError(ValueError):
@@ -65,6 +67,46 @@ def validate_eye_parameters(doc: dict) -> None:
 
 
 def validate_deformation(doc: dict) -> None:
-    """Validate a `*.deformation.json` sidecar (and its embedded reference EyeParameters)."""
+    """Validate a `*.deformation.json` sidecar (and its embedded reference EyeParameters), and
+    check what the schema cannot: one displacement and one region per vertex, and triangle
+    indices within the vertex list (as the TypeScript loader does)."""
     _validate(_DEFORMATION_VALIDATOR, doc)
     validate_eye_parameters(doc["reference"])
+    n = len(doc["vertices"])
+    errors = [
+        f"/{key} has {len(doc[key])} entries for {n} vertices"
+        for key in ("displacementMm", "region", "rawDisplacementMm")
+        if key in doc and len(doc[key]) != n
+    ]
+    bad = [i for i, t in enumerate(doc["triangles"]) if max(t) >= n]
+    if bad:
+        errors.append(f"/triangles/{bad[0]} has a triangle index beyond the {n} vertices")
+    if errors:
+        raise SchemaError(errors)
+
+
+def validate_predictions(doc: dict) -> None:
+    """Validate a prediction grid (schemas/predictions.schema.json) and the array shapes the
+    schema cannot state: (nearHours, baselineSphereD, baselineCylinderD, ages)."""
+    _validate(_PREDICTIONS_VALIDATOR, doc)
+    ax = doc["axes"]
+    shape = tuple(len(ax[k]) for k in ("nearHours", "baselineSphereD", "baselineCylinderD"))
+
+    def dims(x, depth):
+        out = []
+        for _ in range(depth):
+            out.append(len(x))
+            x = x[0]
+        return tuple(out)
+
+    errors = []
+    for name in ("sphere", "cylinder"):
+        for q in ("p05", "p50", "p95"):
+            if dims(doc[name][q], 4) != (*shape, len(ax["ages"])):
+                errors.append(f"/{name}/{q} has shape {dims(doc[name][q], 4)}")
+    for name in ("refraction", "acuity"):
+        for q in ("p05", "p50", "p95"):
+            if dims(doc["onset"][name][q], 3) != shape:
+                errors.append(f"/onset/{name}/{q} has shape {dims(doc['onset'][name][q], 3)}")
+    if errors:
+        raise SchemaError(errors)

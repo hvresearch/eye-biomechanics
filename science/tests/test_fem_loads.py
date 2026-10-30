@@ -187,21 +187,53 @@ def test_orbital_support_leaves_iop_alone(eye_ctx):
     assert np.allclose(fa, fb)
 
 
-def test_force_table_loads_are_torque_balanced():
-    """The six muscle moments about the globe center sum to zero after the smallest weighted
-    force change that keeps the total tension (the v1 stand-in for the v2 static equilibrium)."""
-    for gaze in ((0, 0), (15, 0), (30, 30)):
+def test_force_table_loads_balance_the_passive_orbit():
+    """The six muscle moments about the globe center cancel the passive orbital moment (zero in
+    primary gaze), within the capacities; `passive=False` keeps M4's balance (no moment, the
+    total tension kept); `balance_moments=False` leaves the table forces."""
+    for gaze in ((0, 0), (15, 0), (30, 30), (-30, 0)):
         g = TABLE.at(*gaze)
         loads = Loads().from_force_table(TABLE, g, EOM)
         items = [i for i in loads.summary() if i["kind"] == "insertion"]
         M = sum(i["forceN"] * np.cross(i["centerMm"], i["insertionDir"]) for i in items)
-        assert np.linalg.norm(M) < 1e-12
+        passive = np.asarray(items[0]["passiveMomentNmm"])
+        assert np.linalg.norm(M + passive) < 1e-9
         assert all(i["forceN"] >= 0 for i in items)
-        total = sum(i["forceN"] for i in items)
-        assert total == pytest.approx(sum(i["tableForceN"] for i in items), rel=1e-9)
+        assert loads.unloaded_muscles() == []
+    m4 = Loads().from_force_table(TABLE, TABLE.at(15, 0), EOM, passive=False)
+    items = [i for i in m4.summary() if i["kind"] == "insertion"]
+    assert (
+        np.linalg.norm(sum(i["forceN"] * np.cross(i["centerMm"], i["insertionDir"]) for i in items))
+        < 1e-12
+    )
+    assert sum(i["forceN"] for i in items) == pytest.approx(sum(i["tableForceN"] for i in items))
     raw = Loads().from_force_table(TABLE, TABLE.at(0, 0), EOM, balance_moments=False)
     items = [i for i in raw.summary() if i["kind"] == "insertion"]
     assert all(i["forceN"] == i["tableForceN"] for i in items)
+
+
+def test_equilibrium_is_the_exact_optimum_at_every_lattice_gaze():
+    """KKT conditions of the equilibrium program with bounds at every gaze of the table: the
+    weighted-change gradient is a combination of the moment rows on the free muscles, at least
+    it on muscles held at zero, and at most it on muscles at capacity."""
+    from eyebiomech.forces.equilibrium import capacities_n, equilibrium_forces, passive_moment
+
+    cap = capacities_n()
+    for g in range(TABLE.force_n.shape[0]):
+        body = TABLE.body_frame(g)
+        f0 = np.asarray(TABLE.force_n[g], dtype=float)
+        Mp = passive_moment(TABLE.quaternions[g])
+        f = equilibrium_forces(f0, body["insertion_mm"], body["insertion_dir"], Mp, cap)
+        A = np.cross(body["insertion_mm"], body["insertion_dir"]).T
+        s = np.maximum(f0, f0.mean() / 4)
+        grad = 2 * (f - f0) / s**2
+        free = (f > 0) & (f < cap)
+        lam = np.linalg.lstsq(A[:, free].T, grad[free], rcond=None)[0]
+        nu = grad - A.T @ lam
+        tol = 1e-9 * max(np.abs(grad).max(), 1e-12)
+        assert np.abs(nu[free]).max(initial=0) < tol
+        assert np.all(nu[f == 0] >= -tol) and np.all(nu[f == cap] <= tol)
+        assert np.linalg.norm(A @ f + Mp) < 1e-9
 
 
 def test_torque_balance_is_the_exact_optimum_at_every_lattice_gaze():
@@ -230,24 +262,77 @@ def test_torque_balance_is_the_exact_optimum_at_every_lattice_gaze():
     assert solved >= 17
 
 
-@pytest.mark.parametrize(
-    "gaze, message",
-    [
-        ((-30, 0), "unloads medialRectus"),
-        ((-15, 0), "unloads medialRectus"),
-        ((-30, 30), "no non-negative torque-balanced"),
-    ],
-)
-def test_nasal_gaze_is_rejected(gaze, message):
-    """Without passive orbital torques the length-proxy model cannot hold a nasal gaze: the
-    balanced set switches off the medial rectus, or none exists."""
-    with pytest.raises(ValueError, match=message):
-        Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)
+def test_m4_balance_records_the_muscles_it_unloads():
+    """M4's balance (no passive moment, total kept) switches the medial rectus off in nasal gaze;
+    the loads record that instead of refusing, and a gaze with no balanced set still raises."""
+    loads = Loads().from_force_table(TABLE, TABLE.at(-30, 0), EOM, passive=False)
+    assert loads.unloaded_muscles() == ["medialRectus"]
+    with pytest.raises(ValueError, match="no non-negative"):
+        Loads().from_force_table(TABLE, TABLE.at(-30, 30), EOM, passive=False)
 
 
-@pytest.mark.parametrize("gaze", [(30, 0), (0, 15), (0, -15), (0, 30)])
-def test_balancing_that_unloads_a_loaded_muscle_is_rejected(gaze):
-    """In these gazes the smallest balancing change switches off a muscle the table loads (the
-    agonist), which is not a stand-in for equilibrium; refuse it rather than solve it."""
-    with pytest.raises(ValueError, match="unloads"):
-        Loads().from_force_table(TABLE, TABLE.at(*gaze), EOM)
+def _elevation(deg: float) -> np.ndarray:
+    """Quaternion of an upward rotation (the front of the globe, −z, toward +y): about +x."""
+    a = np.radians(deg) / 2
+    return np.array([np.sin(a), 0.0, 0.0, np.cos(a)])
+
+
+def test_lid_bands_stay_in_the_orbit_when_the_globe_turns(sphere_ctx):
+    """At 20° up the globe turns under the lids: the bands keep their area (same total force on
+    the sphere) and their net force turns with the orbit, i.e. is the primary-gaze force rotated
+    back by the gaze, in the globe's frame."""
+    from eyebiomech.forces.from_viewer import rotation_matrix
+
+    q = _elevation(20)
+    primary = resultant(sphere_ctx, Loads().eyelid(2.0, 0.0, 6.0, 1.5, 1.5))
+    turned = resultant(sphere_ctx, Loads().gaze(q).eyelid(2.0, 0.0, 6.0, 1.5, 1.5))
+    assert np.linalg.norm(turned) == pytest.approx(np.linalg.norm(primary), rel=0.02)
+    expected = rotation_matrix(q).T @ primary
+    assert np.linalg.norm(turned - expected) < 0.02 * np.linalg.norm(primary)
+
+
+def test_lid_margins_place_the_bands():
+    loads = Loads().eyelid(1.0, 1.0, 9.0, 0.6, 0.6, upper_margin_mm=3.3, lower_margin_mm=-5.5)
+    item = loads.summary()[0]
+    assert item["upperMarginMm"] == 3.3 and item["lowerMarginMm"] == -5.5
+    assert item["apertureMm"] == pytest.approx(8.8)
+    with pytest.raises(ValueError, match="above"):
+        Loads().eyelid(1.0, 1.0, 9.0, 0.6, 0.6, upper_margin_mm=-6, lower_margin_mm=-5.5)
+
+
+def test_orbital_support_balances_an_eccentric_gaze(eye_ctx):
+    """With the near gaze's equilibrium forces, gaze-placed lids, and the ciliary ring, the
+    orbital reaction cancels the dead loads' net force and moment (it carries the passive
+    moment)."""
+    duty = load_force_table(DATA_DIR / "results" / "forces" / "duty-cycle.json")
+    loads = (
+        Loads()
+        .from_force_table(duty, duty.find("near"), EOM)
+        .eyelid(1.0, 1.0, 9.0, 0.6, 0.6, upper_margin_mm=3.3, lower_margin_mm=-5.5)
+        .ciliary(1e-3, 2.0)
+        .orbital_support()
+    )
+    f = loads._dead(eye_ctx)
+    X = eye_ctx.sb.doflocs
+    F = f[eye_ctx.vector_dofs]
+    assert np.linalg.norm(F.sum(axis=1)) < 1e-9 * np.abs(F).sum()
+    moment = np.cross(X, F, axis=0).sum(axis=1)
+    assert np.linalg.norm(moment) < 1e-9 * np.abs(np.cross(X, F, axis=0)).sum()
+
+
+def test_dead_load_cache_lives_on_the_context():
+    """A context built after another is garbage-collected may reuse its id(); the cached dead
+    load must not carry over (M4 follow-up, review of b6f5a0d)."""
+    import gc
+
+    loads = Loads().eyelid(1.0, 1.0, 9.0, 0.6, 0.6)
+    first = make_context(make_sphere_shell(11.5, 12.0, layers=1, n_face=4))
+    f1, _ = loads.assemble(first, np.zeros(first.n), 1.0)
+    del first
+    gc.collect()
+    second = make_context(make_sphere_shell(10.0, 11.0, layers=1, n_face=4))
+    f2, _ = loads.assemble(second, np.zeros(second.n), 1.0)
+    fresh, _ = Loads().eyelid(1.0, 1.0, 9.0, 0.6, 0.6).assemble(second, np.zeros(second.n), 1.0)
+    assert np.array_equal(f2, fresh)
+    assert not np.array_equal(f1, f2)
+    assert second.load_cache  # the cache is on the context

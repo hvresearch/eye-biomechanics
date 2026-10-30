@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/deformation.schema.json",
   "title": "Deformation",
-  "description": "Displacement field of the corneoscleral shell's outer surface written by `eyebiomech fem` next to its EyeParameters result (M4 plan, Deviation 7). Positions and displacements are in the FEM frame named by `frame` (mm); `displacementMm` is the loaded state minus the IOP-only reference state.",
+  "description": "Displacement field of the corneoscleral shell's outer surface written by `eyebiomech fem` next to its EyeParameters result (M4 plan, Deviation 7). Positions and displacements are in the FEM frame named by `frame` (mm); `displacementMm` is the loaded state minus the IOP-only reference state, relative to the lens (the scleral-spur ring's rigid lateral shift and tilt removed, M5); `rawDisplacementMm`, when present, is the same difference before that removal; `scleralMaps`, when present, fits the scleral radial height change in Zernike polynomials (M5 plan, Task 5.5).",
   "type": "object",
   "properties": {
     "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
@@ -30,6 +30,23 @@
     "displacementMm": {
       "type": "array",
       "items": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+    },
+    "rawDisplacementMm": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }
+    },
+    "scleralMaps": {
+      "type": "object",
+      "properties": {
+        "projection": { "type": "string" },
+        "normRadiusMm": { "type": "number", "exclusiveMinimum": 0 },
+        "maxOrder": { "type": "integer", "minimum": 0 },
+        "coeffsMicrons": { "type": "array", "items": { "type": "number" } },
+        "rmsResidualUm": { "type": "number", "minimum": 0 },
+        "samples": { "type": "integer", "minimum": 0 }
+      },
+      "required": ["projection", "normRadiusMm", "maxOrder", "coeffsMicrons", "rmsResidualUm"],
+      "additionalProperties": false
     },
     "region": { "type": "array", "items": { "enum": ["cornea", "limbus", "sclera"] } },
     "reference": { "$ref": "eye-parameters.schema.json" }

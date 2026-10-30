@@ -168,3 +168,26 @@ def test_half_share_families_double_up_to_the_same_equibiaxial_response():
     shear = np.eye(3)[:, :, None].copy()
     shear[0, 1, 0] = 0.02
     assert four.first_pk(shear)[0, 1, 0] > 1.5 * two.first_pk(shear)[0, 1, 0]
+
+
+def test_tangent_tensor_is_the_tangent_the_solver_uses():
+    """`tangent_tensor` (assembled by the solver) agrees with `tangent` and with the central
+    difference of `first_pk`, for an HGO with dispersion and unequal shares, fibers stretched
+    (M4 follow-up, review of 8ac4f73)."""
+    n = 12
+    a, b = _unit(n), _unit(n)
+    m = HGO(mu=0.2, lam=9.0, k1=1.0, k2=5.0, kappa=0.1, fibers=[a, b], shares=[0.5, 1.0])
+    # Stretch along both fibers so the fiber terms are active.
+    F = np.eye(3)[:, :, None] + 0.08 * (
+        np.einsum("in,jn->ijn", a, a) + np.einsum("in,jn->ijn", b, b)
+    )
+    F = F + 0.02 * RNG.standard_normal((3, 3, n))
+    for E, *_ in m._fiber_terms(F, None):
+        assert np.all(E > 0)
+    A = m.tangent_tensor(F)
+    for _ in range(3):
+        dF = RNG.standard_normal((3, 3, n))
+        via_tensor = np.einsum("ijkl...,kl...->ij...", A, dF)
+        assert np.allclose(via_tensor, m.tangent(F, dF), rtol=1e-10, atol=1e-12)
+        num = (m.first_pk(F + H * dF) - m.first_pk(F - H * dF)) / (2 * H)
+        assert np.allclose(via_tensor, num, rtol=1e-6, atol=1e-8)

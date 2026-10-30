@@ -7,9 +7,11 @@ in that commit.
 
 ## Spec and literature
 
-- `docs/literature/README.md`: DOIs still "to be added" for Rozema 2016,
-  Feil 2017, Atchison & Thibos 2016, the material, remodeling, eyelid, and
-  dynamics rows; fill them in the milestone that transcribes each source.
+- `docs/literature/README.md`: DOIs still "to be added" for Feil 2017,
+  Atchison & Thibos 2016, the material, remodeling (Rodriguez 1994 and the two
+  Grytz papers; searched in M5, 2026-10-29, not in the excerpts), eyelid, and
+  dynamics rows; fill them in the milestone that transcribes each source. Rozema
+  2016 was filled in M5.
 
 ## Schema and validators
 

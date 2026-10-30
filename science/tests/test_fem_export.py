@@ -151,9 +151,10 @@ def test_cli_end_to_end_on_a_coarse_mesh(tmp_path, capsys):
     prov = doc["provenance"]
     assert prov["source"] == "eyebiomech fem"
     assert "--gaze 0,0" in prov["generatedBy"]
-    assert re.fullmatch(r"[0-9a-f]{40}|", prov["gitHash"])
+    assert re.fullmatch(r"([0-9a-f]{40}(-dirty)?)?", prov["gitHash"])
     assert prov["date"] == date.today().isoformat()
     assert prov["verified"] is False and "elastic" in prov["citation"].lower()
+    assert "inverse solve" in prov["citation"]  # the default stress-free reference (Task 5.3)
     assert np.max(np.abs(side["displacementMm"])) > 0
 
 
@@ -167,16 +168,21 @@ def test_cli_rejects_a_future_schema_version(tmp_path, capsys):
     assert "2.0.0" in capsys.readouterr().err
 
 
-@pytest.mark.parametrize("gaze", ["15,0", "30,30", "0,-15"])
-def test_cli_rejects_eccentric_gazes(tmp_path, capsys, gaze):
-    """Until passive orbital torques exist and the lid bands follow the gaze, only primary gaze
-    has a defensible load set."""
+def test_cli_solves_an_eccentric_gaze(tmp_path, capsys):
+    """With the passive orbit and gaze-following lids, eccentric gazes have a load set (M5,
+    Task 5.2): the near gaze of the duty-cycle table, by its label."""
     fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
-    out = tmp_path / "e.eye.json"
-    code = main(["fem", "--eye", str(fixture), "--gaze", gaze, "--out", str(out)])
-    assert code == 2
-    assert "primary gaze" in capsys.readouterr().err
-    assert not out.exists()
+    forces = DATA_DIR / "results" / "forces" / "duty-cycle.json"
+    out = tmp_path / "n.eye.json"
+    args = ["fem", "--eye", str(fixture), "--gaze", "near", "--forces", str(forces)]
+    args += ["--reference", "measured"]  # the inverse solve is tested end to end below
+    code = main([*args, "--n-face", "6", "--layers", "1", "--steps", "1", "--out", str(out)])
+    assert code == 0, capsys.readouterr().err
+    side = json.loads(out.with_name("n.deformation.json").read_text())
+    eq = [i for i in side["loads"] if i["kind"] == "equilibrium"]
+    assert eq and np.linalg.norm(eq[0]["passiveMomentNmm"]) > 0 and eq[0]["unloaded"] == []
+    gaze = [i for i in side["loads"] if i["kind"] == "gaze"]
+    assert gaze and gaze[0]["quaternion"] != [0.0, 0.0, 0.0, 1.0]
 
 
 def test_cli_rejects_a_gaze_off_the_lattice(tmp_path, capsys):
@@ -186,3 +192,171 @@ def test_cli_rejects_a_gaze_off_the_lattice(tmp_path, capsys):
     )
     assert code == 2
     assert "gaze" in capsys.readouterr().err
+
+
+def test_check_physical_ignores_piston_and_tilt():
+    """Tilt is rigid motion of the surface, not deformation; it does not count toward the
+    500 µm limit (M4 follow-up, review of 8ac4f73)."""
+    doc = _zernike_doc(1.0)
+    doc["surfaces"][0]["zernikeHeight"]["coeffsMicrons"][:3] = [600.0, 600.0, 600.0]
+    check_physical(doc)
+
+
+def _corneal_field(shell, bulge_mm: float, c22_mm: float) -> np.ndarray:
+    """A non-rigid displacement confined to the cornea (zero at the scleral spur): a radial
+    bulge and an axial c(2,2)-like height change, both fading to zero at the limbus."""
+    X = shell.mesh.doflocs
+    theta = shell.geometry.polar(X)
+    fade = np.clip(1.0 - (theta / shell.limbus_polar_rad) ** 2, 0.0, None)
+    W = bulge_mm * fade * X / np.linalg.norm(X, axis=0)
+    W[2] += c22_mm * fade * (X[0] ** 2 - X[1] ** 2) / 16.0
+    return W
+
+
+def test_relative_to_lens_keeps_a_non_rigid_field_under_a_pivot(shell):
+    """A corneal deformation carried by a pivot of the globe about the optic nerve comes back as
+    the deformation alone, up to the axial translation the function keeps (M4 follow-up,
+    review of 34e8f59)."""
+    from eyebiomech.fem.export import relative_to_lens
+
+    X = shell.mesh.doflocs
+    W = _corneal_field(shell, 0.004, 0.002)
+    pole = np.array([0.0, 0.0, shell.sclera_radius_mm])[:, None]
+    R = _rotation_y(0.004)
+    U = R @ (X + W - pole) + pole - X
+    rel = relative_to_lens(shell, np.zeros_like(X), U)
+    diff = rel - W
+    assert np.max(np.abs(diff[:2])) < 1e-9
+    assert np.ptp(diff[2]) < 1e-9
+
+
+def test_relative_to_lens_passes_torsion_through(shell):
+    from eyebiomech.fem.export import relative_to_lens
+
+    X = shell.mesh.doflocs
+    c, s_ = np.cos(0.01), np.sin(0.01)
+    Rz = np.array([[c, -s_, 0.0], [s_, c, 0.0], [0.0, 0.0, 1.0]])
+    U = Rz @ X - X
+    assert np.max(np.abs(relative_to_lens(shell, np.zeros_like(X), U) - U)) < 1e-9
+
+
+def test_cli_exits_2_without_files_when_newton_fails(tmp_path, capsys, monkeypatch):
+    """A non-converged solve is refused with exit code 2 and writes nothing (M4 Task 4.7)."""
+    import eyebiomech.fem.cli as fem_cli
+    from eyebiomech.fem.solve import NewtonDidNotConverge
+
+    def fail(*args, **kwargs):
+        raise NewtonDidNotConverge("load increment to 0.5 failed", [1.0, 0.5])
+
+    monkeypatch.setattr(fem_cli, "solve", fail)
+    out = tmp_path / "n.eye.json"
+    fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
+    args = ["fem", "--eye", str(fixture), "--n-face", "4", "--layers", "1"]
+    code = main([*args, "--reference", "measured", "--out", str(out)])
+    assert code == 2
+    assert "failed" in capsys.readouterr().err
+    assert not out.exists() and not out.with_name("n.deformation.json").exists()
+
+
+def test_cli_names_a_missing_or_malformed_input(tmp_path, capsys):
+    fixture = DATA_DIR / "fixtures" / "emmetrope-right.eye.json"
+    out = str(tmp_path / "m.eye.json")
+    assert main(["fem", "--eye", str(tmp_path / "nope.eye.json"), "--out", out]) == 2
+    assert "nope.eye.json" in capsys.readouterr().err
+    bad = tmp_path / "bad.json"
+    bad.write_text("{not json")
+    assert main(["fem", "--eye", str(bad), "--out", out]) == 2
+    assert "bad.json" in capsys.readouterr().err
+    table = tmp_path / "forces.json"
+    table.write_text(json.dumps({"schema": "eye-forces/1", "frame": "?", "gazes": []}))
+    assert main(["fem", "--eye", str(fixture), "--forces", str(table), "--out", out]) == 2
+    assert "forces.json" in capsys.readouterr().err
+
+
+def test_cli_rejects_a_document_whose_muscles_differ_from_the_force_table(tmp_path, capsys):
+    """The force table is generated from the default muscle geometry; a document with other
+    muscles would be loaded with forces that do not belong to it (M4 follow-up, review of
+    edd021b)."""
+    from eyebiomech.forces.from_viewer import document_muscles
+
+    doc = copy.deepcopy(FIXTURE)
+    doc["extraocularMuscles"] = document_muscles()
+    src = tmp_path / "same.eye.json"
+    src.write_text(json.dumps(doc))
+    from eyebiomech.forces.from_viewer import check_document_muscles
+
+    check_document_muscles(doc)  # the default geometry passes
+    doc["extraocularMuscles"][0]["insertionDistFromLimbusMm"] += 0.5
+    src.write_text(json.dumps(doc))
+    code = main(["fem", "--eye", str(src), "--out", str(tmp_path / "d.eye.json")])
+    assert code == 2
+    err = capsys.readouterr().err
+    assert "lateralRectus" in err and "regenerate" in err
+
+
+def test_git_hash_marks_a_dirty_tree(tmp_path):
+    import subprocess
+
+    from eyebiomech.fem.cli import _git_hash
+
+    run = lambda *a: subprocess.run(["git", *a], cwd=tmp_path, check=True, capture_output=True)  # noqa: E731
+    run("init", "-q")
+    run("-c", "user.email=t@t", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", "x")
+    assert re.fullmatch(r"[0-9a-f]{40}", _git_hash(tmp_path))
+    (tmp_path / "f.txt").write_text("change")
+    assert re.fullmatch(r"[0-9a-f]{40}-dirty", _git_hash(tmp_path))
+
+
+def test_cli_iop_default_comes_from_the_data():
+    """No physiological value in code: the default IOP is the materials table's (M4 follow-up,
+    review of 8ac4f73)."""
+    from eyebiomech.cli import _parser
+    from eyebiomech.fem.cli import default_iop_mmhg
+    from eyebiomech.fem.data import load_materials
+
+    args = _parser().parse_args(["fem", "--eye", "x.eye.json", "--out", "y.eye.json"])
+    assert args.iop is None
+    assert default_iop_mmhg() == load_materials()["intraocularPressure"]["meanMmHg"]
+
+
+def test_sidecar_displacement_is_relative_to_the_lens(shell):
+    """The heat map shows the change relative to the lens (the spur ring's lateral shift and
+    tilt removed, as for the corneal maps) and keeps the raw field (M4 follow-up, review of
+    edd021b)."""
+    from eyebiomech.fem.export import _spur_band
+
+    X = shell.mesh.doflocs
+    U = np.zeros_like(X)
+    pole = np.array([0.0, 0.0, shell.sclera_radius_mm])[:, None]
+    T = _rotation_y(0.004) @ (X - pole) + pole - X + _corneal_field(shell, 0.003, 0.0)
+    side = build_deformation(shell, U, T, [], FIXTURE, PROV)
+    raw = np.asarray(side["rawDisplacementMm"])
+    rel = np.asarray(side["displacementMm"])
+    verts = np.asarray(side["vertices"])
+    assert raw.shape == rel.shape == verts.shape
+    # The raw field carries the pivot (lateral motion on the spur ring); the relative one does not.
+    band = _spur_band(shell)
+    index = {tuple(np.round(p, 9)): i for i, p in enumerate(verts)}
+    ring = [index[k] for k in map(tuple, np.round(X[:, band].T, 9)) if k in index]
+    assert len(ring) > 8
+    assert np.max(np.abs(raw[ring, 0])) > 1e-3
+    assert np.max(np.abs(rel[ring, :2])) < 1e-6
+    assert "scleralMaps" in side
+
+
+def test_the_retina_is_measured_at_the_edge_of_the_optic_nerve_support(shell):
+    """The node at the posterior pole sits in the clamped optic-nerve support (always 0 in a
+    solve); the retina shift is the mean axial displacement of the free inner-surface ring around
+    the support (M4 follow-up, review of edd021b). Here the field is −1 µm outside the support
+    and 0 inside."""
+    from eyebiomech.fem.data import load_materials
+    from eyebiomech.fem.export import axial_shifts
+
+    X = shell.mesh.doflocs
+    on = load_materials()["opticNerve"]["radiusMm"]
+    U = np.zeros_like(X)
+    T = U.copy()
+    T[2] = np.where(np.hypot(X[0], X[1]) > on, -0.001, 0.0)
+    s = axial_shifts(shell, U, T)
+    assert s["retinaClampMm"] == 0.0
+    assert s["retinaMm"] == pytest.approx(-0.001, abs=1e-12)

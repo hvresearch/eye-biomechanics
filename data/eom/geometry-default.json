@@ -83,12 +83,12 @@
         "meridianDeg": 90,
         "arcFromLimbusMm": 7.7,
         "alt": null,
-        "widthMm": 10,
-        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: assumption. Meridian: assumption.",
+        "widthMm": 10.5,
+        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: 10.5 +/- 1.0 mm, a cadaver dissection study of the rectus insertions (search excerpt, 2026-10-29; the excerpt gives neither the authors nor the sample size; candidate: 'Investigation of the insertion of the rectus muscles', Lokman Hekim University record) (superior rectus the widest of the four). Meridian: assumption.",
         "verified": false
       },
       "tendon": {
-        "stiffnessNPerMm": 49.07,
+        "stiffnessNPerMm": 51.52,
         "slackLengthMm": 6,
         "citation": "slackLengthMm: assumption. stiffnessNPerMm: E A / L with E = 58.88 MPa, the mean transverse Young's modulus of bovine extraocular tendon fiber bundles by atomic force microscopy (Yoo, Shin & Demer, J Biomech 2014, PubMed 24767704; excerpt), A = insertion width x 0.5 mm (thickness: assumption), L = slack length. A lower bound: the authors note the axial modulus is one to two orders of magnitude higher, and current orbital models treat the tendons as inextensible. It sets only the reported tendon elongation (M4 plan, Deviation 5).",
         "verified": false
@@ -109,12 +109,12 @@
         "meridianDeg": 270,
         "arcFromLimbusMm": 6.5,
         "alt": null,
-        "widthMm": 10,
-        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: assumption. Meridian: assumption.",
+        "widthMm": 8.4,
+        "citation": "Arc from limbus: BCSC spiral of Tillaux (excerpts). Width: 8.4 +/- 0.6 mm, the same dissection study (inferior rectus the narrowest of the four; excerpt). Meridian: assumption.",
         "verified": false
       },
       "tendon": {
-        "stiffnessNPerMm": 49.07,
+        "stiffnessNPerMm": 41.22,
         "slackLengthMm": 6,
         "citation": "slackLengthMm: assumption. stiffnessNPerMm: E A / L with E = 58.88 MPa, the mean transverse Young's modulus of bovine extraocular tendon fiber bundles by atomic force microscopy (Yoo, Shin & Demer, J Biomech 2014, PubMed 24767704; excerpt), A = insertion width x 0.5 mm (thickness: assumption), L = slack length. A lower bound: the authors note the axial modulus is one to two orders of magnitude higher, and current orbital models treat the tendons as inextensible. It sets only the reported tendon elongation (M4 plan, Deviation 5).",
         "verified": false

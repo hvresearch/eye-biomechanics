@@ -1,0 +1,47 @@
+{
+ "description": "Watson & Yellott 2012 pupil diameters from web/packages/eye-model/src/pupil/watsonYellott.ts; see web/packages/eye-model/test/pupil-values.test.ts",
+ "values": [
+  {
+   "luminanceCdM2": 100,
+   "fieldDeg2": 3600,
+   "ageYears": 30,
+   "eyes": 2,
+   "diameterMm": 2.815508297186877
+  },
+  {
+   "luminanceCdM2": 100,
+   "fieldDeg2": 3600,
+   "ageYears": 6,
+   "eyes": 2,
+   "diameterMm": 2.872276471817887
+  },
+  {
+   "luminanceCdM2": 100,
+   "fieldDeg2": 3600,
+   "ageYears": 70,
+   "eyes": 2,
+   "diameterMm": 2.588435598662837
+  },
+  {
+   "luminanceCdM2": 1,
+   "fieldDeg2": 3600,
+   "ageYears": 25,
+   "eyes": 2,
+   "diameterMm": 5.113203524257962
+  },
+  {
+   "luminanceCdM2": 1000,
+   "fieldDeg2": 100,
+   "ageYears": 50,
+   "eyes": 1,
+   "diameterMm": 3.9711084242919767
+  },
+  {
+   "luminanceCdM2": 10,
+   "fieldDeg2": 10,
+   "ageYears": 90,
+   "eyes": 1,
+   "diameterMm": 4.6706893409671935
+  }
+ ]
+}

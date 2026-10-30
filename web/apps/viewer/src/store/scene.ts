@@ -2,6 +2,7 @@ import {
   MIN_TARGET_DISTANCE_M,
   PRESET_NAMES,
   REFRACTIVE_PRESETS,
+  applyRefraction,
   applyRefractivePreset,
   decomposeRefraction,
   mirrorEye,
@@ -20,9 +21,11 @@ import {
   type PerEye,
   type PresetName,
   type SceneState,
+  validateEyeParameters,
 } from "@eye/eye-model";
 import { SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
 import { create } from "zustand";
+import { at, loadPredictionGrid, trajectoryFor, type PredictionGrid, type Trajectory } from "../data/predictions";
 import type { ResultEntry } from "../results/catalog";
 import { parseDeformation, parseEyeDocument, parseFiles, type Deformation } from "../results/load";
 import { OpticsClient, StaleRequestError } from "../worker/client";
@@ -90,6 +93,25 @@ export interface LoadedResult {
   eye: EyeParameters;
   /** Its displacement sidecar; without it the result shows refraction but no heat map. */
   deformation: Deformation | null;
+}
+
+/** The subject of the prediction timeline: duty cycle and refraction at the grid's baseline age. */
+export interface PredictionInputs {
+  nearHours: number;
+  baselineSphereD: number;
+  baselineCylinderD: number;
+}
+
+/** Defaults: 2 h of near work a day, a mildly hyperopic child without cylinder (UI defaults). */
+export const DEFAULT_PREDICTION_INPUTS: PredictionInputs = { nearHours: 2, baselineSphereD: 0.5, baselineCylinderD: 0 };
+
+export interface PredictionState {
+  grid: PredictionGrid | null;
+  profile: PredictionInputs;
+  trajectory: Trajectory | null;
+  /** The predicted refraction at the scene's age is applied to the eyes. */
+  applied: boolean;
+  error: string | null;
 }
 
 export type Hover = { kind: "structure"; label: string } | { kind: "muscle"; side: Side; index: number };
@@ -167,6 +189,12 @@ export interface SceneStore {
    * auto-prescription computed for inputs that have changed since is dropped.
    */
   applyOptics: (res: OpticsResponse, key?: string) => void;
+  prediction: PredictionState;
+  /** Load the committed prediction grid (once; later calls are no-ops). */
+  loadPredictions: () => Promise<void>;
+  setPredictionGrid: (grid: PredictionGrid) => void;
+  setPredictionProfile: (p: Partial<PredictionInputs>) => void;
+  setPredictionApplied: (on: boolean) => void;
 }
 
 /** The optics of one eye from a response, if present. */
@@ -196,6 +224,28 @@ export function clampDirectionDeg(deg: { x: number; y: number }): { x: number; y
 function presetEyes(schematic: PresetName, refractive: string): Eyes {
   const right = applyRefractivePreset(loadPreset(schematic), refractive, farPointOf, "right");
   return { right, left: mirrorEye(right, "left") };
+}
+
+/** Predicted refraction rounded for the corneal solve (0.01 D, 1°: below what the readout shows). */
+function roundedRx(r: { sphereD: number; cylinderD: number; axisDeg: number }) {
+  const cylinderD = Math.round(r.cylinderD * 100) / 100;
+  return { sphereD: Math.round(r.sphereD * 100) / 100, cylinderD, axisDeg: cylinderD === 0 ? 180 : Math.round(r.axisDeg) || 180 };
+}
+
+/**
+ * Both eyes with the predicted refraction at an age: the schematic eye's anterior cornea
+ * changed so the right eye's refraction moves by the predicted sphere and cylinder (an
+ * approximation: remodeling acts on the whole globe), the left its mirror.
+ */
+function predictedEyes(schematic: PresetName, traj: Trajectory, ageYears: number): Eyes {
+  const rx = roundedRx(at(traj, ageYears));
+  const base = loadPreset(schematic);
+  const doc = applyRefraction(base, { mechanism: "corneal", sphereD: rx.sphereD, cylinderD: rx.cylinderD, axisDegTabo: rx.axisDeg }, farPointOf, "right");
+  doc.id = `${base.id}-predicted-${ageYears}y-right`;
+  doc.label = `Predicted at ${ageYears} years, right eye (${base.label})`;
+  const r = validateEyeParameters(doc);
+  if (!r.ok) throw new Error(`The predicted eye does not validate: ${r.errors.join("; ")}`);
+  return { right: r.value, left: mirrorEye(r.value, "left") };
 }
 
 /** The decomposition readout relative to the schematic eye, or null when it cannot be computed. */
@@ -330,9 +380,12 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
     /** Put a loaded result in the right eye (the left eye keeps its document). */
     const showResult = (result: LoadedResult) => {
       if (get().loadedResult === null) beforeResult = { eyes: get().eyes, decomposition: get().decomposition };
-      set({ loadedResult: result, loadError: null, decomposition: null });
+      set({ loadedResult: result, loadError: null, decomposition: null, prediction: { ...get().prediction, applied: false } });
       update(get().scene, { left: get().eyes.left, right: result.eye });
     };
+
+    /** The eyes and decomposition shown before the prediction was applied (restored when it is cleared). */
+    let beforePrediction: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
 
     if (typeof Worker !== "undefined") queueMicrotask(schedule);
 
@@ -362,6 +415,7 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       loadError: null,
       exaggeration: DEFAULT_EXAGGERATION,
       showHeatMap: true,
+      prediction: { grid: null, profile: DEFAULT_PREDICTION_INPUTS, trajectory: null, applied: false, error: null },
 
       setTargetDistance: (m) => update({ ...get().scene, targetDistanceM: clampDistance(m) }),
       setTargetDirection: (deg) => update({ ...get().scene, targetDirectionDeg: clampDirectionDeg(deg) }),
@@ -371,13 +425,24 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           targetDistanceM: clampDistance(t.distanceM),
           targetDirectionDeg: clampDirectionDeg(t.directionDeg),
         }),
-      setAge: (years) => update({ ...get().scene, ageYears: years }),
+      setAge: (years) => {
+        const scene = { ...get().scene, ageYears: years };
+        const { applied, trajectory } = get().prediction;
+        if (!applied || !trajectory) return update(scene);
+        try {
+          const eyes = predictedEyes(scene.preset, trajectory, years);
+          set({ decomposition: decompose(eyes.right, scene.preset) });
+          update(scene, eyes);
+        } catch (e) {
+          set({ paramError: message(e) });
+        }
+      },
       setIpd: (mm) => update({ ...get().scene, ipdMm: mm }),
       setPreset: (name) => {
         if (!PRESET_NAMES.includes(name)) return;
         try {
           const eyes = presetEyes(name, get().refractivePreset);
-          set({ decomposition: decompose(eyes.right, name), loadedResult: null });
+          set({ decomposition: decompose(eyes.right, name), loadedResult: null, prediction: { ...get().prediction, applied: false } });
           update({ ...get().scene, preset: name }, eyes);
         } catch (e) {
           set({ paramError: message(e) });
@@ -389,7 +454,12 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
         try {
           const scene = get().scene;
           const eyes = presetEyes(scene.preset, name);
-          set({ refractivePreset: name, decomposition: decompose(eyes.right, scene.preset), loadedResult: null });
+          set({
+            refractivePreset: name,
+            decomposition: decompose(eyes.right, scene.preset),
+            loadedResult: null,
+            prediction: { ...get().prediction, applied: false },
+          });
           update({ ...scene, ageYears: preset.ageYears ?? scene.ageYears }, eyes);
         } catch (e) {
           set({ paramError: message(e) });
@@ -548,6 +618,50 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           set({ farPointD: fp });
           if (s.paramError === null) update(s.scene, s.eyes);
         }
+      },
+
+      loadPredictions: async () => {
+        if (get().prediction.grid !== null) return;
+        try {
+          get().setPredictionGrid(await loadPredictionGrid());
+        } catch (e) {
+          set({ prediction: { ...get().prediction, error: message(e) } });
+        }
+      },
+      setPredictionGrid: (grid) => {
+        const profile = get().prediction.profile;
+        set({ prediction: { ...get().prediction, grid, trajectory: trajectoryFor(grid, { ...profile, anchorAgeYears: grid.baselineAgeYears }), error: null } });
+        if (get().prediction.applied) get().setPredictionApplied(true);
+      },
+      setPredictionProfile: (p) => {
+        const prev = get().prediction;
+        const profile = { ...prev.profile, ...Object.fromEntries(Object.entries(p).filter(([, v]) => Number.isFinite(v))) };
+        const trajectory = prev.grid ? trajectoryFor(prev.grid, { ...profile, anchorAgeYears: prev.grid.baselineAgeYears }) : null;
+        set({ prediction: { ...prev, profile, trajectory } });
+        if (prev.applied) get().setPredictionApplied(true);
+      },
+      setPredictionApplied: (on) => {
+        const { prediction, scene, refractivePreset, loadedResult } = get();
+        if (on && prediction.trajectory) {
+          try {
+            const eyes = predictedEyes(scene.preset, prediction.trajectory, scene.ageYears);
+            if (!prediction.applied) beforePrediction = { eyes: get().eyes, decomposition: get().decomposition };
+            if (loadedResult) beforeResult = null;
+            set({ prediction: { ...prediction, applied: true }, loadedResult: null, decomposition: decompose(eyes.right, scene.preset) });
+            update(scene, eyes);
+          } catch (e) {
+            set({ paramError: message(e) });
+          }
+          return;
+        }
+        if (!prediction.applied) return;
+        const before = beforePrediction ?? (() => {
+          const eyes = presetEyes(scene.preset, refractivePreset);
+          return { eyes, decomposition: decompose(eyes.right, scene.preset) };
+        })();
+        beforePrediction = null;
+        set({ prediction: { ...prediction, applied: false }, decomposition: before.decomposition });
+        update(scene, before.eyes);
       },
     };
   });

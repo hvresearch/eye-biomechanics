@@ -5,6 +5,7 @@ import { Decomposition } from "./Decomposition";
 import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
 import { Spectacles } from "./Spectacles";
+import { Timeline } from "./Timeline";
 
 const MIN_M = 0.1;
 const MAX_M = 6;
@@ -229,6 +230,8 @@ export function Inspector() {
       <Spectacles />
 
       <Biomechanics />
+
+      <Timeline />
 
       <MuscleTable />
     </aside>

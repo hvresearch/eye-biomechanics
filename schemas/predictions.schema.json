@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/predictions.schema.json",
+  "title": "Predictions",
+  "description": "Prediction grid written by `eyebiomech grid` (M5 plan, Task 5.11): remodeled trajectories of sphere, minus cylinder, and axis by age from a baseline refraction at the first age, over near-work hours, baseline sphere, and baseline cylinder, with 5-95% bands from the calibrated parameters' posterior and the onset ages of needing correction. Arrays are nested in C order over (nearHours, baselineSphereD, baselineCylinderD, ages); onsets over the first three. Diopters, degrees (TABO, right eye), years.",
+  "type": "object",
+  "$defs": {
+    "grid4": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "array", "items": { "type": "array", "items": { "type": "number" } } } }
+    },
+    "grid3": {
+      "type": "array",
+      "items": { "type": "array", "items": { "type": "array", "items": { "type": ["number", "null"] } } }
+    },
+    "bands": {
+      "type": "object",
+      "properties": { "p05": { "$ref": "#/$defs/grid4" }, "p50": { "$ref": "#/$defs/grid4" }, "p95": { "$ref": "#/$defs/grid4" } },
+      "required": ["p05", "p50", "p95"],
+      "additionalProperties": false
+    },
+    "onset": {
+      "type": "object",
+      "properties": { "p05": { "$ref": "#/$defs/grid3" }, "p50": { "$ref": "#/$defs/grid3" }, "p95": { "$ref": "#/$defs/grid3" } },
+      "required": ["p05", "p50", "p95"],
+      "additionalProperties": false
+    },
+    "axis": { "type": "array", "items": { "type": "number" }, "minItems": 1 }
+  },
+  "properties": {
+    "schemaVersion": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$" },
+    "id": { "type": "string" },
+    "provenance": { "type": "object" },
+    "remodeled": { "const": true },
+    "baselineAgeYears": { "type": "number" },
+    "baselineAxisDeg": { "type": "number" },
+    "axes": {
+      "type": "object",
+      "properties": {
+        "ages": { "$ref": "#/$defs/axis" },
+        "nearHours": { "$ref": "#/$defs/axis" },
+        "baselineSphereD": { "$ref": "#/$defs/axis" },
+        "baselineCylinderD": { "$ref": "#/$defs/axis" }
+      },
+      "required": ["ages", "nearHours", "baselineSphereD", "baselineCylinderD"],
+      "additionalProperties": false
+    },
+    "parameters": { "type": "array", "items": { "type": "string" } },
+    "draws": { "type": "integer", "minimum": 1 },
+    "sphere": { "$ref": "#/$defs/bands" },
+    "cylinder": { "$ref": "#/$defs/bands" },
+    "axisDeg": {
+      "type": "object",
+      "properties": { "p50": { "$ref": "#/$defs/grid4" } },
+      "required": ["p50"],
+      "additionalProperties": false
+    },
+    "logMAR": {
+      "type": "object",
+      "properties": { "p50": { "$ref": "#/$defs/grid4" } },
+      "required": ["p50"],
+      "additionalProperties": false
+    },
+    "onset": {
+      "type": "object",
+      "properties": { "refraction": { "$ref": "#/$defs/onset" }, "acuity": { "$ref": "#/$defs/onset" } },
+      "required": ["refraction", "acuity"],
+      "additionalProperties": false
+    },
+    "thresholds": { "type": "object" },
+    "citation": { "type": "string" },
+    "date": { "type": "string" }
+  },
+  "required": ["schemaVersion", "id", "provenance", "remodeled", "baselineAgeYears", "baselineAxisDeg", "axes", "sphere", "cylinder", "axisDeg", "onset"],
+  "additionalProperties": false
+}

@@ -20,7 +20,7 @@ between the inner and outer surfaces.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 
 import numpy as np
 from numpy.typing import NDArray
@@ -198,6 +198,20 @@ class ShellMesh:
     # Per element: (face, i, j, k) with i along u, j along v, k along the depth; the element's
     # reference coordinates are (ξ, η, ζ) = (along v, along u, along depth) in [0, 1]³.
     cell_index: NDArray = field(repr=False)
+    # Node positions the supports are chosen by (None: the mesh's own). A shell moved to its
+    # stress-free reference keeps the measured positions here, so it is held at the same nodes.
+    support_doflocs: NDArray | None = field(default=None, repr=False)
+
+    def with_reference(self, doflocs: NDArray) -> ShellMesh:
+        """The same connectivity, facets, region tags, and geometry description at new node
+        positions (3, N) in `mesh.doflocs` order: the stress-free reference of an inverse solve
+        (M5, Task 5.3). Supports stay at the nodes this shell chose them by."""
+        X = np.asarray(doflocs, dtype=float)
+        if X.shape != self.mesh.doflocs.shape or not np.all(np.isfinite(X)):
+            raise ValueError("new node positions must be finite and shaped like mesh.doflocs")
+        mesh = MeshHex2(X, self.mesh.t, sort_t=False)
+        support = self.mesh.doflocs if self.support_doflocs is None else self.support_doflocs
+        return replace(self, mesh=mesh, support_doflocs=support)
 
 
 def _cube_shell_hex1(n_face: int, layers: int):

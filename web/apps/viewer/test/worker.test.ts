@@ -277,7 +277,7 @@ describe("induced refraction of a biomechanics result", () => {
     const raw = await RESULTS.find((r) => r.id === "emmetrope-right-primary-15mmHg")!.load();
     const loaded = parseEyeDocument(raw.eye);
     const reference = parseDeformation(raw.deformation).reference;
-    // The loaded document has no lens accommodation model, so it stays relaxed (as the store derives it).
+    // Both eyes relaxed (the induced refraction is defined at zero accommodation).
     const res = handle(request({ params: loaded, accommodationD: 0, induced: { reference } }, 0));
     const ind = res.eyes[0]!.induced!;
     expect(Number.isFinite(ind.delta.cylinderD)).toBe(true);

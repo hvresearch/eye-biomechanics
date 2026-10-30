@@ -40,3 +40,20 @@ induced deformations are, to first order, about half of what a calibrated model 
 The corneal inflation excerpt (6.6 µm for 15 → 15.5 mmHg) is 7–11 times the model's 0.6–1.0
 µm and cannot be reconciled with the rigidity reference for a whole globe; it is kept for the
 record, not as a target. Tissue stiffness is a calibration parameter of Milestone 5.
+
+## Calibration (M5, Task 5.4, 2026-10-29)
+
+`calibration.stiffnessScale` multiplies every μ and k₁ (after the age factor). It was found by
+`eyebiomech.fem.rigidity.calibrate_stiffness`: the stress-free globe of the fixture eye (the
+inverse solve of Task 5.3 at 15 mmHg) at age 70 (assumed age of Pallikaris's cataract-surgery
+cohort), production mesh, Friedenwald coefficient between 10 and 20 mmHg. Scale 0.45 gave
+0.0206 /µL; the secant step to 0.2746 gave 0.01273 /µL, 1.1% above the in-vivo mean 0.0126.
+The uncalibrated globe was therefore about 3.6 times too stiff at 70 years (2.2 times at 50 in
+M4, measured from the document geometry rather than the stress-free one). One scale cannot
+correct the balance between cornea, limbus, and sclera, which stays as transcribed or assumed.
+
+The published corneal inflation-curve check (spec §7; deferred from M4 by the owner, #14) is
+still not possible: the M5 search (2026-10-29) found the Elsheikh 2007 and 2010 inflation
+studies' abstracts (nonlinear response with a transition between 12 and 20 mmHg; stiffening
+with age and load rate) but no apex-rise numbers. It is re-filed with the owner's question in
+the M5 follow-ups.

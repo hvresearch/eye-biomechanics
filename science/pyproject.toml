@@ -6,12 +6,13 @@ requires-python = ">=3.12"
 dependencies = [
     "jsonschema>=4.26.0",
     "numpy>=2.5.4",
+    "referencing>=0.36",
     "scikit-fem>=12.0.2",
     "scipy>=1.18.1",
 ]
 
 [project.scripts]
-eyebiomech = "eyebiomech.fem.cli:main"
+eyebiomech = "eyebiomech.cli:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -19,6 +20,25 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["eyebiomech"]
+
+# The data tables the package reads ship inside the wheel as eyebiomech/data/ (found by
+# eyebiomech.fem.data.data_root() outside a checkout). Listed per directory so data/large/
+# (downloads, gitignored) never enters a wheel.
+[tool.hatch.build.targets.wheel.force-include]
+"../data/materials" = "eyebiomech/data/materials"
+"../data/eyelid" = "eyebiomech/data/eyelid"
+"../data/eom" = "eyebiomech/data/eom"
+"../data/fixtures" = "eyebiomech/data/fixtures"
+"../data/results/forces" = "eyebiomech/data/results/forces"
+"../data/results/response" = "eyebiomech/data/results/response"
+"../data/results/calibration" = "eyebiomech/data/results/calibration"
+"../data/accommodation" = "eyebiomech/data/accommodation"
+"../data/calibration" = "eyebiomech/data/calibration"
+"../data/remodeling" = "eyebiomech/data/remodeling"
+"../data/population" = "eyebiomech/data/population"
+"../data/synteyes" = "eyebiomech/data/synteyes"
+"../data/acuity" = "eyebiomech/data/acuity"
+"../data/pupil" = "eyebiomech/data/pupil"
 
 [tool.ruff]
 line-length = 100

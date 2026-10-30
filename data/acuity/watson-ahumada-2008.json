@@ -1,0 +1,27 @@
+{
+  "name": "acuity-metric",
+  "label": "Visual acuity from a sphero-cylindrical refraction, and the onset thresholds of spec §8",
+  "model": "mtf-threshold-standin",
+  "intendedModel": "Watson AB, Ahumada AJ, Predicting visual acuity from wavefront aberrations, J Vis 8(4):17, 2008 (journalofvision.org/8/4/17; search excerpts, 2026-10-29): a simulated observer identifies Sloan letters blurred by the eye's PSF, filtered by a neural transfer function, with added noise, by template matching; the authors then designed a simple metric that performs as well. Neither the model's constants nor the metric's formula were in any excerpt, and the hosts that hold the paper and its patent (US 8,408,707) were unreachable.",
+  "standin": {
+    "equation": "logMAR = max(floorLogMAR, log10(30 / f_c)), f_c (cycles/deg) the lowest spatial frequency at which the radially averaged optical MTF of the sphero-cylindrical pupil function (diffraction included, at the given pupil and wavelength) falls below thresholdContrast; 30/f_c is the stroke width in arcmin of a letter whose critical frequency is f_c",
+    "thresholdContrast": 0.1,
+    "floorLogMAR": -0.1,
+    "citation": "assumption: thresholdContrast 0.1 (a letter becomes unreadable when the optics pass less than about a tenth of the contrast at its critical frequency) and floorLogMAR -0.1 (20/16, the neural limit of a normal eye) are modeling choices, not transcribed; the stand-in ignores the neural transfer function's shape and noise. Labeled 'Approximation' wherever its acuity is shown.",
+    "verified": false
+  },
+  "pupil": {
+    "luminanceCdM2": 100,
+    "fieldDeg2": 3600,
+    "eyes": 2,
+    "citation": "The pupil for the acuity onset is the Watson & Yellott 2012 diameter (data/pupil/watson-yellott-2012.json) at the viewer's default luminance (data/scene/defaults.json, 100 cd/m2), a 60 x 60 deg field (assumption), both eyes, and the subject's age."
+  },
+  "wavelengthNm": 555,
+  "thresholds": {
+    "cylinderD": 0.75,
+    "sphereD": 0.5,
+    "logMAR": 0.3,
+    "citation": "Spec §8: onset of needing correction by refraction (cylinder >= 0.75 D or |sphere| > 0.5 D) and by acuity (worse than logMAR 0.3, 20/40; the default, configurable)."
+  },
+  "verified": false
+}

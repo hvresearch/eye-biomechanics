@@ -2,6 +2,7 @@ import { MIN_TARGET_DISTANCE_M, loadPreset } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_LENS, MAX_DIRECTION_DEG, autoRxKey, clampDirectionDeg, createSceneStore, eyeOptics, mirrorLens } from "../src/store/scene";
 import { handle } from "../src/worker/handle";
+import { synthetic } from "./syntheticGrid";
 
 describe("scene store", () => {
   it("clamps the target distance once and stores the clamped value", () => {
@@ -222,7 +223,7 @@ describe("biomechanics results in the store", () => {
     const s = store.getState();
     expect(s.loadError).toBeNull();
     expect(s.loadedResult?.id).toBe(entry.id);
-    expect(s.eyes.right.id).toBe("emmetrope-right-fem");
+    expect(s.eyes.right.id).toBe("navarro-1985-relaxed-fem");
     expect(s.loadedResult?.deformation?.maxUm).toBeGreaterThan(0);
     store.getState().clearLoadedResult();
     expect(store.getState().loadedResult).toBeNull();
@@ -245,5 +246,50 @@ describe("biomechanics results in the store", () => {
     await store.getState().loadEyeFiles([new File([JSON.stringify({ schemaVersion: "2.0.0" })], "x.eye.json")]);
     expect(store.getState().loadError).toMatch(/2\.0\.0/);
     expect(store.getState().eyes).toBe(before);
+  });
+});
+
+describe("the prediction timeline in the store", () => {
+  it("computes a trajectory when the grid and profile are set", () => {
+    const store = createSceneStore();
+    expect(store.getState().prediction.trajectory).toBeNull();
+    store.getState().setPredictionGrid(synthetic());
+    store.getState().setPredictionProfile({ nearHours: 4, baselineSphereD: 0, baselineCylinderD: 0 });
+    const t = store.getState().prediction.trajectory!;
+    expect(t.sphere.p50[2]).toBeCloseTo((4 * 84) / 100, 10);
+    store.getState().setPredictionProfile({ nearHours: Number.NaN });
+    expect(store.getState().prediction.profile.nearHours).toBe(4);
+  });
+
+  it("applies the prediction to the right eye's cornea, follows the age, and restores the preset when cleared", () => {
+    const store = createSceneStore();
+    const before = store.getState().eyes;
+    store.getState().setPredictionGrid(synthetic());
+    store.getState().setPredictionProfile({ nearHours: 4, baselineSphereD: 0, baselineCylinderD: -1 });
+    store.getState().setAge(40);
+    store.getState().setPredictionApplied(true);
+    const s = store.getState();
+    expect(s.prediction.applied).toBe(true);
+    expect(s.paramError).toBeNull();
+    const cornea = s.eyes.right.surfaces[0]!;
+    expect(cornea.type).toBe("toric");
+    expect(s.eyes.right.surfaces.slice(1)).toEqual(before.right.surfaces.slice(1));
+    expect(s.eyes.left.surfaces[0]).toEqual(cornea);
+    // At 40 the median is +1.36 −1.68 × 180: the decomposition sees it all in the cornea.
+    expect(s.decomposition?.cylinderCornealD).toBeCloseTo(-1.68, 2);
+    store.getState().setAge(90);
+    expect(store.getState().eyes.right.surfaces[0]).not.toEqual(cornea);
+    expect(store.getState().decomposition?.cylinderCornealD).toBeCloseTo(-2.68, 2);
+    store.getState().setPredictionApplied(false);
+    expect(store.getState().prediction.applied).toBe(false);
+    expect(store.getState().eyes.right).toEqual(before.right);
+  });
+
+  it("stops applying the prediction when a refractive preset is chosen", () => {
+    const store = createSceneStore();
+    store.getState().setPredictionGrid(synthetic());
+    store.getState().setPredictionApplied(true);
+    store.getState().setRefractivePreset("emmetrope");
+    expect(store.getState().prediction.applied).toBe(false);
   });
 });

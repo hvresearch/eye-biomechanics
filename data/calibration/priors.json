@@ -1,0 +1,77 @@
+{
+  "name": "calibration-priors",
+  "label": "Parameters of the population calibration, their bounds and priors (M5 plan, Task 5.10)",
+  "parameters": {
+    "rate_per_year": {
+      "transform": "log",
+      "prior": "log-uniform",
+      "bounds": [1e-05, 1.0],
+      "start": 0.001,
+      "citation": "The growth rate r of data/remodeling/growth.json; no excerpt gave a human value, so a wide log-uniform prior over five decades."
+    },
+    "lid_pressure_scale": {
+      "transform": "log",
+      "prior": "log-normal",
+      "median": 1.0,
+      "sigmaLn": 0.7,
+      "bounds": [0.1, 10.0],
+      "citation": "Multiplier on the lid pressure of data/eyelid/shaw-2010.json. sigmaLn 0.7 (a factor of 2 at one SD): Shaw et al. report 8.0 +/- 3.4 mmHg between subjects and 3.8 to 55 mmHg between estimation methods (excerpt)."
+    },
+    "eom_tone_scale": {
+      "transform": "log",
+      "prior": "log-normal",
+      "median": 1.0,
+      "sigmaLn": 0.7,
+      "bounds": [0.1, 10.0],
+      "citation": "Multiplier on the muscle forces in equilibrium (length-proxy activation x capacity). sigmaLn 0.7: the equilibrium alone changes primary-gaze forces by about half (data/results/README.md), and the capacities are partly assumed."
+    },
+    "stiffness_age_slope": {
+      "transform": "linear",
+      "prior": "normal",
+      "mean": 0.02165,
+      "sd": 0.01,
+      "bounds": [0.0, 0.06],
+      "citation": "Per-year exponent of the age stiffening above the table's lower clamp age (data/materials ageStiffening.ratePerYear, from Elsheikh et al. 2007 by excerpt); the stiffness at the rigidity calibration's age (70) stays at the calibrated value, so the slope changes only the age dependence. SD 0.01: the excerpt gave group means only."
+    },
+    "baseline_j0_mean": {
+      "transform": "linear",
+      "prior": "uniform",
+      "bounds": [-0.5, 1.0],
+      "start": 0.15,
+      "citation": "Nuisance: mean J0 of the cohort at the baseline age (the SyntEyes stand-in, data/synteyes); fitted mainly by the youngest axis-class band."
+    },
+    "baseline_j_sd": {
+      "transform": "log",
+      "prior": "log-uniform",
+      "bounds": [0.05, 1.0],
+      "start": 0.25,
+      "citation": "Nuisance: SD of J0 and J45 at the baseline age (isotropic); sets the share of astigmatic eyes."
+    }
+  },
+  "fixed": {
+    "homeostatic_ratio": {
+      "value": 1.0,
+      "citation": "Not fitted (M5 plan, Task 5.10 notes): the homeostatic offset drives axisymmetric growth and so changes only the spherical equivalent, whose adult trajectory is dominated by the crystalline lens, which the mechanical model does not contain; with the astigmatism targets alone it is unidentified. h = 1 makes the pressurized eye of the reference age homeostatic."
+    }
+  },
+  "cohort": {
+    "n": 1000,
+    "seed": 7,
+    "nearHours": {
+      "form": "uniform",
+      "low": 0.0,
+      "high": 8.0,
+      "citation": "assumption: daily near-work hours spread evenly between 0 and 8 across the cohort (the populations' near work is not reported in the target sources)."
+    }
+  },
+  "effectiveSampleSize": {
+    "value": 200,
+    "citation": "assumption: the target sources are summaries without sample sizes in the excerpts; 200 astigmatic eyes per band gives a binomial standard error of about 0.035 on a proportion."
+  },
+  "classification": {
+    "softWidthD": 0.05,
+    "softWidthCos": 0.05,
+    "citation": "numerical: logistic smoothing widths of the astigmatism threshold (D) and of the axis-class boundaries (in cos 2*axis), so the least-squares objective is differentiable; reported proportions use hard classes."
+  },
+  "verified": false
+}

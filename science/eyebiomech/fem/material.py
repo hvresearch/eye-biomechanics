@@ -223,11 +223,19 @@ def fiber_directions(x: NDArray, family: str, geometry) -> NDArray:
     return a.reshape(shape)
 
 
-def region_materials(materials: dict, age_years: float, geometry=None) -> dict[str, HGO]:
-    """One HGO material per region with the age factor applied to μ, λ, and k₁. With a
-    geometry, fiber directions follow the shell at the quadrature points; without one, the
-    materials carry no fiber callable (for inspection only)."""
-    factor = age_factor(age_years, materials)
+def region_materials(
+    materials: dict, age_years: float, geometry=None, scale: float | None = None
+) -> dict[str, HGO]:
+    """One HGO material per region with the age factor and the stiffness scale applied to μ,
+    λ, and k₁. The scale defaults to the calibrated one (`calibration.stiffnessScale` of the
+    materials table, M5 Task 5.4; 1 without a calibration). With a geometry, fiber directions
+    follow the shell at the quadrature points; without one, the materials carry no fiber
+    callable (for inspection only)."""
+    if scale is None:
+        scale = materials.get("calibration", {}).get("stiffnessScale", 1.0)
+    if not scale > 0:
+        raise ValueError(f"the stiffness scale must be positive, got {scale}")
+    factor = age_factor(age_years, materials) * scale
     out = {}
     for name, region in materials["regions"].items():
         mu = region["matrix"]["muMPa"] * factor

@@ -105,10 +105,20 @@ export function decompositionTooltip(): string {
 
 /** Hover text for the induced refraction of a loaded biomechanics result. */
 export function inducedTooltip(): string {
-  return "Approximation: elastic FEM result (no remodeling). The change is the loaded eye minus the IOP-only eye, the document's geometry being taken as stress-free; primary gaze only; muscle forces come from the length-proxy activation, torque-balanced (torque balancing changes the lateral and medial rectus forces by about half, and the induced astigmatism depends strongly on it), with the orbit taking their net pull; fixed optic-nerve cap; the lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the posterior pole. Both eyes are refracted relaxed, on the visual axis, at 555 nm, by the paraxial method (spherical aberration does not bias the difference). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.";
+  return "Approximation: elastic FEM result (no remodeling). The change is the loaded eye minus the IOP-only eye; since Milestone 5 the stress-free geometry is found by an inverse solve so the IOP-only eye is the document's (earlier files took the document as stress-free). Muscle forces come from the length-proxy activation, brought into static equilibrium with a linear passive orbital moment (the equilibrium changes the lateral and medial rectus forces by about half even in primary gaze, and the induced astigmatism depends strongly on it), with the orbit taking their net pull; lid bands at the lid margins, fixed in the orbit; fixed optic-nerve cap; the lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the edge of the optic-nerve support. Both eyes are refracted relaxed, on the visual axis, at 555 nm, by the paraxial method (spherical aberration does not bias the difference). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.";
 }
 
 /** Hover text for the displacement heat map. */
 export function heatMapTooltip(exaggeration: number): string {
-  return `Approximation: displacement magnitude of the globe's outer surface, loaded minus IOP-only, drawn ×${exaggeration} for visibility (elastic). Displacements are relative to the fixed optic-nerve cap and an assumed orbital reaction, and include rigid motion of the anterior segment, which can dominate the color scale. Without a .deformation.json file a loaded document shows its refraction but no map.`;
+  return `Approximation: displacement magnitude of the globe's outer surface, loaded minus IOP-only, drawn ×${exaggeration} for visibility (elastic). Displacements are relative to the lens: the scleral-spur ring's rigid motion (its lateral shift and tilt, the globe's pivot about the fixed optic-nerve cap) is removed, as for the corneal maps; files written before Milestone 5 show the raw field, pivot included. The orbital reaction that holds the globe is assumed. Without a .deformation.json file a loaded document shows its refraction but no map.`;
+}
+
+/** Hover text for the prediction timeline. */
+export function timelineTooltip(): string {
+  return "Approximation: model responses of the reference eye (Navarro 1985 schematic eye) for every subject; linear superposition about the pressurized eye; remodeled (growth of the corneoscleral shell under muscle, lid, and ciliary loads, calibrated to the population's astigmatism axis shift and J0 slope only; growth is held to the exposure the reduced growth model is validated for, where the calibration pushes the growth rate to its prior's floor, so the fitted shift comes from the elastic loads and the age stiffening, only in part and not as a confirmation, see data/results/README.md); bands are parameter uncertainty only (5–95% over posterior draws), not subject variability; acuity is a stand-in MTF-threshold metric. A hypothesis test, not a clinical prediction.";
+}
+
+/** Hover text for applying the predicted refraction to the eye. */
+export function appliedPredictionTooltip(): string {
+  return "Approximation: the predicted change is applied to the eye as a corneal change (the anterior cornea of the schematic eye is reshaped to carry the predicted sphere and cylinder at the current age), although the model remodels the whole corneoscleral shell; the left eye is the mirror image.";
 }

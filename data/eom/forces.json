@@ -14,12 +14,12 @@
       "citation": "Collins et al. 1981, as for the lateral rectus (excerpt)."
     },
     "superiorRectus": {
-      "maxForceGf": 66.95,
-      "citation": "assumption: mean of the two horizontal recti (Collins et al. 1981 measured the horizontal recti only)."
+      "maxForceGf": 85.62,
+      "citation": "derived: the mean of Collins et al. 1981's horizontal recti (66.95 gf) times this muscle's ratio to the horizontal mean in the active tensions of Shin et al., Applied Sciences 13(20):11431, 2023 (swab-and-force-sensor device; lateral 101.7 +/- 15.0, medial 88.0 +/- 15.4, inferior 61.3 +/- 6.8, superior 121.3 +/- 38.5 g; excerpt): 121.3 / 94.85 = 1.2789. Shin's absolute values exceed the 45-60 g of earlier studies (the authors attribute it to the passive connective tissue their method includes), so only the ratio is used, to keep the Collins scale of the horizontal recti."
     },
     "inferiorRectus": {
-      "maxForceGf": 66.95,
-      "citation": "assumption: mean of the two horizontal recti."
+      "maxForceGf": 43.27,
+      "citation": "derived: the mean of Collins et al. 1981's horizontal recti (66.95 gf) times this muscle's ratio to the horizontal mean in the active tensions of Shin et al., Applied Sciences 13(20):11431, 2023 (swab-and-force-sensor device; lateral 101.7 +/- 15.0, medial 88.0 +/- 15.4, inferior 61.3 +/- 6.8, superior 121.3 +/- 38.5 g; excerpt): 61.3 / 94.85 = 0.6463. Shin's absolute values exceed the 45-60 g of earlier studies (the authors attribute it to the passive connective tissue their method includes), so only the ratio is used, to keep the Collins scale of the horizontal recti."
     },
     "superiorOblique": {
       "maxForceGf": 59.1,

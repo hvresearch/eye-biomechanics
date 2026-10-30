@@ -264,6 +264,7 @@ source = { editable = "." }
 dependencies = [
     { name = "jsonschema" },
     { name = "numpy" },
+    { name = "referencing" },
     { name = "scikit-fem" },
     { name = "scipy" },
 ]
@@ -279,6 +280,7 @@ dev = [
 requires-dist = [
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "numpy", specifier = ">=2.5.4" },
+    { name = "referencing", specifier = ">=0.36" },
     { name = "scikit-fem", specifier = ">=12.0.2" },
     { name = "scipy", specifier = ">=1.18.1" },
 ]

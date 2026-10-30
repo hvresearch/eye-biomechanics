@@ -4,6 +4,10 @@ Items deferred while implementing Milestone 4 (2026-10-28). Each line names the
 milestone that should absorb it. Resolve an item in the task that touches the
 same file, and delete its line here in that commit.
 
+Every item that named Milestone 5 was absorbed by the Milestone 5 plan
+(`2026-10-29-m5-remodeling-calibration-prediction.md`, "Follow-ups absorbed from earlier
+milestones") and removed here on 2026-10-29.
+
 ## Closed in Task 4.0
 
 - Python cap (M0): closed, no cap. `science/uv.lock` lists cp314 wheels for NumPy
@@ -12,39 +16,6 @@ same file, and delete its line here in that commit.
   SciPy 1.18.1 on CPython 3.14.6 (2026-10-28). CI still tests 3.12 only.
 - Superior oblique insertion width (M2): transcribed from an excerpt (10.32 mm,
   Korean cadaver study), `verified: false`.
-
-## Data and provenance (needs a session with document access)
-
-The M4 session (2026-10-28) searched once more for each item. The session's
-network policy denies pmc.ncbi.nlm.nih.gov, iovs.arvojournals.org, doi.org,
-www.ncbi.nlm.nih.gov, europepmc.org, www.ebi.ac.uk, and scholar.archive.org (curl
-and WebFetch), and the search excerpts gave bibliographic records but not the
-numbers. All move to M5.
-
-- `data/schematic-eyes/zapata-diaz-2019.json` is a stub. Transcribe Table 1 of
-  Zapata-Díaz et al. 2019 (open access, doi 10.1016/j.optom.2018.01.003,
-  PMC6318498), set `transcribed: true`, and switch the viewer's default preset to
-  it. Blocks the release gate on `verified: true` for the default preset. (M5, or
-  any session with document access)
-- `data/schematic-eyes/navarro-1985.json`: confirm the Table 4 conic-constant
-  coefficients (−0.34 and −0.125 per ln(1+A)) against the paper (the CSIC
-  repository, digital.csic.es/handle/10261/29930, has a PDF). (M5, or any session
-  with document access)
-- `data/eom/geometry-default.json`: transcribe the rectus origins and the oblique
-  origins and insertions from Volkmann 1869 (Eggers, Duane's Foundations vol. 1
-  ch. 31, Table 2, or Helmholtz's *Physiological Optics*; a 1985 Aston thesis by
-  Clement also tables them), replacing the common annulus point and the 51°
-  construction. (M5, or any session with document access)
-- `data/eom/geometry-default.json`: rectus pulleys are `null`; transcribe fixed
-  pulley coordinates from Clark, Miller & Demer, IOVS 41:3787-3797, 2000, and
-  tighten the `path.test.ts` tolerance once they land. (M5, or any session with
-  document access)
-- `data/eom/geometry-default.json`: superior and inferior rectus insertion widths
-  and tendon lengths and the inferior oblique width are still assumptions;
-  transcribe the BCSC table. (M5, or any session with document access)
-- `data/visual-axis/defaults.json`: transcribe Polans 2015's angle alpha, lens tilt,
-  and decentration (doi 10.1364/OPTICA.2.000124). Tilted surfaces exist since M4
-  Task 4.1, so this is transcription only. (M5, or any session with document access)
 
 ## Modeling
 
@@ -59,34 +30,6 @@ numbers. All move to M5.
 
 ## From implementation (2026-10-28)
 
-- `data/materials/cornea-sclera.json`: calibrate tissue stiffness. The uncalibrated globe is
-  2.2 times stiffer than the in-vivo ocular rigidity of Pallikaris et al. 2005, and the corneal
-  inflation excerpt (6.6 µm for 15 → 15.5 mmHg) is 7–11 times the model's apex rise; transcribe
-  Pandolfi & Holzapfel 2008, Whitford et al. 2015, Elsheikh et al. 2007/2010, and a scleral HGO
-  set (Grytz et al. 2014) in a session with document access, then calibrate (the spec makes
-  tissue stiffness a calibration parameter). (M5)
-- `science/eyebiomech/fem/loads.py` (`from_force_table`): the length-proxy muscle forces are not
-  torque-balanced. The smallest balancing change moves the primary-gaze lateral and medial recti
-  by +57% and −47%, and switches off the agonist (or has no non-negative solution) in nasal,
-  vertical and far temporal gazes, so the CLI accepts primary gaze only. The induced astigmatism
-  is about five times larger when the orbit carries the moment instead (Deviation 15). Model
-  passive orbital torques or the v2 static equilibrium (spec §4.4), rerun the committed result,
-  and re-enable eccentric gazes in the CLI. (M5, blocking for the duty cycle and for any claim
-  about the size of the effect)
-- `science/eyebiomech/fem`: the document geometry is treated as stress-free (no prestress or
-  inverse solve; Deviation 3). Add an inverse (fixed-point) solve for the unloaded geometry so the
-  IOP's own deformation of the measured shape is accounted for. (M5)
-- `data/eyelid/shaw-2010.json`: the lower-lid pressure and band are assumed equal to the upper's,
-  and the bands are placed symmetrically about the corneal center; transcribe lower-lid values
-  and the lid margin positions in primary gaze. (M5, or any session with document access)
-- `data/eom/forces.json`: vertical rectus and oblique capacities are assumptions (Collins 1981
-  measured the horizontal recti). Tendon stiffness is a lower bound from a transverse modulus.
-  (M5, or any session with document access)
-- `data/results/fem/`: the committed result is built from the regression fixture, which has no
-  lens accommodation model, so the loaded eye cannot accommodate in the viewer; run the CLI on a
-  preset document that carries one (the exporter keeps it). (M5)
-- `science/eyebiomech/fem/cli.py`: mesh refinement 12 → 16 changes the anterior c(2,2) by about
-  8% and ΔC by about 3%; check 20 (and two layers) for the M5 prediction grid's tolerance. (M5)
 - `web/apps/viewer/src/scene/DeformationMap.tsx`: the heat map is a full shell that hides the
   cutaway while shown; clip it to the cutaway's half or draw it translucent. (M6)
 - `web/apps/viewer/test/bench.test.ts`: in this cloud container the worker benchmark varies
@@ -95,82 +38,19 @@ numbers. All move to M5.
 
 ## From the driver review of edd021b (2026-10-28, Minor findings not fixed in M4)
 
-- `science/eyebiomech/fem/export.py` (`axial_shifts`): the retina shift is ≈0 (0.12 µm after the
-  spur ring's tilt is removed, relative to the optic-nerve clamp) because the inner posterior-pole
-  node lies in the clamped optic-nerve support, so axial changes are relative to the clamp. Measure the retina elsewhere or say so in Deviation 9, the tooltip, and
-  `data/results/README.md`. (M5)
-- `science/eyebiomech/fem/export.py`: the exported document is now relative to the lens (the
-  spur ring's rigid lateral shift and tilt are removed; driver review of b6f5a0d), but the
-  sidecar's heat map still shows the raw displacement, which the globe's ~113 µm pivot about the
-  optic-nerve support dominates. Show the displacement relative to the spur ring there too, or
-  say so in the heat-map tooltip. (M5)
-- `science/eyebiomech/fem/cli.py`: the CLI ignores the input document's `extraocularMuscles` and
-  globe size and always uses `data/eom/geometry-default.json` and the default force table; warn
-  or reject until the force table is generated from the document. (M5)
-- `science/eyebiomech/fem/loads.py`: the lid bands and the orbital support are placed in the
-  globe frame and are not counter-rotated for off-primary gazes; the CLI now rejects
-  non-primary gazes (driver review of 8ac4f73). Rotate them by the inverse gaze when eccentric
-  gazes are re-enabled. (M5, blocking for the duty cycle)
-- `science/tests/test_fem_export.py`: add the Task 4.7 test that a non-converged solve
-  (`NewtonDidNotConverge`) exits with code 2 and writes no files. (M5)
-- `science/eyebiomech/fem/cli.py`: a missing `--eye`/`--forces` file or a malformed force table
-  ends in a traceback instead of exit code 2 with a message. (M5)
-- `science/eyebiomech/fem/data.py`: `DATA_DIR` points into the repository, so the installed
-  wheel's `eyebiomech fem` cannot find its tables; ship them as package data or take a data
-  root option. (M5)
 - `web/apps/viewer/src/results/load.ts` (`parseFiles`): check that the sidecar's `id` matches the
   EyeParameters document. (M6)
-- `data/results/forces/default.json`: add a drift test against a fresh `buildForceTable` run, as
-  the oracle has. (M5)
-- Spec §7 / master plan Task 4.2: reproduce a published corneal inflation curve (apex rise
-  against IOP, Elsheikh 2007 or another transcribed source in `data/materials/`) within 15% with
-  the calibrated stiffness. The owner accepted the ocular-rigidity plausibility check in its
-  place for M4 and deferred this check to the M5 calibration (#14, 2026-10-28); keep the
-  ocular-rigidity test in CI. (M5)
 
 ## From the driver review of 8ac4f73 (2026-10-28, Minor findings not fixed in M4)
 
-- `science/tests/test_fem_material.py`: `tangent_tensor`, the tangent the solver uses, has no
-  direct finite-difference test; add `einsum(A, dF) == tangent(F, dF)` for an HGO material with
-  κ > 0 and shares. (M5)
-- `science/eyebiomech/fem/cli.py`: `--iop` defaults to 15.0 mmHg, a physiological value in code;
-  make it required (as the plan's interface says) or take the default from `data/`. (M5)
-- `science/eyebiomech/fem/cli.py` (`_git_hash`): returns "" for a dirty tree, so the committed
-  result has `gitHash: ""`; write `<hash>-dirty` like the TypeScript exporter (the schema pattern
-  may need to allow it) or regenerate from a clean tree. (M5)
-- `science/eyebiomech/schema.py` (`validate_deformation`): mirror the TypeScript checks that
-  `vertices`, `displacementMm`, and `region` have equal lengths and triangle indices are in
-  range. (M5)
-- `science/eyebiomech/fem/export.py` (`check_physical`): the tilt terms (j = 1, 2) count toward the
-  500 µm limit, and the committed anterior map already carries 29.6 µm of Z(1,1) from rigid
-  motion; exclude them or remove the rigid motion first. (M5)
 - `web/apps/viewer/test/worker.test.ts`: the committed-result test asserts `cylinderD <= 0`,
   which a zero cylinder passes; also assert `|ΔC| > 1e-3`. (M6)
-- Spec §7 "start axisymmetric for verification" was replaced by the 3D Lamé sphere test without a
-  deviation entry; add one line to the M4 plan's deviations or accept the gap. (owner, M5)
 
 ## From the driver review of b6f5a0d (2026-10-28, Minor findings not fixed in M4)
 
-- `science/eyebiomech/schema.py`: `referencing` is imported directly but only arrives through
-  `jsonschema`; declare it in `pyproject.toml` or use `jsonschema`'s re-exports. (M5)
 - `web/apps/viewer/src/ui/Biomechanics.tsx`: with a document loaded without a sidecar, ΔSphere
   and ΔCylinder show "…" indefinitely while the row below says "no reference"; show "—" or "no
   reference" in all three. (M6)
 - `web/apps/viewer/src/ui/tooltips.ts`: tilted or decentered EyeParameters files can be loaded,
   but the paraxial-power, demand, and far-point readouts (`paraxial/abcd.ts`) ignore tilt and
   decenter; say so in their tooltips ("Approximation:"). (M6)
-- `science/eyebiomech/fem/export.py`: the posterior map is normalized to 3.5 mm while the surface
-  aperture is 6 mm, so large-pupil exact traces evaluate the order-8 polynomial beyond ρ = 1;
-  clamp, widen the fit, or document it. (M5)
-- `science/eyebiomech/fem/loads.py`: the dead-load cache is keyed by `id(ctx)`, which can be
-  reused after garbage collection; store the cache on the context. (M5)
-
-## From the driver review of 34e8f59 (2026-10-28, Minor findings not fixed in M4)
-
-- `science/tests/test_fem_export.py`: the `relative_to_lens` tests cover pure rigid motion only.
-  Add a case that superposes a known non-rigid field (a radial bulge or a c(2,2) height change) on
-  a pivot and asserts the maps equal those of the field alone, and a pure z-rotation (torsion)
-  that passes through unchanged. (M5)
-- Spec §7 "scleral shape, fitted to Zernike height maps": fit the deformed sclera (outer surface
-  relative to the spur ring) to Zernike height maps and export it, in the sidecar or a schema
-  extension (plan Deviation 17). (M5)

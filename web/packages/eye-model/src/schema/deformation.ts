@@ -21,7 +21,12 @@ export interface DeformationDocument {
   loads: Array<Record<string, unknown>>;
   vertices: Array<[number, number, number]>;
   triangles: Array<[number, number, number]>;
+  /** Loaded minus IOP-only, relative to the lens (the spur ring's lateral shift and tilt removed; M5). */
   displacementMm: Array<[number, number, number]>;
+  /** The same difference before the lens-relative correction (M5; absent in M4 files). */
+  rawDisplacementMm?: Array<[number, number, number]>;
+  /** Scleral radial height change in Zernike polynomials on a stereographic projection (M5). */
+  scleralMaps?: { projection: string; normRadiusMm: number; maxOrder: number; coeffsMicrons: number[]; rmsResidualUm: number; samples?: number };
   region: Array<"cornea" | "limbus" | "sclera">;
   reference: EyeParameters;
 }

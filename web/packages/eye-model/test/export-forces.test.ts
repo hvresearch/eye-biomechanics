@@ -3,7 +3,8 @@ import { mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { buildForceTable } from "../scripts/export-forces";
+import { buildDutyCycleTable, buildForceTable, type ForceTableFile } from "../scripts/export-forces";
+import { eyeDirections } from "../src/gaze/vergence";
 import { EOM_TABLE, MUSCLE_NAMES } from "../src/eom/geometry";
 import { quatRotate } from "../src/math/quat";
 
@@ -48,4 +49,36 @@ describe("force table export", () => {
     expect(written.gazes).toHaveLength(9);
     expect(written.provenance.generatedBy).toContain("--grid 3");
   }, 60_000);
+
+  it("writes a list of labeled gazes", () => {
+    const table = buildForceTable({ gazes: [{ label: "a", xDeg: 0, yDeg: 0 }, { label: "b", xDeg: -5, yDeg: -20 }] });
+    expect(table.gazes.map((g) => [g.label, g.xDeg, g.yDeg])).toEqual([
+      ["a", 0, 0],
+      ["b", -5, -20],
+    ]);
+    expect(table.gazes[0]!.quaternion).toEqual([0, 0, 0, 1]);
+  });
+
+  it("builds the duty-cycle gazes from the near target and the interpupillary distance", () => {
+    const table = buildDutyCycleTable();
+    expect(table.gazes.map((g) => g.label)).toEqual(["distance", "near"]);
+    expect(table.gazes[0]).toMatchObject({ xDeg: 0, yDeg: 0 });
+    const near = eyeDirections({ distanceM: 0.35, directionDeg: { x: 0, y: -20 } }, 63).right;
+    expect(table.gazes[1]!.xDeg).toBeCloseTo(near.xDeg, 9);
+    expect(table.gazes[1]!.yDeg).toBeCloseTo(near.yDeg, 9);
+    expect(table.gazes[1]!.xDeg).toBeLessThan(0); // the right eye turns nasally to converge
+  });
+
+  // Drift tests: the committed tables are what the current eye model writes (M4 follow-up).
+  const withoutProvenance = (t: ForceTableFile) => ({ ...t, provenance: null });
+  const committed = (name: string) =>
+    JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../../data/results/forces", name), "utf8")) as ForceTableFile;
+
+  it("matches the committed lattice table", () => {
+    expect(withoutProvenance(committed("default.json"))).toEqual(withoutProvenance(buildForceTable({ grid: 5, rangeDeg: 30 })));
+  });
+
+  it("matches the committed duty-cycle table", () => {
+    expect(withoutProvenance(committed("duty-cycle.json"))).toEqual(withoutProvenance(buildDutyCycleTable()));
+  });
 });

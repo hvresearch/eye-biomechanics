@@ -1,0 +1,67 @@
+{
+  "name": "refraction-by-age",
+  "label": "Mean refraction trajectories by age: the J0 slope (a calibration target) and spherical-equivalent changes (for comparison)",
+  "sources": [
+    {
+      "id": "j0-slope-pmc6221551",
+      "quantity": "meanJ0SlopeDPerYear",
+      "value": -0.014,
+      "corneal": -0.015,
+      "ageFrom": 30,
+      "ageTo": 80,
+      "citation": "Study of age-related corneal geometry and astigmatism (PMC6221551; search excerpt, 2026-10-29): 'the mean values of J0 and corneal J0 decreased by -0.014 and -0.015 per year of increase in age, indicating astigmatic shift toward ATR', correlated with horizontal steepening and vertical flattening of the cornea. The age range is not in the excerpt; 30-80 is an assumption.",
+      "standardErrorDPerYear": 0.003,
+      "seCitation": "assumption: no standard error in the excerpt; 0.003 D/yr spans this and the Hong Kong estimate.",
+      "useInFit": true,
+      "verified": false
+    },
+    {
+      "id": "hong-kong-polyu",
+      "quantity": "meanJ0SlopeDPerYear",
+      "value": -0.015,
+      "corneal": -0.014,
+      "ageFrom": 30,
+      "ageTo": 80,
+      "citation": "Hong Kong clinical study (The Hong Kong Polytechnic University, ira.lib.polyu.edu.hk handle 10397/25994; search excerpt, 2026-10-29): refractive and corneal J0 fell synchronously, -0.15 and -0.14 D per 10 years, after the age of 30; the population moved from mostly WTR to ATR with age. The upper age is not in the excerpt (assumption).",
+      "standardErrorDPerYear": 0.003,
+      "seCitation": "assumption, as above.",
+      "useInFit": true,
+      "verified": false
+    },
+    {
+      "id": "beesley-elliott-2024",
+      "quantity": "individualCylinderChange",
+      "citation": "Beesley & Elliott 2024 (doi 10.1111/opo.13234; search excerpt): 640 eyes followed a median of 20 years from mean age 46; most cylinder changes came after the mid-40s; increases of ATR changed faster per decade than the earlier decreases of WTR (0.71 vs 0.34 D per decade; whether clinical cylinder or J0 is not in the excerpt).",
+      "useInFit": false,
+      "useNote": "Rates in eyes that changed, not population means; kept for comparison with the model's individual trajectories.",
+      "verified": false
+    },
+    {
+      "id": "guangzhou-six-year",
+      "quantity": "meanSphericalEquivalentChange",
+      "intervalYears": 6,
+      "bands": [
+        { "ageFrom": 35, "ageTo": 44, "changeD": 0.24 },
+        { "ageFrom": 45, "ageTo": 54, "changeD": 0.51 },
+        { "ageFrom": 55, "ageTo": 64, "changeD": 0.26 },
+        { "ageFrom": 65, "ageTo": 80, "changeD": -0.05 }
+      ],
+      "citation": "Six-year changes in refraction and related ocular biometric factors in an adult Chinese population (Guangzhou; search excerpt, 2026-10-29): mean spherical-equivalent changes +0.24, +0.51, +0.26, and -0.05 D for baseline ages 35-44, 45-54, 55-64, and 65+; a hyperopic shift before 65 and a myopic shift after.",
+      "useInFit": false,
+      "useNote": "Adult spherical-equivalent changes are dominated by the crystalline lens (hyperopic shift, then nuclear myopia), which the mechanical model does not contain; fitting them would push the homeostatic ratio to stand in for the lens (M5 plan, Task 5.9 notes). Kept for comparison.",
+      "useAsBound": true,
+      "boundNote": "The bounding fit (M5 plan, Task 5.14 Step 6; `eyebiomech calibrate --bound-sphere`) requires only that the mechanical six-year change of the mean spherical equivalent in each band not exceed the observed change in magnitude: the lens, not modeled, accounts for the rest, so the observed change is an envelope, not a target.",
+      "boundStandardErrorD": 0.1,
+      "boundSeCitation": "assumption: no standard error in the excerpt; 0.1 D, about a third of the largest band change, so a mechanical change one band-change beyond the envelope costs a few units of chi-square.",
+      "verified": false
+    },
+    {
+      "id": "nhanes-1999-2004",
+      "quantity": "prevalence",
+      "citation": "Prevalence of refractive error in the United States, 1999-2004 (NHANES autorefraction; PMC2772054; search excerpt, 2026-10-29; authors not in the excerpt): age-standardized prevalence in adults 20 and older of hyperopia 3.6%, myopia 33.1%, astigmatism 36.2%; age-by-refraction distributions only as figures. The raw VIX files can be downloaded with eyebiomech.calib.download_nhanes (cdc.gov was unreachable from the cloud session).",
+      "useInFit": false,
+      "verified": false
+    }
+  ],
+  "verified": false
+}

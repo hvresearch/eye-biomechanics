@@ -1,0 +1,20 @@
+{
+  "name": "duty-cycle-default",
+  "label": "Daily near-work duty cycle: the distance and near viewing states the load history averages over (M5 plan, Task 5.6)",
+  "wakingHours": {
+    "value": 16,
+    "citation": "assumption: 24 h less 8 h of sleep (adults are advised 7-9 h); loads are averaged over waking hours only, and the closed-lid sleeping state is not modeled."
+  },
+  "distance": {
+    "targetDistanceM": null,
+    "directionDeg": { "x": 0, "y": 0 },
+    "citation": "assumption: distance viewing at optical infinity straight ahead (primary position), so no accommodation and no vergence."
+  },
+  "near": {
+    "targetDistanceM": 0.35,
+    "directionDeg": { "x": 0, "y": -20 },
+    "citation": "targetDistanceM: 35.0 cm, the mean smartphone reading distance of non-presbyopes in a study of 233 people aged 16-90 (36.8 cm overall, 39.0 cm in presbyopes; PMC8093538, search excerpt 2026-10-29); children read closer (24-27 cm in two small studies, excerpts), not modeled. directionDeg.y: -20 deg, the upper end of the 15-20 deg of downgaze by eye rotation during reading quoted by a practitioner article (eyesoneyecare.com, '20 degree rule', citing biomechanical studies it does not name; excerpt) and within the 15-60 deg near-vision declination of an ophthalmic-lens patent (excerpt); weak sources, an assumption in effect."
+  },
+  "ipdSource": "data/scene/defaults.json ipdMm (63 mm, spec §4.4 default)",
+  "verified": false
+}

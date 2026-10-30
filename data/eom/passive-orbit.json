@@ -1,0 +1,17 @@
+{
+  "name": "passive-orbit-default",
+  "label": "Passive rotational stiffness of the orbit (globe suspension and passive muscle elasticity)",
+  "form": "linear",
+  "equation": "M = -K theta: the moment the orbit exerts on the globe at gaze rotation vector theta (degrees, orbit frame), K = diag(vertical, horizontal, torsional) about the x (temporal), y (superior), and z (posterior) axes, K = stiffnessGfPerDeg x gramForceToN x leverArmMm in N mm per degree",
+  "gramForceToN": 0.00980665,
+  "leverArmMm": 12.0,
+  "leverArmCitation": "The globe radius at which the forceps applied the force (Collins et al. 1981 as summarized in the excerpt: 'expressed as g cm/deg by assuming force at the globe radius of 1.2 cm'); equal to the EOM table's 12 mm globe.",
+  "stiffnessGfPerDeg": {
+    "horizontal": 1.0,
+    "vertical": 1.0,
+    "torsional": 0.55
+  },
+  "citation": "horizontal: about 1 g/deg for horizontal rotation from primary position in the intact human eye, measured with strain-gauged forceps (Collins, Carlson et al. 1981; search excerpt quoting the measurement, 2026-10-29), the sum of the suspensory tissues' and the muscles' passive elasticity; Robinson 1965 gave 1.2 g/deg for abduction and Childress & Jones 1967 about 1.25 g/deg for adduction, falling to 0.65 g/deg beyond about 5 deg (excerpt); awake volunteers 0.52-1.26 g/deg (Arch Ophthalmol 104(10), 1986, excerpt). vertical: assumption, equal to horizontal (no excerpt gave vertical passive stiffness). torsional: 0.55 g/deg (range 0.4-0.66) for passive cyclotorsion (Arch Ophthalmol 1986, excerpt). The linear form is an approximation (the measured stiffness falls with eccentricity).",
+  "note": "In this model the extraocular muscle forces are active only (length-proxy activation x capacity); their passive elasticity is part of this orbital term, as in Collins' measurement.",
+  "verified": false
+}

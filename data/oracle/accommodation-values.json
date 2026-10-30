@@ -1,0 +1,149 @@
+{
+ "description": "Accommodation values of web/packages/eye-model/src/accommodation (amplitude by age; demand by target distance with an emmetropic far point; response by demand and amplitude); see web/packages/eye-model/test/accommodation-values.test.ts",
+ "amplitude": [
+  {
+   "ageYears": 3,
+   "amplitudeD": 7.07467089335783
+  },
+  {
+   "ageYears": 6,
+   "amplitudeD": 7.07467089335783
+  },
+  {
+   "ageYears": 10,
+   "amplitudeD": 7.06425956504766
+  },
+  {
+   "ageYears": 15,
+   "amplitudeD": 7.031502375972641
+  },
+  {
+   "ageYears": 20,
+   "amplitudeD": 6.942625301190459
+  },
+  {
+   "ageYears": 25,
+   "amplitudeD": 6.7085287809827925
+  },
+  {
+   "ageYears": 30,
+   "amplitudeD": 6.137222322425411
+  },
+  {
+   "ageYears": 35,
+   "amplitudeD": 4.968975195595897
+  },
+  {
+   "ageYears": 40,
+   "amplitudeD": 3.2572345976430763
+  },
+  {
+   "ageYears": 45,
+   "amplitudeD": 1.6694893498022916
+  },
+  {
+   "ageYears": 50,
+   "amplitudeD": 0.7117142987807638
+  },
+  {
+   "ageYears": 55,
+   "amplitudeD": 0.27545038266388294
+  },
+  {
+   "ageYears": 60,
+   "amplitudeD": 0.10231157549958217
+  },
+  {
+   "ageYears": 70,
+   "amplitudeD": 0.013594315043229005
+  },
+  {
+   "ageYears": 80,
+   "amplitudeD": 0.0017866110454001882
+  },
+  {
+   "ageYears": 90,
+   "amplitudeD": 0.0002344623456480463
+  },
+  {
+   "ageYears": 95,
+   "amplitudeD": 0
+  }
+ ],
+ "demand": [
+  {
+   "distanceM": null,
+   "demandD": 0
+  },
+  {
+   "distanceM": 6,
+   "demandD": 0.16666666666666666
+  },
+  {
+   "distanceM": 1,
+   "demandD": 1
+  },
+  {
+   "distanceM": 0.5,
+   "demandD": 2
+  },
+  {
+   "distanceM": 0.35,
+   "demandD": 2.857142857142857
+  },
+  {
+   "distanceM": 0.25,
+   "demandD": 4
+  },
+  {
+   "distanceM": 0.1,
+   "demandD": 10
+  },
+  {
+   "distanceM": 0.02,
+   "demandD": 20
+  }
+ ],
+ "response": [
+  {
+   "demandD": 0,
+   "amplitudeD": 5,
+   "responseD": 0
+  },
+  {
+   "demandD": 0.5,
+   "amplitudeD": 5,
+   "responseD": 0.5
+  },
+  {
+   "demandD": 1,
+   "amplitudeD": 5,
+   "responseD": 1
+  },
+  {
+   "demandD": 2,
+   "amplitudeD": 5,
+   "responseD": 1.85
+  },
+  {
+   "demandD": 2.857142857142857,
+   "amplitudeD": 5,
+   "responseD": 2.5785714285714287
+  },
+  {
+   "demandD": 3,
+   "amplitudeD": 2,
+   "responseD": 2
+  },
+  {
+   "demandD": 4,
+   "amplitudeD": 1,
+   "responseD": 1
+  },
+  {
+   "demandD": 6,
+   "amplitudeD": 8,
+   "responseD": 5.25
+  }
+ ]
+}

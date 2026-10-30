@@ -22,9 +22,9 @@ Used for: wide-field model, angle alpha and lens tilt and decentration defaults.
 
 ## Rozema et al. 2016 (SyntEyes)
 
-Rozema JJ, Rodriguez P, Navarro R, Tassignon MJ. *Invest Ophthalmol Vis Sci* 57:683-691, 2016.
-DOI: to be added
-Used for: population biometry variability, synthetic subjects for the prediction grid.
+Rozema JJ, Rodriguez P, Navarro R, Tassignon MJ. SyntEyes: a higher-order statistical eye model for healthy eyes. *Invest Ophthalmol Vis Sci* 57(2):683-691, 2016.
+DOI: 10.1167/iovs.15-18067 (search excerpt of the Zaguan repository record, 2026-10-29)
+Used for: population biometry variability, synthetic subjects for the prediction grid. In M5 the mixture parameters were not in any excerpt, so `data/synteyes/rozema-2016-params.json` is a labeled stand-in (one Gaussian over M, J0, J45 at age 6; `transcribed: false`), its J0 mean and astigmatic spread fitted as calibration nuisance parameters.
 
 ## Anderson et al. 2008
 
@@ -60,7 +60,7 @@ Used for: the magnitude of near miosis in `data/pupil/near-response.json` (1.83 
 
 Watson AB, Ahumada AJ. Predicting visual acuity from wavefront aberrations. *J Vis* 8(4):17, 2008.
 DOI: 10.1167/8.4.17
-Used for: acuity from wavefront, the onset acuity threshold.
+Used for: acuity from wavefront, the onset acuity threshold. Not transcribed in M5: the excerpts (2026-10-29) described the simulated observer and the simple metric the authors derived from it but gave neither the model's constants nor the metric's formula, and the hosts holding the paper and its patent (US 8,408,707) were unreachable. `data/acuity/watson-ahumada-2008.json` names an MTF-threshold stand-in instead (assumptions, labeled "Approximation").
 
 ## Atchison & Thibos 2016
 
@@ -93,24 +93,42 @@ Used for: FEM constitutive defaults, regional thickness, and age stiffening in `
 
 ## Ocular rigidity
 
-Pallikaris et al. Ocular rigidity in living human eyes. *Invest Ophthalmol Vis Sci* 2005 (PubMed 15671262).
-DOI: to be added
-Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Friedenwald coefficient 0.0126 /µL (95% CI 0.0112–0.0149) in 79 living eyes, stored in `data/materials/cornea-sclera.json` (`ocularRigidityReference`). `verified: false`.
+Pallikaris IG, Kymionis GD, Ginis HS, Kounis GA, Tsilimbaris MK. Ocular rigidity in living human eyes. *Invest Ophthalmol Vis Sci* 46(2):409-414, 2005 (PubMed 15671262).
+DOI: 10.1167/iovs.04-0162 (search excerpt of a reference list, 2026-10-29)
+Used for: the whole-globe acceptance check of the elastic FEM (M4): mean Friedenwald coefficient 0.0126 /µL (95% CI 0.0112–0.0149) in 79 living eyes, stored in `data/materials/cornea-sclera.json` (`ocularRigidityReference`). `verified: false`. Since M5 the calibration target of the tissue stiffness (`calibration`).
 
 ## Remodeling framework
 
-Rodriguez EK, Hoger A, McCulloch AD, 1994; Grytz R, Meschke G, 2010; Grytz R, Siegwart JT, 2015.
+Rodriguez EK, Hoger A, McCulloch AD. Stress-dependent finite growth in soft elastic tissues. *J Biomech* 27:455-467, 1994 (search excerpt, 2026-10-29; DOI not in the excerpt). Grytz R, Meschke G, 2010; Grytz R, Siegwart JT, 2015 (no excerpt found, 2026-10-29).
 DOI: to be added
-Used for: the growth law of the remodeling layer.
+Used for: the growth law of the remodeling layer: the multiplicative decomposition of the deformation gradient into a growth part and an elastic part (Rodriguez 1994), M5 plan Deviation 3.
 
 ## Eyelid pressure on the cornea
 
 Shaw AJ, Collins MJ, Davis BA, Carney LG. Eyelid pressure and contact with the ocular surface. *Invest Ophthalmol Vis Sci* 2010 (PubMed 19834035). Shaw AJ, Eyelid pressure on the cornea, PhD thesis, Queensland University of Technology, 2009.
 DOI: to be added (not in the excerpts)
-Used for: eyelid load defaults in `data/eyelid/shaw-2010.json` (M4): upper-lid pressure 8.0 mmHg and contact band 0.60 mm by excerpt; lower lid assumed equal. `verified: false`.
+Used for: eyelid load defaults in `data/eyelid/shaw-2010.json` (M4): upper-lid pressure 8.0 mmHg and contact band 0.60 mm by excerpt; lower lid assumed equal. `verified: false`. The lid margin positions (MRD1, MRD2) come from two population studies named in that file (M5).
 
 ## Oculomotor dynamics
 
 Bahill AT, Clark MR, Stark L, 1975 (main sequence); Rashbass C, Westheimer G, 1961 (vergence); Kasthurirangan S, Glasser A, 2005 (accommodation dynamics).
 DOI: to be added
 Used for: animation constants for saccades, vergence, and accommodation.
+
+## Population astigmatism and refraction by age
+
+Read SA, Collins MJ, Carney LG. A review of astigmatism and its possible genesis. *Clin Exp Optom* 90:5-19, 2007 (as summarized in Beesley & Elliott 2024, doi 10.1111/opo.13234); Hoffmann PC, Hütz WW. Analysis of biometry and prevalence data for corneal astigmatism in 23,239 eyes. *J Cataract Refract Surg* 36:1479-1485, 2010; the Zibo City school-children study (PMC12657078), the northern-China cataract study (PMC7542495), the corneal-geometry study PMC6221551, a Hong Kong Polytechnic University study (handle 10397/25994), the Guangzhou six-year study, and NHANES 1999–2004 (PMC2772054). All by search excerpt, 2026-10-29.
+DOI: as in each file entry where the excerpt gave one
+Used for: the calibration targets of M5 (`data/population/`): the with-the-rule, against-the-rule, and oblique proportions among astigmatic eyes by age band, and the mean J0 slope of −0.014 to −0.015 D per year between 30 and 80; the cataract-population corneal bands and the spherical-equivalent changes are kept for comparison only. `verified: false`.
+
+## Passive orbital stiffness
+
+Collins CC, et al., 1981 (passive force–length of the human orbit, by forced duction in strabismus surgery), as summarized in a search excerpt (2026-10-29); Robinson DA, 1975 (the orbit's passive elasticity in oculomotor models).
+DOI: to be added (not in the excerpts)
+Used for: `data/eom/passive-orbit.json` (M5 Task 5.2): the linear passive orbital moment, about 0.118 N·mm per degree horizontally, against which the muscle forces are brought into static equilibrium. `verified: false`.
+
+## Ensemble sampler
+
+Goodman J, Weare J. Ensemble samplers with affine invariance, 2010 (the algorithm `emcee` implements; bibliographic details not looked up in this session).
+DOI: to be added (not looked up in this session)
+Used for: `science/eyebiomech/calib/mcmc.py` (M5 Task 5.10): the stretch move of the affine-invariant ensemble sampler, written in NumPy (M5 plan Deviation 4).

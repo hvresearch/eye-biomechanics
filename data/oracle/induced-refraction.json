@@ -1,0 +1,969 @@
+{
+ "description": "Induced refraction (loaded minus reference; M, J0, J45 in D, right eye, TABO) from web/apps/viewer/src/worker/handle.ts inducedRefraction (paraxial Zernike method, 4 mm pupil); see web/apps/viewer/test/induced-refraction.test.ts",
+ "pupilDiameterMm": 4,
+ "cases": [
+  {
+   "name": "committed-fem-result",
+   "loaded": {
+    "schemaVersion": "1.0.0",
+    "id": "navarro-1985-relaxed-fem",
+    "label": "Navarro, Santamaría & Bescós 1985 accommodation-dependent schematic eye (regression fixture): elastic FEM, gaze 0,0, IOP 15 mmHg",
+    "provenance": {
+     "source": "eyebiomech fem",
+     "citation": "Elastic corneoscleral FEM (no remodeling; spec §7). The stress-free geometry is found by a fixed-point inverse solve so that the IOP-only state is the document's geometry, and the result is the change from that state (--reference measured instead takes the document as stress-free). Stiffness calibrated to the in-vivo ocular rigidity (data/materials). The loads other than IOP act as a linear perturbation of the pressurized eye (the nonlinear solve softens under the full muscle load, an artifact of the support model). Approximations: fixed optic-nerve support; muscle forces from length-proxy activation x capacity, brought into static equilibrium with a linear passive orbital moment by the least change, with the net force and the passive moment taken by an orbital reaction on the orbit's posterior hemisphere; lid bands fixed in the orbit at the lid margins; dead loads in the reference configuration; Zernike maps fitted within 4 mm of the axis; lens follows the scleral spur, the cornea is measured relative to the spur ring's lateral shift and tilt, and the retina follows the edge of the optic-nerve support. Materials, thickness, eyelid, and force data are unverified (see data/materials, data/eyelid, data/eom). Tests the hypothesis that muscle and lid loading shape the cornea; not an established result.",
+     "generatedBy": "eyebiomech fem --eye ../data/fixtures/navarro-1985-preset.eye.json --gaze 0,0 --iop 15 --out ../data/results/fem/emmetrope-right-primary-15mmHg.eye.json",
+     "gitHash": "d742868f6eea6a1d89bab3a4496adf69fcd09932-dirty",
+     "date": "2026-10-29",
+     "verified": false
+    },
+    "surfaces": [
+     {
+      "name": "cornea.anterior",
+      "type": "zernike",
+      "radiusMm": 7.72,
+      "conic": -0.26,
+      "zernikeHeight": {
+       "normRadiusMm": 4,
+       "coeffsMicrons": [
+        1.5755756356072297,
+        2.7039667273695636,
+        -0.01747824668135023,
+        -0.19990330340356166,
+        0.9463884983518949,
+        -1.0600972897852783,
+        0.5170410946180861,
+        0.1136222157569009,
+        0.0037785487084544545,
+        -0.0592615358258653,
+        0.00022203935408904307,
+        -0.006244543008724179,
+        -0.0040792543361158895,
+        0.05693416108275731,
+        -0.20749294024287201,
+        -0.07019789424004513,
+        0.09862330259678875,
+        -0.09915197626994743,
+        0.00039498172086584876,
+        -0.0007677122448376816,
+        0.0005328659286150117,
+        0.0003545182913815559,
+        0.00013199852845738325,
+        0.0007663662186204734,
+        -0.03525677979256589,
+        0.04905865773271573,
+        -0.04735032629445368,
+        0.043878762741125676,
+        0.019731029375486236,
+        -0.020723504738618226,
+        0.02337892818389009,
+        -0.02414284848849277,
+        -0.00008070946375915433,
+        0.00023013249918257817,
+        -0.0000016416952159925557,
+        2.956572194845464e-7,
+        0.00002340091541429279,
+        0.000005561885415339418,
+        0.000010340680497988863,
+        0.00006298106686186689,
+        -0.006847284709987855,
+        0.009426659307809726,
+        -0.008637195506967121,
+        0.0077555107447047945,
+        -0.007368291662097015
+       ]
+      },
+      "thicknessToNextMm": 0.5500117855170886,
+      "mediumAfter": {
+       "name": "cornea",
+       "index555": 1.376
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "cornea.posterior",
+      "type": "zernike",
+      "radiusMm": 6.5,
+      "conic": 0,
+      "zernikeHeight": {
+       "normRadiusMm": 4,
+       "coeffsMicrons": [
+        1.968765097226715,
+        3.036642394374481,
+        -0.017124472538823085,
+        -0.2753132555624141,
+        1.1622039110516698,
+        -1.232263096612928,
+        0.8673446163745903,
+        0.006340637628471868,
+        0.00588157873604081,
+        -0.09719900168742845,
+        -0.0009416104409273179,
+        -0.011652885648243683,
+        -0.04837298527376688,
+        0.15943347126106128,
+        -0.41552751443815605,
+        -0.13131741429730776,
+        0.19760830927422424,
+        -0.1916552272532124,
+        0.0008357727735686105,
+        -0.0024602219788526503,
+        0.0012097445643607374,
+        0.00018101736627765264,
+        0.00018869602402284136,
+        0.0013297809753850531,
+        -0.05823918274423534,
+        0.08066005050575376,
+        -0.07915114351314786,
+        0.06557166368652563,
+        0.01367055020016041,
+        -0.017381314458610048,
+        0.023647813754678865,
+        -0.026641824465307717,
+        0.000005140672587541917,
+        0.0006189037827667443,
+        0.0001769935381569221,
+        -0.0002929620475351502,
+        0.00012545352392101528,
+        -0.000030305992391621572,
+        0.00004634766894332648,
+        0.0002330602925639247,
+        -0.0005633284280406256,
+        -0.0009108323212940195,
+        0.002163524942708994,
+        -0.0035395080280326754,
+        0.004834296284206729
+       ]
+      },
+      "thicknessToNextMm": 3.0510919710951794,
+      "mediumAfter": {
+       "name": "aqueous",
+       "index555": 1.3374
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "lens.anterior",
+      "type": "conic",
+      "radiusMm": 10.2,
+      "conic": -3.1316,
+      "thicknessToNextMm": 4,
+      "mediumAfter": {
+       "name": "lens",
+       "index555": 1.42
+      },
+      "apertureSemiDiamMm": 5
+     },
+     {
+      "name": "lens.posterior",
+      "type": "conic",
+      "radiusMm": -6,
+      "conic": -1,
+      "thicknessToNextMm": 16.336392225615846,
+      "mediumAfter": {
+       "name": "vitreous",
+       "index555": 1.336
+      },
+      "apertureSemiDiamMm": 5
+     }
+    ],
+    "pupil": {
+     "model": "watsonYellott2012",
+     "params": {
+      "fieldAreaDeg2": 3600,
+      "eyes": 2,
+      "note": "Viewer defaults, assumptions: binocular viewing of a 60° × 60° adapting field (a room-sized scene)."
+     }
+    },
+    "axialLengthMm": 23.937495982228118,
+    "retina": {
+     "radiusMm": -12,
+     "conic": 0
+    },
+    "age": 30,
+    "interpupillaryDistanceMm": 63,
+    "extraocularMuscles": [
+     {
+      "name": "lateralRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 6.9,
+      "insertionWidthMm": 9.2,
+      "tendon": {
+       "stiffnessNPerMm": 36.11,
+       "slackLengthMm": 7.5
+      }
+     },
+     {
+      "name": "medialRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 5.5,
+      "insertionWidthMm": 10.3,
+      "tendon": {
+       "stiffnessNPerMm": 81.95,
+       "slackLengthMm": 3.7
+      }
+     },
+     {
+      "name": "superiorRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 7.7,
+      "insertionWidthMm": 10.5,
+      "tendon": {
+       "stiffnessNPerMm": 51.52,
+       "slackLengthMm": 6
+      }
+     },
+     {
+      "name": "inferiorRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 6.5,
+      "insertionWidthMm": 8.4,
+      "tendon": {
+       "stiffnessNPerMm": 41.22,
+       "slackLengthMm": 6
+      }
+     },
+     {
+      "name": "superiorOblique",
+      "originMm": [
+       -9.180103,
+       17.370341,
+       -9.055217
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 16,
+      "insertionWidthMm": 10.32,
+      "tendon": {
+       "stiffnessNPerMm": 15.19,
+       "slackLengthMm": 20
+      }
+     },
+     {
+      "name": "inferiorOblique",
+      "originMm": [
+       -7.688174,
+       -16.828871,
+       -11.210758
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 17,
+      "insertionWidthMm": 9.4,
+      "tendon": {
+       "stiffnessNPerMm": 276.74,
+       "slackLengthMm": 1
+      }
+     }
+    ],
+    "visualAxis": {
+     "alphaDeg": 5,
+     "kappaDeg": 5
+    },
+    "pupilDecenterMm": {
+     "x": 0,
+     "y": 0
+    },
+    "lensAccommodationModel": {
+     "form": "navarro1985",
+     "description": "Lens and anterior chamber as functions of accommodation A (diopters), Table 4. L = ln(1 + A). anteriorRadius = R_a0 + anteriorRadiusPerLn * L; posteriorRadius = R_p0 + posteriorRadiusPerLn * L; thickness = t0 + thicknessPerLn * L; anteriorChamberDepth = ACD0 + chamberDepthPerLn * L; index = n0 + indexCoeff * (10 A + A^2); anteriorConic = Q_a0 + anteriorConicPerLn * L; posteriorConic = Q_p0 + posteriorConicPerLn * L. The retina stays at axialLengthMm and the vitreous absorbs the change in anterior chamber depth and lens thickness (buildSurfaces).",
+     "coefficients": {
+      "anteriorRadiusPerLn": -1.75,
+      "posteriorRadiusPerLn": 0.2294,
+      "thicknessPerLn": 0.1,
+      "chamberDepthPerLn": -0.05,
+      "indexCoeff": 0.00009,
+      "anteriorConicPerLn": -0.34,
+      "posteriorConicPerLn": -0.125
+     },
+     "unverified": [
+      "anteriorConicPerLn",
+      "posteriorConicPerLn"
+     ],
+     "unverifiedNote": "Radius, thickness, chamber depth, and index coefficients were confirmed against excerpts of Table 4 on 2026-10-26. The two conic coefficients could not be confirmed from the reachable excerpts and are retained from the secondary literature; confirm against the paper before relying on them."
+    }
+   },
+   "reference": {
+    "schemaVersion": "1.0.0",
+    "id": "navarro-1985-relaxed",
+    "label": "Navarro, Santamaría & Bescós 1985 accommodation-dependent schematic eye (regression fixture)",
+    "provenance": {
+     "source": "data/schematic-eyes/navarro-1985.json",
+     "citation": "Navarro R, Santamaría J, Bescós J. Accommodation-dependent model of the human eye with aspherics. J Opt Soc Am A 2(8):1273-1281, 1985. Table 1 (relaxed surfaces, indices) and Table 4 (accommodation dependence).",
+     "generatedBy": "eye-model loadPreset",
+     "gitHash": "",
+     "date": "2026-10-26",
+     "verified": true
+    },
+    "surfaces": [
+     {
+      "name": "cornea.anterior",
+      "type": "conic",
+      "radiusMm": 7.72,
+      "conic": -0.26,
+      "thicknessToNextMm": 0.55,
+      "mediumAfter": {
+       "name": "cornea",
+       "index555": 1.376
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "cornea.posterior",
+      "type": "conic",
+      "radiusMm": 6.5,
+      "conic": 0,
+      "thicknessToNextMm": 3.05,
+      "mediumAfter": {
+       "name": "aqueous",
+       "index555": 1.3374
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "lens.anterior",
+      "type": "conic",
+      "radiusMm": 10.2,
+      "conic": -3.1316,
+      "thicknessToNextMm": 4,
+      "mediumAfter": {
+       "name": "lens",
+       "index555": 1.42
+      },
+      "apertureSemiDiamMm": 5
+     },
+     {
+      "name": "lens.posterior",
+      "type": "conic",
+      "radiusMm": -6,
+      "conic": -1,
+      "thicknessToNextMm": 16.4,
+      "mediumAfter": {
+       "name": "vitreous",
+       "index555": 1.336
+      },
+      "apertureSemiDiamMm": 5
+     }
+    ],
+    "pupil": {
+     "model": "watsonYellott2012",
+     "params": {
+      "fieldAreaDeg2": 3600,
+      "eyes": 2,
+      "note": "Viewer defaults, assumptions: binocular viewing of a 60° × 60° adapting field (a room-sized scene)."
+     }
+    },
+    "axialLengthMm": 24,
+    "retina": {
+     "radiusMm": -12,
+     "conic": 0
+    },
+    "age": 30,
+    "interpupillaryDistanceMm": 63,
+    "extraocularMuscles": [
+     {
+      "name": "lateralRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 6.9,
+      "insertionWidthMm": 9.2,
+      "tendon": {
+       "stiffnessNPerMm": 36.11,
+       "slackLengthMm": 7.5
+      }
+     },
+     {
+      "name": "medialRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 5.5,
+      "insertionWidthMm": 10.3,
+      "tendon": {
+       "stiffnessNPerMm": 81.95,
+       "slackLengthMm": 3.7
+      }
+     },
+     {
+      "name": "superiorRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 7.7,
+      "insertionWidthMm": 10.5,
+      "tendon": {
+       "stiffnessNPerMm": 51.52,
+       "slackLengthMm": 6
+      }
+     },
+     {
+      "name": "inferiorRectus",
+      "originMm": [
+       -15,
+       0,
+       32
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 6.5,
+      "insertionWidthMm": 8.4,
+      "tendon": {
+       "stiffnessNPerMm": 41.22,
+       "slackLengthMm": 6
+      }
+     },
+     {
+      "name": "superiorOblique",
+      "originMm": [
+       -9.180103,
+       17.370341,
+       -9.055217
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 16,
+      "insertionWidthMm": 10.32,
+      "tendon": {
+       "stiffnessNPerMm": 15.19,
+       "slackLengthMm": 20
+      }
+     },
+     {
+      "name": "inferiorOblique",
+      "originMm": [
+       -7.688174,
+       -16.828871,
+       -11.210758
+      ],
+      "pulleyMm": null,
+      "insertionDistFromLimbusMm": 17,
+      "insertionWidthMm": 9.4,
+      "tendon": {
+       "stiffnessNPerMm": 276.74,
+       "slackLengthMm": 1
+      }
+     }
+    ],
+    "visualAxis": {
+     "alphaDeg": 5,
+     "kappaDeg": 5
+    },
+    "pupilDecenterMm": {
+     "x": 0,
+     "y": 0
+    },
+    "lensAccommodationModel": {
+     "form": "navarro1985",
+     "description": "Lens and anterior chamber as functions of accommodation A (diopters), Table 4. L = ln(1 + A). anteriorRadius = R_a0 + anteriorRadiusPerLn * L; posteriorRadius = R_p0 + posteriorRadiusPerLn * L; thickness = t0 + thicknessPerLn * L; anteriorChamberDepth = ACD0 + chamberDepthPerLn * L; index = n0 + indexCoeff * (10 A + A^2); anteriorConic = Q_a0 + anteriorConicPerLn * L; posteriorConic = Q_p0 + posteriorConicPerLn * L. The retina stays at axialLengthMm and the vitreous absorbs the change in anterior chamber depth and lens thickness (buildSurfaces).",
+     "coefficients": {
+      "anteriorRadiusPerLn": -1.75,
+      "posteriorRadiusPerLn": 0.2294,
+      "thicknessPerLn": 0.1,
+      "chamberDepthPerLn": -0.05,
+      "indexCoeff": 0.00009,
+      "anteriorConicPerLn": -0.34,
+      "posteriorConicPerLn": -0.125
+     },
+     "unverified": [
+      "anteriorConicPerLn",
+      "posteriorConicPerLn"
+     ],
+     "unverifiedNote": "Radius, thickness, chamber depth, and index coefficients were confirmed against excerpts of Table 4 on 2026-10-26. The two conic coefficients could not be confirmed from the reachable excerpts and are retained from the secondary literature; confirm against the paper before relying on them."
+    }
+   },
+   "M": 0.06165986115930523,
+   "J0": 0.10237197315918016,
+   "J45": -0.01045138830861914
+  },
+  {
+   "name": "oblique-anterior-longer-vitreous",
+   "loaded": {
+    "schemaVersion": "1.0.0",
+    "id": "emmetrope-right",
+    "label": "Navarro 1985 relaxed emmetrope, right eye (fixture)",
+    "provenance": {
+     "source": "fixture",
+     "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985, Table 1 (d-line indices); mirrors data/schematic-eyes/navarro-1985.json; paraxial power 60.42 D, see spec §5.6",
+     "generatedBy": "hand",
+     "gitHash": "",
+     "date": "2026-10-26",
+     "verified": true
+    },
+    "surfaces": [
+     {
+      "name": "cornea.anterior",
+      "type": "zernike",
+      "radiusMm": 7.72,
+      "conic": -0.26,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 0.55,
+      "mediumAfter": {
+       "name": "cornea",
+       "index555": 1.376
+      },
+      "apertureSemiDiamMm": 6,
+      "zernikeHeight": {
+       "normRadiusMm": 4,
+       "coeffsMicrons": [
+        0,
+        0,
+        0,
+        1,
+        0.3
+       ]
+      }
+     },
+     {
+      "name": "cornea.posterior",
+      "type": "conic",
+      "radiusMm": 6.5,
+      "conic": 0,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 3.05,
+      "mediumAfter": {
+       "name": "aqueous",
+       "index555": 1.3374
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "lens.anterior",
+      "type": "conic",
+      "radiusMm": 10.2,
+      "conic": -3.1316,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 4,
+      "mediumAfter": {
+       "name": "lens",
+       "index555": 1.42
+      },
+      "apertureSemiDiamMm": 5
+     },
+     {
+      "name": "lens.posterior",
+      "type": "conic",
+      "radiusMm": -6,
+      "conic": -1,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 16.45,
+      "mediumAfter": {
+       "name": "vitreous",
+       "index555": 1.336
+      },
+      "apertureSemiDiamMm": 5
+     }
+    ],
+    "pupil": {
+     "model": "fixed",
+     "params": {
+      "diameterMm": 4
+     }
+    },
+    "axialLengthMm": 24.05,
+    "retina": {
+     "radiusMm": -12,
+     "conic": 0
+    },
+    "age": 30,
+    "interpupillaryDistanceMm": 63
+   },
+   "reference": {
+    "schemaVersion": "1.0.0",
+    "id": "emmetrope-right",
+    "label": "Navarro 1985 relaxed emmetrope, right eye (fixture)",
+    "provenance": {
+     "source": "fixture",
+     "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985, Table 1 (d-line indices); mirrors data/schematic-eyes/navarro-1985.json; paraxial power 60.42 D, see spec §5.6",
+     "generatedBy": "hand",
+     "gitHash": "",
+     "date": "2026-10-26",
+     "verified": true
+    },
+    "surfaces": [
+     {
+      "name": "cornea.anterior",
+      "type": "conic",
+      "radiusMm": 7.72,
+      "conic": -0.26,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 0.55,
+      "mediumAfter": {
+       "name": "cornea",
+       "index555": 1.376
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "cornea.posterior",
+      "type": "conic",
+      "radiusMm": 6.5,
+      "conic": 0,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 3.05,
+      "mediumAfter": {
+       "name": "aqueous",
+       "index555": 1.3374
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "lens.anterior",
+      "type": "conic",
+      "radiusMm": 10.2,
+      "conic": -3.1316,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 4,
+      "mediumAfter": {
+       "name": "lens",
+       "index555": 1.42
+      },
+      "apertureSemiDiamMm": 5
+     },
+     {
+      "name": "lens.posterior",
+      "type": "conic",
+      "radiusMm": -6,
+      "conic": -1,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 16.4,
+      "mediumAfter": {
+       "name": "vitreous",
+       "index555": 1.336
+      },
+      "apertureSemiDiamMm": 5
+     }
+    ],
+    "pupil": {
+     "model": "fixed",
+     "params": {
+      "diameterMm": 4
+     }
+    },
+    "axialLengthMm": 24,
+    "retina": {
+     "radiusMm": -12,
+     "conic": 0
+    },
+    "age": 30,
+    "interpupillaryDistanceMm": 63
+   },
+   "M": -0.18578219986958228,
+   "J0": 8.521714287519788e-13,
+   "J45": 0.11482994581584068
+  },
+  {
+   "name": "posterior-wtr-thinner-cornea",
+   "loaded": {
+    "schemaVersion": "1.0.0",
+    "id": "emmetrope-right",
+    "label": "Navarro 1985 relaxed emmetrope, right eye (fixture)",
+    "provenance": {
+     "source": "fixture",
+     "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985, Table 1 (d-line indices); mirrors data/schematic-eyes/navarro-1985.json; paraxial power 60.42 D, see spec §5.6",
+     "generatedBy": "hand",
+     "gitHash": "",
+     "date": "2026-10-26",
+     "verified": true
+    },
+    "surfaces": [
+     {
+      "name": "cornea.anterior",
+      "type": "conic",
+      "radiusMm": 7.72,
+      "conic": -0.26,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 0.53,
+      "mediumAfter": {
+       "name": "cornea",
+       "index555": 1.376
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "cornea.posterior",
+      "type": "zernike",
+      "radiusMm": 6.5,
+      "conic": 0,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 3.05,
+      "mediumAfter": {
+       "name": "aqueous",
+       "index555": 1.3374
+      },
+      "apertureSemiDiamMm": 6,
+      "zernikeHeight": {
+       "normRadiusMm": 4,
+       "coeffsMicrons": [
+        0,
+        0,
+        0,
+        0,
+        -0.4,
+        2
+       ]
+      }
+     },
+     {
+      "name": "lens.anterior",
+      "type": "conic",
+      "radiusMm": 10.2,
+      "conic": -3.1316,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 4,
+      "mediumAfter": {
+       "name": "lens",
+       "index555": 1.42
+      },
+      "apertureSemiDiamMm": 5
+     },
+     {
+      "name": "lens.posterior",
+      "type": "conic",
+      "radiusMm": -6,
+      "conic": -1,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 16.4,
+      "mediumAfter": {
+       "name": "vitreous",
+       "index555": 1.336
+      },
+      "apertureSemiDiamMm": 5
+     }
+    ],
+    "pupil": {
+     "model": "fixed",
+     "params": {
+      "diameterMm": 4
+     }
+    },
+    "axialLengthMm": 24,
+    "retina": {
+     "radiusMm": -12,
+     "conic": 0
+    },
+    "age": 30,
+    "interpupillaryDistanceMm": 63
+   },
+   "reference": {
+    "schemaVersion": "1.0.0",
+    "id": "emmetrope-right",
+    "label": "Navarro 1985 relaxed emmetrope, right eye (fixture)",
+    "provenance": {
+     "source": "fixture",
+     "citation": "Navarro, Santamaría, Bescós, J Opt Soc Am A 2(8):1273-1281, 1985, Table 1 (d-line indices); mirrors data/schematic-eyes/navarro-1985.json; paraxial power 60.42 D, see spec §5.6",
+     "generatedBy": "hand",
+     "gitHash": "",
+     "date": "2026-10-26",
+     "verified": true
+    },
+    "surfaces": [
+     {
+      "name": "cornea.anterior",
+      "type": "conic",
+      "radiusMm": 7.72,
+      "conic": -0.26,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 0.55,
+      "mediumAfter": {
+       "name": "cornea",
+       "index555": 1.376
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "cornea.posterior",
+      "type": "conic",
+      "radiusMm": 6.5,
+      "conic": 0,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 3.05,
+      "mediumAfter": {
+       "name": "aqueous",
+       "index555": 1.3374
+      },
+      "apertureSemiDiamMm": 6
+     },
+     {
+      "name": "lens.anterior",
+      "type": "conic",
+      "radiusMm": 10.2,
+      "conic": -3.1316,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 4,
+      "mediumAfter": {
+       "name": "lens",
+       "index555": 1.42
+      },
+      "apertureSemiDiamMm": 5
+     },
+     {
+      "name": "lens.posterior",
+      "type": "conic",
+      "radiusMm": -6,
+      "conic": -1,
+      "tilt": {
+       "xDeg": 0,
+       "yDeg": 0
+      },
+      "decenter": {
+       "xMm": 0,
+       "yMm": 0
+      },
+      "thicknessToNextMm": 16.4,
+      "mediumAfter": {
+       "name": "vitreous",
+       "index555": 1.336
+      },
+      "apertureSemiDiamMm": 5
+     }
+    ],
+    "pupil": {
+     "model": "fixed",
+     "params": {
+      "diameterMm": 4
+     }
+    },
+    "axialLengthMm": 24,
+    "retina": {
+     "radiusMm": -12,
+     "conic": 0
+    },
+    "age": 30,
+    "interpupillaryDistanceMm": 63
+   },
+   "M": -0.026847465277921236,
+   "J0": 0.022752850828400787,
+   "J45": -1.949956524603748e-13
+  }
+ ]
+}

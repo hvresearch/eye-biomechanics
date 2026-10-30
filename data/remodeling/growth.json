@@ -1,0 +1,33 @@
+{
+  "name": "growth-default",
+  "label": "Stress-driven growth law of the remodeling layer (M5 plan, Task 5.7, Deviation 3)",
+  "form": "rodriguez1994-inplane",
+  "equation": "F = Fe Fg, Fg = I + eps_g (Rodriguez, Hoger & McCulloch 1994); d eps_g / dt = r * Pt (sigma - h sigma_IOP) Pt / s_IOP, with sigma the Cauchy stress, Pt = I - n n^T the projection on the tangent plane of the outer surface, sigma_IOP the stress of the IOP-only eye at the reference age, s_IOP = tr(Pt sigma_IOP Pt) / 2 the local membrane stress under IOP, r the rate (per year), and h the homeostatic ratio. Energy per reference volume Jg W(F Fg^-1).",
+  "ratePerYear": {
+    "default": 0.001,
+    "bounds": [
+      1e-06,
+      1.0
+    ],
+    "citation": "assumption: no excerpt gave a human scleral or corneal growth rate (search 2026-10-29: Grytz & Siegwart 2015 and Grytz & El Hamdaoui 2017 model tree-shrew scleral remodeling over days; rates not in the excerpts). The local stress feedback of growth, in-plane tangent modulus over s_IOP, is about 800 (sclera), 1700 (limbus), and 2600 (cornea) in the fixture eye under IOP (medians; up to 8600), so r = 0.001 per year gives local time constants under a year; the structural feedback the reduced model computes is smaller, because growth is partly accommodated by deformation. A calibration parameter with wide bounds (data/calibration/priors.json)."
+  },
+  "homeostaticRatio": {
+    "default": 1.0,
+    "bounds": [
+      0.8,
+      1.2
+    ],
+    "citation": "assumption: h = 1 makes the pressurized eye of the reference age homeostatic by construction, so only the muscle, lid, and ciliary loads drive growth; h != 1 adds a uniform drive (globe growth or shrinkage). A calibration parameter."
+  },
+  "maxStepFraction": {
+    "value": 0.5,
+    "citation": "numerical: an explicit growth step is refused (FEM) or sub-stepped (reduced model) when r dt lambda exceeds this, lambda the largest local feedback estimate (in-plane tangent modulus over s_IOP), so no trajectory oscillates or diverges from the step size."
+  },
+  "growthStartAgeYears": {
+    "value": 0.0,
+    "citation": "assumption (approximation): the lid, muscle, and ciliary loads drive growth from birth, so a trajectory that starts at a later baseline age (the calibration's 6 years) begins with the growth amplitudes that this history leaves, not with zero amplitudes; between birth and the baseline age the intensities and the stiffness are held at their baseline-age values, because the loading of infancy is not modeled. Starting from zero at the baseline age instead makes the fast growth modes settle in the first year after it, a transient of the starting state rather than of the mechanism (M5 review, round 1)."
+  },
+  "fiberReorientation": "none (approximation: fiber directions do not turn with growth; small strains)",
+  "citation": "Rodriguez EK, Hoger A, McCulloch AD, Stress-dependent finite growth in soft elastic tissues, J Biomech 27:455-467, 1994 (the multiplicative decomposition; search excerpt). In-plane tensorial growth with the tissue's in-plane fiber dispersion stands in for the fiber-aligned growth of Grytz & Meschke 2010 (approximation).",
+  "verified": false
+}
