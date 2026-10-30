@@ -1,6 +1,12 @@
 import { readFileSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
 
+/**
+ * Demand at a 0.33 m target: 3 D less the relaxed far point, which is the minimum-RMS spherical
+ * equivalent at the pupil (the emmetropic schematic eye reads a few tenths of a diopter myopic).
+ */
+const NEAR_DEMAND = /^(2\.[6-9]\d|3\.0\d)$/;
+
 const text = async (page: Page, id: string) => (await page.getByTestId(id).textContent()) ?? "";
 const num = async (page: Page, id: string) => Number((await text(page, id)).replace(/−/g, "-"));
 
@@ -9,7 +15,7 @@ test("near-to-far refocus: accommodation relaxes for the far target and returns 
   await page.goto("/");
   await page.getByTestId("scenario-near-to-far-refocus").click();
   await expect(page.getByTestId("scenario-current")).toContainText("Near-to-far refocus");
-  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+  await expect(page.getByTestId("demand")).toHaveText(NEAR_DEMAND);
   await page.getByTestId("scenario-play").click();
   await expect.poll(async () => num(page, "accommodation"), { timeout: 45_000 }).toBeLessThan(0.5);
   await expect.poll(async () => num(page, "accommodation"), { timeout: 45_000 }).toBeGreaterThan(2);

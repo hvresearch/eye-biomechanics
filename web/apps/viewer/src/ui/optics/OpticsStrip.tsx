@@ -60,6 +60,7 @@ export function waveConfigs(wave: { uncorrected: WaveResult; corrected: WaveResu
  */
 export function OpticsStrip() {
   const wave = useScene((s) => eyeOptics(s.optics, "right")?.wave ?? null);
+  const waveError = useScene((s) => eyeOptics(s.optics, "right")?.waveError ?? null);
   const psfScale = useScene((s) => s.psfScale);
   const setPsfScale = useScene((s) => s.setPsfScale);
   const polychromatic = useScene((s) => s.polychromatic);
@@ -70,7 +71,13 @@ export function OpticsStrip() {
   if (!wave) {
     return (
       <section className="optics-strip" aria-label="Optics" data-testid="optics-strip">
-        <p className="note">Computing wave optics…</p>
+        {waveError ? (
+          <p className="note warn" role="alert" data-testid="wave-error">
+            Wave optics unavailable for the right eye: {waveError}
+          </p>
+        ) : (
+          <p className="note">Computing wave optics…</p>
+        )}
       </section>
     );
   }

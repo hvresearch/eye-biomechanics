@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 import { otf, otfPair } from "../src/image/mtf";
 import { psf, type Psf } from "../src/image/psf";
 import { retinalImage, retinalImagePair } from "../src/image/retinal";
-import { grating, snellenE } from "../src/image/targets";
+import { OPTOTYPE, grating, snellenE } from "../src/image/targets";
 
 const optotypes = JSON.parse(readFileSync(resolve(import.meta.dirname, "../../../../data/acuity/optotypes.json"), "utf8")) as {
   letterArcminAt20_20: number;
+  letterHeightStrokes: number;
 };
 
 function deltaPsf(n: number, pixelArcmin: number): Psf {
@@ -102,5 +103,17 @@ describe("retinalImage", () => {
     const p = deltaPsf(64, 0.25);
     expect(() => retinalImage(snellenE(32, 0.25, 5), p)).toThrow();
     expect(() => retinalImage(snellenE(64, 0.3, 5), p)).toThrow();
+  });
+});
+
+describe("optotype geometry from data", () => {
+  it("draws the E on the data file's stroke grid", () => {
+    expect(OPTOTYPE.letterHeightStrokes).toBe(optotypes.letterHeightStrokes);
+    expect(OPTOTYPE.letterArcminAt20_20).toBe(optotypes.letterArcminAt20_20);
+    const fromData = snellenE(64, 0.25, OPTOTYPE.letterArcminAt20_20);
+    expect(Array.from(snellenE(64, 0.25, OPTOTYPE.letterArcminAt20_20, "right", OPTOTYPE).data)).toEqual(Array.from(fromData.data));
+    const seven = { ...OPTOTYPE, letterHeightStrokes: 7 };
+    expect(Array.from(snellenE(64, 0.25, OPTOTYPE.letterArcminAt20_20, "right", seven).data)).not.toEqual(Array.from(fromData.data));
+    expect(() => snellenE(64, 0.25, 5, "right", { letterHeightStrokes: 4 })).toThrow(RangeError);
   });
 });

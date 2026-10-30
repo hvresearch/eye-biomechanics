@@ -83,9 +83,20 @@ function seed(s: Exclude<Surface, { kind: "conic" }>, origin: Vec3, dir: Vec3): 
 }
 
 /**
+ * Whether the ray crosses the vertex plane outside the aperture: then a missing intersection is
+ * the aperture's doing (a ray parallel to the plane is never classified by it).
+ */
+function outsideAperture(s: Surface, origin: Vec3, dir: Vec3): boolean {
+  if (dir[2] === 0) return false;
+  const t = (s.vertexZMm - origin[2]) / dir[2];
+  return Math.hypot(origin[0] + t * dir[0] - s.decenter.xMm, origin[1] + t * dir[1] - s.decenter.yMm) > s.apertureSemiDiamMm;
+}
+
+/**
  * Intersect a ray with the surface: the first forward hit, `null` when it lies outside the
  * aperture, `"miss"` when there is no forward hit (no root, Newton does not converge, or the
- * ray passes beyond the surface's edge). Toric and Zernike surfaces use Newton iteration on
+ * ray passes beyond the surface's edge). The aperture is tested first: a ray with no hit that
+ * crosses the vertex plane outside the aperture is an aperture clip (`null`), not a miss. Toric and Zernike surfaces use Newton iteration on
  * z(t) − sag(x(t), y(t)) = 0 seeded by the closed-form conic root. A tilted surface is
  * intersected in its own frame (surfaces/tilt), where its aperture is measured; the rotation
  * preserves the ray parameter t.
@@ -97,7 +108,12 @@ export function intersect(s: Surface, origin: Vec3, dir: Vec3): Intersection {
     if (hit === null || hit === "miss") return hit;
     return { point: toGlobal(frame, hit.point), t: hit.t };
   }
-  if (s.kind === "conic") return conicIntersect(s, origin, dir);
+  const hit = s.kind === "conic" ? conicIntersect(s, origin, dir) : newtonIntersect(s, origin, dir);
+  return hit === "miss" && outsideAperture(s, origin, dir) ? null : hit;
+}
+
+/** Newton intersection with a toric or Zernike surface in its own (untilted) frame. */
+function newtonIntersect(s: Exclude<Surface, { kind: "conic" }>, origin: Vec3, dir: Vec3): Intersection {
   const t0 = seed(s, origin, dir);
   if (t0 === null) return "miss";
   let t = t0;

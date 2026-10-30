@@ -17,9 +17,9 @@ function base(): Scenario {
 }
 
 describe("scenario serialize and parse", () => {
-  it("round-trips the scene, both eyes, the prescription, the correction, and the result id", () => {
+  it("round-trips the scene, both eyes, the prescription, the correction, and the result id", async () => {
     const store = createSceneStore();
-    store.getState().setRefractivePreset("astigmat-1.5-atr-corneal");
+    await store.getState().setRefractivePreset("astigmat-1.5-atr-corneal");
     store.getState().setTarget({ distanceM: 0.5, directionDeg: { x: 5, y: -3 } });
     store.getState().setSpectacles({ ...DEFAULT_LENS, sphereD: 0.25, cylinderD: -1.5, axisDeg: 90 });
     store.getState().setCorrected(true);
@@ -122,8 +122,8 @@ async function buildScenarios(): Promise<Record<string, Scenario>> {
   const out: Record<string, Scenario> = {};
 
   const refocus = createSceneStore();
-  refocus.getState().setRefractivePreset("emmetrope");
-  refocus.getState().setAge(25);
+  await refocus.getState().setRefractivePreset("emmetrope");
+  await refocus.getState().setAge(25);
   refocus.getState().setTargetDistance(0.33);
   out["near-to-far-refocus"] = serializeScenario(refocus.getState().scenarioInput(), {
     name: "Near-to-far refocus",
@@ -140,8 +140,8 @@ async function buildScenarios(): Promise<Record<string, Scenario>> {
   });
 
   const presby = createSceneStore();
-  presby.getState().setRefractivePreset("emmetrope");
-  presby.getState().setAge(20);
+  await presby.getState().setRefractivePreset("emmetrope");
+  await presby.getState().setAge(20);
   presby.getState().setTargetDistance(0.4);
   out["presbyopia-20-to-60"] = serializeScenario(presby.getState().scenarioInput(), {
     name: "Presbyopia 20 to 60",
@@ -154,7 +154,7 @@ async function buildScenarios(): Promise<Record<string, Scenario>> {
   });
 
   const astig = createSceneStore();
-  astig.getState().setRefractivePreset("astigmat-1.5-atr-corneal");
+  await astig.getState().setRefractivePreset("astigmat-1.5-atr-corneal");
   astig.getState().setTargetDistance(SCENE_DEFAULTS.targetDistanceM);
   const s = astig.getState();
   const b = s.binocular.right;

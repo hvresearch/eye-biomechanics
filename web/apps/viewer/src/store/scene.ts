@@ -2,9 +2,6 @@ import {
   MIN_TARGET_DISTANCE_M,
   PRESET_NAMES,
   REFRACTIVE_PRESETS,
-  applyRefraction,
-  applyRefractivePreset,
-  decomposeRefraction,
   mirrorEye,
   type Decomposition,
   defaultScene,
@@ -22,15 +19,15 @@ import {
   type PresetName,
   type Scenario,
   type SceneState,
-  validateEyeParameters,
 } from "@eye/eye-model";
-import { SPECTACLE_DEFAULTS, paraxialPower, type Surface } from "@eye/optics";
+import { OPTOTYPE, SPECTACLE_DEFAULTS } from "@eye/optics";
 import { create } from "zustand";
 import { at, loadPredictionGrid, trajectoryFor, type PredictionGrid, type Trajectory } from "../data/predictions";
 import type { ResultEntry } from "../results/catalog";
 import { animatedKeys, sceneAt, toSceneState, type ScenarioInput } from "../scenario/scenario";
 import { parseDeformation, parseEyeDocument, parseFiles, type Deformation } from "../results/load";
 import { OpticsClient, StaleRequestError } from "../worker/client";
+import { runEyesJob, type EyesJob, type EyesJobResult } from "../worker/jobs";
 import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveRequest } from "../worker/messages";
 import { throttle } from "./throttle";
 import { DEFAULT_CUT, clampDepthMm, type CutSettings } from "../scene/cut";
@@ -42,9 +39,9 @@ export const DEFAULT_PRESET: PresetName = "navarro-1985";
 export const FAN_RAYS = 15;
 /**
  * Wave optics of the right (cutaway) eye: the spec's 64 × 64 pupil grid and 256 PSF grid, at
- * 555 nm, with a 20/20 Snellen E (5 arcmin) as the retinal-image target.
+ * 555 nm, with a 20/20 Snellen E (data/acuity/optotypes.json) as the retinal-image target.
  */
-export const WAVE_REQUEST: WaveRequest = { gridN: 64, psfN: 256, polychromatic: false, letterArcmin: 5, autoPrescribe: false };
+export const WAVE_REQUEST: WaveRequest = { gridN: 64, psfN: 256, polychromatic: false, letterArcmin: OPTOTYPE.letterArcminAt20_20, autoPrescribe: false };
 /** Minimum interval between worker requests while inputs change, ms (one frame). */
 const REQUEST_INTERVAL_MS = 16;
 /** Target directions span the comfortable oculomotor range, degrees (a UI bound, not physiology). */
@@ -64,9 +61,6 @@ export interface HistorySample {
   verticalVergenceDeg: number;
   accommodationD: PerEye;
 }
-
-/** Paraxial far point in one meridian, for presets and the decomposition (main thread; well under 1 ms per call). */
-export const farPointOf = (s: Surface[], meridianDeg = 0) => paraxialPower(s, 1, { meridianDeg }).farPointD;
 
 /** A plano lens with the default design, the starting point of the Spectacles panel. */
 export const DEFAULT_LENS: ClinicalLens = {
@@ -148,12 +142,15 @@ export interface SceneStore {
   setTargetDirection: (deg: { x: number; y: number }) => void;
   /** Distance and direction at once (dragging the target in the stage). */
   setTarget: (t: { distanceM: number; directionDeg: { x: number; y: number } }) => void;
-  setAge: (years: number) => void;
+  /** With the prediction applied, the predicted eyes follow from the worker; resolves once they are applied. */
+  setAge: (years: number) => Promise<void>;
   setIpd: (mm: number) => void;
-  setPreset: (name: PresetName) => void;
+  /** Resolves once the worker's eyes are applied (or the change was superseded). */
+  setPreset: (name: PresetName) => Promise<void>;
   /** Refractive-error preset applied to the schematic eye (right eye; the left is its mirror). */
   refractivePreset: string;
-  setRefractivePreset: (name: string) => void;
+  /** Solved in the worker; resolves once the eyes are applied (or the change was superseded). */
+  setRefractivePreset: (name: string) => Promise<void>;
   /** Copy the right eye's document and lens to the left eye, mirrored. */
   mirrorRightToLeft: () => void;
   setLuminance: (cdM2: number) => void;
@@ -200,7 +197,7 @@ export interface SceneStore {
   /** Load an EyeParameters file, with its .deformation.json when selected together. */
   loadEyeFiles: (files: readonly File[]) => Promise<void>;
   /** Back to the schematic eye and refractive preset. */
-  clearLoadedResult: () => void;
+  clearLoadedResult: () => Promise<void>;
   setExaggeration: (x: number) => void;
   setShowHeatMap: (on: boolean) => void;
   /**
@@ -213,7 +210,7 @@ export interface SceneStore {
   loadPredictions: () => Promise<void>;
   setPredictionGrid: (grid: PredictionGrid) => void;
   setPredictionProfile: (p: Partial<PredictionInputs>) => void;
-  setPredictionApplied: (on: boolean) => void;
+  setPredictionApplied: (on: boolean) => Promise<void>;
   /** The loaded scenario and the dynamics time its timeline starts at (spec §6.5). */
   scenario: { doc: Scenario; startS: number } | null;
   /** Apply a parsed scenario (with its biomechanics result's catalog entry when it names one). */
@@ -248,41 +245,15 @@ export function clampDirectionDeg(deg: { x: number; y: number }): { x: number; y
   return { x: c(deg.x), y: c(deg.y) };
 }
 
-/** Both eyes for a schematic eye and refractive preset: the right eye solved, the left its mirror. */
-function presetEyes(schematic: PresetName, refractive: string): Eyes {
-  const right = applyRefractivePreset(loadPreset(schematic), refractive, farPointOf, "right");
-  return { right, left: mirrorEye(right, "left") };
-}
-
 /** Predicted refraction rounded for the corneal solve (0.01 D, 1°: below what the readout shows). */
 function roundedRx(r: { sphereD: number; cylinderD: number; axisDeg: number }) {
   const cylinderD = Math.round(r.cylinderD * 100) / 100;
   return { sphereD: Math.round(r.sphereD * 100) / 100, cylinderD, axisDeg: cylinderD === 0 ? 180 : Math.round(r.axisDeg) || 180 };
 }
 
-/**
- * Both eyes with the predicted refraction at an age: the schematic eye's anterior cornea
- * changed so the right eye's refraction moves by the predicted sphere and cylinder (an
- * approximation: remodeling acts on the whole globe), the left its mirror.
- */
-function predictedEyes(schematic: PresetName, traj: Trajectory, ageYears: number): Eyes {
-  const rx = roundedRx(at(traj, ageYears));
-  const base = loadPreset(schematic);
-  const doc = applyRefraction(base, { mechanism: "corneal", sphereD: rx.sphereD, cylinderD: rx.cylinderD, axisDegTabo: rx.axisDeg }, farPointOf, "right");
-  doc.id = `${base.id}-predicted-${ageYears}y-right`;
-  doc.label = `Predicted at ${ageYears} years, right eye (${base.label})`;
-  const r = validateEyeParameters(doc);
-  if (!r.ok) throw new Error(`The predicted eye does not validate: ${r.errors.join("; ")}`);
-  return { right: r.value, left: mirrorEye(r.value, "left") };
-}
-
-/** The decomposition readout relative to the schematic eye, or null when it cannot be computed. */
-function decompose(eye: EyeParameters, schematic: PresetName): Decomposition | null {
-  try {
-    return decomposeRefraction(eye, loadPreset(schematic), farPointOf);
-  } catch {
-    return null;
-  }
+/** The worker job that puts the predicted refraction at an age into the schematic eye. */
+function predictedJob(schematic: PresetName, traj: Trajectory, ageYears: number): EyesJob {
+  return { kind: "predicted", schematic, rx: roundedRx(at(traj, ageYears)), ageYears };
 }
 
 /**
@@ -310,12 +281,20 @@ function getClient(): OpticsClient | null {
   return sharedClient;
 }
 
+/** Runs an eye job (preset solving, the decomposition) and resolves with its result. */
+export type JobRunner = (job: EyesJob) => Promise<EyesJobResult>;
+
+/** The worker when there is one; in-process (asynchronously, like the worker) in unit tests. */
+const defaultRunJob: JobRunner = (job) => getClient()?.job(job) ?? Promise.resolve().then(() => runEyesJob(job));
+
 /**
  * The viewer's state. Eye-model derivation (gaze, muscles, accommodation controller,
  * dynamics) runs on the main thread; every optics computation (lens solve, surfaces,
- * paraxial power, defocus, ray fan) runs in the worker.
+ * paraxial power, defocus, ray fan, preset solving, the decomposition) runs in the worker, and
+ * the store applies its results when they arrive.
  */
-export function createSceneStore(init: { eyes?: Eyes } = {}) {
+export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner } = {}) {
+  const runJob = init.runJob ?? defaultRunJob;
   return create<SceneStore>((set, get) => {
     const fallbackEyes: Eyes = { left: loadPreset(DEFAULT_PRESET), right: loadPreset(DEFAULT_PRESET) };
     const scene0 = defaultScene(DEFAULT_PRESET);
@@ -403,10 +382,33 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       }
     };
 
+    /** Sequence number of the latest eye job; an older job's result is dropped. */
+    let jobSeq = 0;
+    /** Drop the results of eye jobs still running (the eyes were changed directly). */
+    const cancelJobs = () => {
+      jobSeq++;
+    };
+    /** Run an eye job in the worker and apply its result unless a newer job or a direct change superseded it. */
+    const runLatest = async (job: EyesJob, apply: (r: EyesJobResult) => void): Promise<void> => {
+      const seq = ++jobSeq;
+      try {
+        const r = await runJob(job);
+        if (seq === jobSeq) apply(r);
+      } catch (e) {
+        if (seq === jobSeq) set({ paramError: message(e) });
+      }
+    };
+    /** The eyes of a preset job (always present for that kind). */
+    const eyesOf = (r: EyesJobResult): Eyes => {
+      if (!r.eyes) throw new Error("The worker returned no eyes for a preset");
+      return r.eyes;
+    };
+
     /** The eyes and decomposition shown before the first result was loaded (restored on clear). */
     let beforeResult: { eyes: Eyes; decomposition: Decomposition | null } | null = null;
     /** Put a loaded result in the right eye (the left eye keeps its document). */
     const showResult = (result: LoadedResult) => {
+      cancelJobs();
       if (get().loadedResult === null) beforeResult = { eyes: get().eyes, decomposition: get().decomposition };
       set({ loadedResult: result, loadError: null, decomposition: null, prediction: { ...get().prediction, applied: false } });
       update(get().scene, { left: get().eyes.left, right: result.eye });
@@ -439,11 +441,14 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
     };
 
     if (typeof Worker !== "undefined") queueMicrotask(schedule);
+    // The starting decomposition comes from the worker like every later one (started now, so any
+    // later job supersedes it).
+    void runLatest({ kind: "decomposition", eye: eyes0.right, schematic: scene0.preset }, (r) => set({ decomposition: r.decomposition }));
 
     return {
       scene: scene0,
       refractivePreset: "emmetrope",
-      decomposition: decompose(eyes0.right, scene0.preset),
+      decomposition: null,
       spectacles: null,
       corrected: false,
       autoPending: false,
@@ -483,44 +488,38 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
       setAge: (years) => {
         const scene = { ...get().scene, ageYears: years };
         const { applied, trajectory } = get().prediction;
-        if (!applied || !trajectory) return update(scene);
-        try {
-          const eyes = predictedEyes(scene.preset, trajectory, years);
-          set({ decomposition: decompose(eyes.right, scene.preset) });
-          update(scene, eyes);
-        } catch (e) {
-          set({ paramError: message(e) });
-        }
+        update(scene);
+        if (!applied || !trajectory) return Promise.resolve();
+        // The age moves now; the predicted eyes for it follow from the worker.
+        return runLatest(predictedJob(scene.preset, trajectory, years), (r) => {
+          set({ decomposition: r.decomposition });
+          update(get().scene, eyesOf(r));
+        });
       },
       setIpd: (mm) => update({ ...get().scene, ipdMm: mm }),
       setPreset: (name) => {
-        if (!PRESET_NAMES.includes(name)) return;
-        try {
-          const eyes = presetEyes(name, get().refractivePreset);
-          set({ decomposition: decompose(eyes.right, name), loadedResult: null, prediction: { ...get().prediction, applied: false } });
-          update({ ...get().scene, preset: name }, eyes);
-        } catch (e) {
-          set({ paramError: message(e) });
-        }
+        if (!PRESET_NAMES.includes(name)) return Promise.resolve();
+        return runLatest({ kind: "preset", schematic: name, refractive: get().refractivePreset }, (r) => {
+          set({ decomposition: r.decomposition, loadedResult: null, prediction: { ...get().prediction, applied: false } });
+          update({ ...get().scene, preset: name }, eyesOf(r));
+        });
       },
       setRefractivePreset: (name) => {
         const preset = REFRACTIVE_PRESETS.find((p) => p.name === name);
-        if (!preset) return;
-        try {
+        if (!preset) return Promise.resolve();
+        return runLatest({ kind: "preset", schematic: get().scene.preset, refractive: name }, (r) => {
           const scene = get().scene;
-          const eyes = presetEyes(scene.preset, name);
           set({
             refractivePreset: name,
-            decomposition: decompose(eyes.right, scene.preset),
+            decomposition: r.decomposition,
             loadedResult: null,
             prediction: { ...get().prediction, applied: false },
           });
-          update({ ...scene, ageYears: preset.ageYears ?? scene.ageYears }, eyes);
-        } catch (e) {
-          set({ paramError: message(e) });
-        }
+          update({ ...scene, ageYears: preset.ageYears ?? scene.ageYears }, eyesOf(r));
+        });
       },
       mirrorRightToLeft: () => {
+        cancelJobs();
         const { eyes, spectacles } = get();
         if (spectacles) set({ spectacles: { right: spectacles.right, left: mirrorLens(spectacles.right) } });
         update(get().scene, { right: eyes.right, left: mirrorEye(eyes.right, "left") });
@@ -649,15 +648,20 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
         }
       },
       clearLoadedResult: () => {
-        if (get().loadedResult === null) return;
-        const { scene, refractivePreset } = get();
-        const before = beforeResult ?? (() => {
-          const eyes = presetEyes(scene.preset, refractivePreset);
-          return { eyes, decomposition: decompose(eyes.right, scene.preset) };
-        })();
+        if (get().loadedResult === null) return Promise.resolve();
+        const restore = (before: { eyes: Eyes; decomposition: Decomposition | null }) => {
+          set({ loadedResult: null, loadError: null, decomposition: before.decomposition });
+          update(get().scene, before.eyes);
+        };
+        const before = beforeResult;
         beforeResult = null;
-        set({ loadedResult: null, loadError: null, decomposition: before.decomposition });
-        update(scene, before.eyes);
+        if (before) {
+          cancelJobs();
+          restore(before);
+          return Promise.resolve();
+        }
+        const { scene, refractivePreset } = get();
+        return runLatest({ kind: "preset", schematic: scene.preset, refractive: refractivePreset }, (r) => restore({ eyes: eyesOf(r), decomposition: r.decomposition }));
       },
       setExaggeration: (x) => {
         const [lo, hi] = EXAGGERATION_RANGE;
@@ -717,27 +721,29 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
         if (prev.applied) get().setPredictionApplied(true);
       },
       setPredictionApplied: (on) => {
-        const { prediction, scene, refractivePreset, loadedResult } = get();
+        const { prediction, scene, refractivePreset } = get();
         if (on && prediction.trajectory) {
-          try {
-            const eyes = predictedEyes(scene.preset, prediction.trajectory, scene.ageYears);
-            if (!prediction.applied) beforePrediction = { eyes: get().eyes, decomposition: get().decomposition };
-            if (loadedResult) beforeResult = null;
-            set({ prediction: { ...prediction, applied: true }, loadedResult: null, decomposition: decompose(eyes.right, scene.preset) });
-            update(scene, eyes);
-          } catch (e) {
-            set({ paramError: message(e) });
-          }
-          return;
+          return runLatest(predictedJob(scene.preset, prediction.trajectory, scene.ageYears), (r) => {
+            const s = get();
+            if (!s.prediction.applied) beforePrediction = { eyes: s.eyes, decomposition: s.decomposition };
+            if (s.loadedResult) beforeResult = null;
+            set({ prediction: { ...s.prediction, applied: true }, loadedResult: null, decomposition: r.decomposition });
+            update(s.scene, eyesOf(r));
+          });
         }
-        if (!prediction.applied) return;
-        const before = beforePrediction ?? (() => {
-          const eyes = presetEyes(scene.preset, refractivePreset);
-          return { eyes, decomposition: decompose(eyes.right, scene.preset) };
-        })();
+        if (!prediction.applied) return Promise.resolve();
+        const restore = (before: { eyes: Eyes; decomposition: Decomposition | null }) => {
+          set({ prediction: { ...get().prediction, applied: false }, decomposition: before.decomposition });
+          update(get().scene, before.eyes);
+        };
+        const before = beforePrediction;
         beforePrediction = null;
-        set({ prediction: { ...prediction, applied: false }, decomposition: before.decomposition });
-        update(scene, before.eyes);
+        if (before) {
+          cancelJobs();
+          restore(before);
+          return Promise.resolve();
+        }
+        return runLatest({ kind: "preset", schematic: scene.preset, refractive: refractivePreset }, (r) => restore({ eyes: eyesOf(r), decomposition: r.decomposition }));
       },
 
       loadScenario: async (doc, result) => {
@@ -755,11 +761,14 @@ export function createSceneStore(init: { eyes?: Eyes } = {}) {
           loadError: null,
           spectacles: doc.prescription ? { right: { ...doc.prescription.right }, left: { ...doc.prescription.left } } : null,
           corrected: start.corrected,
-          decomposition: decompose(doc.eyes.right, scene.preset),
+          decomposition: null,
           prediction: { ...get().prediction, applied: false },
         });
         update(scene, { left: doc.eyes.left, right: doc.eyes.right });
+        const decomposed = runLatest({ kind: "decomposition", eye: doc.eyes.right, schematic: scene.preset }, (r) => set({ decomposition: r.decomposition }));
+        // Loading the result supersedes the decomposition (a loaded result shows none).
         if (result) await get().loadResult(result);
+        await decomposed;
       },
       restartScenario: () => {
         const sc = get().scenario;

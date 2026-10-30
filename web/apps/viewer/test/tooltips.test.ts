@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { presetTable } from "@eye/eye-model";
-import { appliedPredictionTooltip, decompositionTooltip, gazeTooltip, heatMapTooltip, inducedTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, timelineTooltip, vergenceTooltip } from "../src/ui/tooltips";
+import { appliedPredictionTooltip, decompositionTooltip, hasTiltOrDecenter, pupilDetail, gazeTooltip, heatMapTooltip, inducedTooltip, muscleTooltip, opticsTooltips, readoutTooltips, spectaclesTooltip, timelineTooltip, vergenceTooltip } from "../src/ui/tooltips";
 
 describe("readoutTooltips", () => {
   const t = readoutTooltips(3.5, "fixed");
@@ -27,8 +27,9 @@ describe("readoutTooltips", () => {
     expect(t.amplitude).toMatch(/extrapolat/);
   });
 
-  it("names the far-point approximation behind demand", () => {
-    expect(t.demand).toMatch(/paraxial/);
+  it("names the far-point measure behind demand: the minimum-RMS refraction auto-prescribe zeroes", () => {
+    expect(t.demand).toMatch(/minimum-RMS refraction/);
+    expect(t.demand).toMatch(/auto-prescribe/);
     expect(t.demand).toMatch(/homogeneous lens index/i);
   });
 
@@ -111,5 +112,44 @@ describe("prediction tooltips", () => {
     const t = appliedPredictionTooltip();
     expect(t.startsWith("Approximation:")).toBe(true);
     expect(t).toMatch(/applied to the eye as a corneal change/);
+  });
+});
+
+describe("near-miosis detail", () => {
+  it("shows nearMiosisMm of the vergence demand, not base minus final", () => {
+    // 2 MA asks for 0.61 mm (0.305 mm per MA, data/pupil/near-response.json).
+    const t = pupilDetail(5, 4.39, 2);
+    expect(t).toContain("near miosis 0.61 mm at 2.00 MA");
+    expect(t).not.toMatch(/floor/);
+  });
+
+  it("says when the 2 mm floor binds", () => {
+    // Base 2.3 mm minus 0.61 mm would be 1.69 mm: the floor holds the pupil at 2 mm.
+    const t = pupilDetail(2.3, 2, 2);
+    expect(t).toContain("near miosis 0.61 mm");
+    expect(t).toMatch(/2 mm floor binds/);
+    expect(t).not.toMatch(/-0\./);
+  });
+});
+
+describe("tilt and decenter", () => {
+  it("detects tilted or decentered surfaces", () => {
+    const doc = { surfaces: [{ tilt: { xDeg: 0, yDeg: 0 }, decenter: { xMm: 0, yMm: 0 } }, {}] } as unknown as Parameters<typeof hasTiltOrDecenter>[0];
+    expect(hasTiltOrDecenter(doc)).toBe(false);
+    expect(hasTiltOrDecenter({ surfaces: [{ tilt: { xDeg: 2, yDeg: 0 } }] } as unknown as Parameters<typeof hasTiltOrDecenter>[0])).toBe(true);
+    expect(hasTiltOrDecenter({ surfaces: [{ decenter: { xMm: 0, yMm: 0.1 } }] } as unknown as Parameters<typeof hasTiltOrDecenter>[0])).toBe(true);
+  });
+
+  it("labels the paraxial readouts (power, accommodation's lens solve, the decomposition's far points) only when the eye is tilted or decentered", () => {
+    const plain = readoutTooltips(3, "fixed");
+    const tilted = readoutTooltips(3, "fixed", [], true);
+    // Demand's far point is traced exactly, tilt and decenter included.
+    expect(tilted.demand).not.toContain("ignores surface tilt");
+    for (const key of ["paraxialPower", "accommodation"] as const) {
+      expect(plain[key]).not.toContain("ignores surface tilt and decenter");
+      expect(tilted[key]).toContain("Approximation: ignores surface tilt and decenter");
+    }
+    expect(decompositionTooltip()).not.toContain("tilt");
+    expect(decompositionTooltip(true)).toContain("Approximation: ignores surface tilt and decenter");
   });
 });
