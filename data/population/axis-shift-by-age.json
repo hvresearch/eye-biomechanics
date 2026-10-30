@@ -3,6 +3,8 @@
   "label": "Axis class of astigmatism (with-the-rule, against-the-rule, oblique) among astigmatic eyes by age: the primary calibration target (spec §8)",
   "definition": {
     "classes": "WTR: minus-cylinder axis within 30 deg of 180; ATR: within 30 deg of 90; oblique: otherwise (the usual convention; each source's own definition is noted where the excerpt states it)",
+    "axisClassHalfWidthDeg": 30,
+    "axisClassCitation": "The usual clinical convention stated in `classes` (with-the-rule and against-the-rule within 30 deg of 180 and 90); the forward model classifies modeled eyes with this half-width (calib/forward.py).",
     "cylinderThresholdD": 0.5,
     "thresholdCitation": "assumption: the excerpts do not state the sources' astigmatism thresholds; 0.5 D is a common screening threshold. The forward model classifies modeled eyes with this threshold."
   },

@@ -117,6 +117,12 @@ def start_params(priors: dict) -> dict:
     return out
 
 
+def degrees_of_freedom(data: list[dict], n_params: int) -> int:
+    """Targets minus parameters, not counting the one-sided envelopes ("spherebound"): an
+    envelope the model stays inside costs nothing and carries no information (M6 Task 6.5)."""
+    return sum(t["kind"] != "spherebound" for t in data) - n_params
+
+
 def residuals(x: NDArray, space: Space, library, cohort, data, priors) -> NDArray:
     params = space.to_params(x)
     model = predict_targets(params, library, cohort, data, priors=priors)
@@ -180,7 +186,7 @@ def fit(
         cov=cov,
         corr=corr,
         cost=float(sol.cost),
-        dof=len(data) - len(space.names),
+        dof=degrees_of_freedom(data, len(space.names)),
         method="lsq",
         lsq_converged=bool(sol.success),
         per_target=per_target,

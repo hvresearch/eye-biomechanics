@@ -1,6 +1,7 @@
 {
   "name": "refraction-by-age",
   "label": "Mean refraction trajectories by age: the J0 slope (a calibration target) and spherical-equivalent changes (for comparison)",
+  "fitNote": "The two J0-slope targets (j0-slope-pmc6221551 and hong-kong-polyu) cover the same assumed 30-80 window with the same assumed 0.003 D/yr standard error, and both are used in the fit, so the population's J0 slope counts twice (as one target with SE 0.0021 D/yr). This is deliberate only in that neither source's SE is known; the M5 calibration kept both (data/results/README.md). Merge them or give each its own SE once the primary documents are read.",
   "sources": [
     {
       "id": "j0-slope-pmc6221551",

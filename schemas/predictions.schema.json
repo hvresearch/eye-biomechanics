@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/predictions.schema.json",
   "title": "Predictions",
-  "description": "Prediction grid written by `eyebiomech grid` (M5 plan, Task 5.11): remodeled trajectories of sphere, minus cylinder, and axis by age from a baseline refraction at the first age, over near-work hours, baseline sphere, and baseline cylinder, with 5-95% bands from the calibrated parameters' posterior and the onset ages of needing correction. Arrays are nested in C order over (nearHours, baselineSphereD, baselineCylinderD, ages); onsets over the first three. Diopters, degrees (TABO, right eye), years. Version 1.1.0 adds the optional `summary`; readers accept any 1.x.",
+  "description": "Prediction grid written by `eyebiomech grid` (M5 plan, Task 5.11): remodeled trajectories of sphere, minus cylinder, and axis by age from a baseline refraction at the first age, over near-work hours, baseline sphere, and baseline cylinder, with 5-95% bands from the calibrated parameters' posterior and the onset ages of needing correction. Arrays are nested in C order over (nearHours, baselineSphereD, baselineCylinderD, ages); onsets over the first three. Diopters, degrees (TABO, right eye), years. Version 1.1.0 adds the optional `summary`, `stiffnessClampedFraction`, and `acuityClipD`; readers accept any 1.x.",
   "type": "object",
   "$defs": {
     "grid4": {
@@ -65,6 +65,17 @@
       "type": "object",
       "properties": { "refraction": { "$ref": "#/$defs/onset" }, "acuity": { "$ref": "#/$defs/onset" } },
       "required": ["refraction", "acuity"],
+      "additionalProperties": false
+    },
+    "stiffnessClampedFraction": {
+      "description": "Since 1.1.0: the fraction of posterior draws whose age-dependent stiffness leaves the response library's tabled scales at some age; their responses use the nearest tabled level (approximation).",
+      "type": "number", "minimum": 0, "maximum": 1
+    },
+    "acuityClipD": {
+      "description": "Since 1.1.0: the acuity table's limits on residual spherical blur |M| and astigmatic blur |J| (D); larger blur reads as the limit's logMAR, so logMAR saturates there.",
+      "type": "object",
+      "properties": { "sphericalBlur": { "type": "number", "minimum": 0 }, "astigmaticBlur": { "type": "number", "minimum": 0 } },
+      "required": ["sphericalBlur", "astigmaticBlur"],
       "additionalProperties": false
     },
     "thresholds": { "type": "object" },

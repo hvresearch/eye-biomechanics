@@ -19,8 +19,14 @@ import numpy as np
 from numpy.typing import NDArray
 
 from eyebiomech.accommodation import amplitude_for_age
-from eyebiomech.calib.forward import AGES, PARAM_NAMES, load_priors, state_trajectories
-from eyebiomech.predict.acuity import acuity_pupil_mm, logmar_lookup
+from eyebiomech.calib.forward import (
+    AGES,
+    PARAM_NAMES,
+    load_priors,
+    state_trajectories,
+    stiffness_function,
+)
+from eyebiomech.predict.acuity import TABLE_J, TABLE_M, acuity_pupil_mm, logmar_lookup
 from eyebiomech.predict.onset import onset_ages
 from eyebiomech.remodel.history import load_duty_cycle, near_fraction
 
@@ -88,9 +94,24 @@ def posterior_draws(
 
 
 def _changes(draws: list[dict], library) -> tuple[NDArray, NDArray]:
-    """Remodeled changes at the distance-only and near-only duty cycles, (draws, ages, 3)."""
-    dist, near = zip(*(state_trajectories(p, library) for p in draws), strict=True)
+    """Remodeled changes at the distance-only and near-only duty cycles, (draws, ages, 3).
+    Stiffness scales outside the library's table clamp to its edges (approximation; the grid
+    records the clamped fraction of draws, `stiffness_clamped_fraction`)."""
+    trajectories = (state_trajectories(p, library, on_edge="clamp") for p in draws)
+    dist, near = zip(*trajectories, strict=True)
     return np.array(dist), np.array(near)
+
+
+def stiffness_clamped_fraction(draws: list[dict], library, ages: NDArray = AGES) -> float:
+    """The fraction of parameter draws whose stiffness leaves the library's table at some age."""
+    lo, hi = library.stiffness_range
+    tol = 1e-9
+
+    def outside(p: dict) -> bool:
+        s = stiffness_function(p["stiffness_age_slope"])
+        return any(not lo * (1 - tol) <= s(float(a)) <= hi * (1 + tol) for a in ages)
+
+    return sum(outside(p) for p in draws) / len(draws)
 
 
 def _bands(v: NDArray, ages: NDArray, onset_from: float | None = None) -> dict:
@@ -262,6 +283,9 @@ def predict_grid(
         },
         "axisDeg": {"p50": arr(fields["axis"], 1)},
         "logMAR": {"p50": arr(fields["logmar"])},
+        "stiffnessClampedFraction": round(stiffness_clamped_fraction(ps, library, ages), 4),
+        # The acuity table's blur limits: larger residual blur reads as the limit's logMAR.
+        "acuityClipD": {"sphericalBlur": float(TABLE_M[-1]), "astigmaticBlur": float(TABLE_J[-1])},
         "onset": {
             "refraction": {
                 "p50": onset_arr(onset["r50"]),

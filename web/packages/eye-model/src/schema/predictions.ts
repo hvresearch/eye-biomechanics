@@ -38,6 +38,10 @@ export interface PredictionsDocument {
   thresholds?: Record<string, unknown>;
   /** Since 1.1.0: the calibration's stance and finding in words, shown by the timeline. */
   summary?: { stance: string; finding: string };
+  /** Since 1.1.0: fraction of posterior draws whose stiffness left the response library's table (clamped). */
+  stiffnessClampedFraction?: number;
+  /** Since 1.1.0: the acuity table's blur limits, D; logMAR saturates beyond them. */
+  acuityClipD?: { sphericalBlur: number; astigmaticBlur: number };
   citation?: string;
   date?: string;
 }

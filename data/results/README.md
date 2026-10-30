@@ -260,12 +260,15 @@ loads and the age stiffening:
 - The lid pressure is 2.4 times the tabled one, within the methods' 3.8–55 mmHg spread but
   above the between-subject spread.
 - At the 90% interval's upper end the slope puts the stiffness below 50 years at the library's
-  lowest tabled scale, where `Library._interp` clamps (follow-up).
+  lowest tabled scale. Since M6 the library refuses a stiffness outside its table unless the
+  caller asks it to clamp; the calibration (`calib/forward.py` `CALIBRATION_ON_EDGE`) and the
+  grid clamp explicitly, and the grid records the clamped fraction of its draws
+  (`stiffnessClampedFraction`, from the next grid build on).
 - The clamp also bites at the top: with the anchor 1.542 at 70, a slope above 0.0477 per year
   puts the stiffness at 90 above the highest tabled scale (4). The posterior median is 0.0472
   and its 95th percentile 0.0566 (stiffness 4.8 at 90, clamped from about 87 years), so roughly
-  half the draws are clamped at grid ages 87–90. These ages lie outside every target band
-  (follow-up).
+  half the draws are clamped at grid ages 87–90. These ages lie outside every target band.
+  Tabling 0.25× and 6× is left to the recalibration (M6 Task 6.6).
 
 The secondary target behaves: the mechanical spherical-equivalent change stays within a few
 hundredths of a diopter per six years (the bounding fit below). So the first calibration's

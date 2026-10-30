@@ -29,6 +29,7 @@ from eyebiomech.remodel.library import (
     VALID_RATE_TIME,
     LevelResponse,
     Library,
+    StiffnessOutOfTable,
     build_library,
 )
 
@@ -126,7 +127,14 @@ def test_the_library_is_enriched_bounded_and_labeled(library):
     stiffness."""
     F = library.feedback(1.0)
     assert F.shape == ((1 + KRYLOV_DEPTH) * len(GROUPS),) * 2
-    assert np.all(np.isfinite(np.linalg.eigvals(F)))
+    lam, V = np.linalg.eig(F)
+    assert np.all(np.isfinite(lam))
+    # The documented structure (data/results/README.md): exactly one growing mode, and its
+    # refraction is mostly spherical (M5 review round 3).
+    growing = np.flatnonzero(lam.real > 0)
+    assert growing.size == 1
+    refraction = np.real(V[:, growing[0]] @ library.growth_refraction(1.0))
+    assert abs(refraction[0]) > 0.9 * np.linalg.norm(refraction)
     doc = library.to_json()
     assert doc["elastic"] is True and doc["remodeled"] is True
     assert doc["krylovDepth"] == KRYLOV_DEPTH and doc["validRateTime"] == VALID_RATE_TIME
@@ -135,6 +143,7 @@ def test_the_library_is_enriched_bounded_and_labeled(library):
     assert np.allclose(back.feedback(1.0), F)
     assert back.valid_rate_time == VALID_RATE_TIME
     assert "linear superposition" in doc["citation"] and "Krylov" in doc["citation"]
+    assert "interpolated in ln s (approximation" in doc["citation"]
 
 
 def test_growth_beyond_the_validated_exposure_is_refused(library):
@@ -219,16 +228,36 @@ def test_a_negative_growth_history_is_refused():
         _constant_loads(np.arange(6.0, 8.0), history_years=-1.0)
 
 
-def test_stiffness_interpolation_is_linear_in_log_scale():
-    def level(s, value):
-        n = len(GROUPS)
-        return LevelResponse(s, np.full((n, 3), value), np.zeros((n, 3)), -np.eye(n),
-                             np.eye(n), np.ones(n))  # fmt: skip
+def _level(s, value):
+    n = len(GROUPS)
+    return LevelResponse(s, np.full((n, 3), value), np.zeros((n, 3)), -np.eye(n),
+                         np.eye(n), np.ones(n))  # fmt: skip
 
-    lib = Library(GROUPS, [level(1.0, 1.0), level(4.0, 3.0)])
+
+def test_stiffness_interpolation_is_linear_in_log_scale():
+    lib = Library(GROUPS, [_level(1.0, 1.0), _level(4.0, 3.0)])
     assert lib.elastic(1.0)[0, 0] == 1.0 and lib.elastic(4.0)[0, 0] == 3.0
     assert lib.elastic(2.0)[0, 0] == pytest.approx(2.0)
-    assert lib.elastic(8.0)[0, 0] == 3.0  # clamped to the table
+    assert lib.elastic(8.0, on_edge="clamp")[0, 0] == 3.0  # clamped to the table on request
+
+
+def test_stiffness_outside_the_table_is_refused_by_default():
+    """M5 review rounds 2-3 (M6 plan, Task 6.5): no silent clamp at either edge."""
+    lib = Library(GROUPS, [_level(0.5, 1.0), _level(4.0, 3.0)])
+    assert lib.stiffness_range == (0.5, 4.0)
+    with pytest.raises(StiffnessOutOfTable, match="0.4"):
+        lib.elastic(0.4)
+    with pytest.raises(StiffnessOutOfTable, match="4.5"):
+        lib.feedback(4.5)
+    assert lib.growth_refraction(0.4, on_edge="clamp")[0, 0] == 0.0
+    assert lib.elastic(0.4, on_edge="clamp")[0, 0] == 1.0
+    with pytest.raises(ValueError, match="on_edge"):
+        lib.elastic(1.0, on_edge="extrapolate")
+    L = np.zeros(len(GROUPS))
+    kw = {"rate_per_year": 0.0, "ratio": 1.0, "stiffness": lambda a: 6.0}
+    with pytest.raises(StiffnessOutOfTable):
+        lib.simulate(lambda a: L, np.array([6.0, 7.0]), **kw)
+    assert lib.simulate(lambda a: L, np.array([6.0, 7.0]), on_edge="clamp", **kw).shape == (2, 2, 3)
 
 
 @pytest.mark.slow

@@ -38,7 +38,12 @@ from numpy.typing import NDArray
 from eyebiomech.fem import assembly as asm
 from eyebiomech.fem.data import load_eom_forces, load_materials
 from eyebiomech.fem.units import kpa_to_mpa, mmhg_to_mpa
-from eyebiomech.forces.equilibrium import capacities_n, equilibrium_forces, passive_moment
+from eyebiomech.forces.equilibrium import (
+    InfeasibleEquilibrium,
+    capacities_n,
+    equilibrium_forces,
+    passive_moment,
+)
 from eyebiomech.forces.from_viewer import rotation_matrix
 
 # Half-width of the band that carries the ciliary line load, mm (numerical: a line load needs a
@@ -58,6 +63,15 @@ def _unit(v) -> NDArray:
 
 def _vec(v) -> list[float]:
     return [float(c) for c in np.asarray(v, dtype=float)]
+
+
+def gaze_label(table, gaze_index: int) -> str:
+    """The force table's name of a gaze: its label, or "x,y" in Fick degrees (as `--gaze`)."""
+    labels = getattr(table, "labels", ())
+    if gaze_index < len(labels) and labels[gaze_index]:
+        return str(labels[gaze_index])
+    x, y = table.gazes_deg[gaze_index]
+    return f"{float(x):g},{float(y):g}"
 
 
 @dataclass
@@ -216,13 +230,17 @@ class Loads:
             forces = _torque_balanced(table_forces, body["insertion_mm"], body["insertion_dir"])
         elif balance_moments:
             moment = passive_moment(quaternion, None if passive in (None, True) else passive)
-            forces = equilibrium_forces(
-                table_forces,
-                body["insertion_mm"],
-                body["insertion_dir"],
-                moment,
-                capacities=capacities_n(names=table.muscles),
-            )
+            try:
+                forces = equilibrium_forces(
+                    table_forces,
+                    body["insertion_mm"],
+                    body["insertion_dir"],
+                    moment,
+                    capacities=capacities_n(names=table.muscles),
+                )
+            except InfeasibleEquilibrium as exc:
+                label = gaze_label(table, gaze_index)
+                raise InfeasibleEquilibrium(f"gaze {label}: {exc}", gaze_label=label) from exc
         if balance_moments:
             unloaded = [
                 name

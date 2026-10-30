@@ -8,7 +8,14 @@ import numpy as np
 import pytest
 
 from eyebiomech.calib.data import CLASSES
-from eyebiomech.calib.fit import Space, fit, residuals, start_params, with_rate_floor
+from eyebiomech.calib.fit import (
+    Space,
+    degrees_of_freedom,
+    fit,
+    residuals,
+    start_params,
+    with_rate_floor,
+)
 from eyebiomech.calib.forward import PARAM_NAMES, load_priors, make_cohort, predict_targets
 from eyebiomech.remodel.library import Library
 
@@ -83,6 +90,12 @@ def test_a_rate_floor_lowers_only_the_growth_rate_bound():
     assert hi == pytest.approx(hi0)
     with pytest.raises(ValueError, match="positive"):
         with_rate_floor(PRIORS, 0.0)
+
+
+def test_one_sided_envelopes_are_not_counted_as_degrees_of_freedom():
+    """M5 review round 3 (M6 plan, Task 6.5): an inactive envelope adds no information."""
+    data = [{"kind": "class"}] * 7 + [{"kind": "j0slope"}] * 2 + [{"kind": "spherebound"}] * 4
+    assert degrees_of_freedom(data, 6) == 3
 
 
 def test_a_sphere_bound_costs_only_beyond_the_envelope(monkeypatch):

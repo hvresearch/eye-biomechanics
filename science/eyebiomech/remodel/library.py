@@ -31,7 +31,10 @@ superposes it:
    grows at the calibrated stiffness, do not converge with the Krylov depth.
 
 Responses are tabled at several stiffness scales (relative to the calibrated stiffness) and
-interpolated linearly in ln s. Approximations, labeled wherever the library is used: linear
+interpolated linearly in ln s (an approximation: the Krylov patterns differ between levels, and
+blending them agrees with interpolating per-level results within about 3% inside the validated
+exposure); a stiffness outside the table raises `StiffnessOutOfTable` unless the caller asks to
+clamp it to the nearest level. Approximations, labeled wherever the library is used: linear
 superposition about the pressurized eye; the growth dynamics reduced to the span of the load
 patterns and their Krylov sequence, for growth exposures up to `VALID_RATE_TIME`; the
 reference eye's responses for every subject; the growth patterns and feedback of the stiffness
@@ -46,6 +49,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -261,6 +265,16 @@ def build_level(
     )
 
 
+OnEdge = Literal["raise", "clamp"]
+# Relative slack on the table's edges (numerical: a scale computed as exactly a tabled value may
+# differ from it by round-off).
+EDGE_TOLERANCE = 1e-9
+
+
+class StiffnessOutOfTable(ValueError):
+    """A stiffness scale outside the response library's tabled range."""
+
+
 @dataclass
 class Library:
     """Responses at several stiffness scales; see the module notes."""
@@ -269,24 +283,42 @@ class Library:
     levels: list[LevelResponse]
     meta: dict = field(default_factory=dict)
 
-    def _interp(self, attr: str, scale: float) -> NDArray:
+    @property
+    def stiffness_range(self) -> tuple[float, float]:
+        """The lowest and highest tabled stiffness scale."""
+        scales = [lv.scale for lv in self.levels]
+        return float(min(scales)), float(max(scales))
+
+    def _interp(self, attr: str, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        """Linear interpolation in ln s (approximation: the tabled levels' patterns and feedback
+        are blended, not rebuilt at the scale). Outside the table, `on_edge` "raise" refuses with
+        `StiffnessOutOfTable` and "clamp" takes the nearest tabled level."""
+        if on_edge not in ("raise", "clamp"):
+            raise ValueError(f"on_edge must be 'raise' or 'clamp', got {on_edge!r}")
+        lo, hi = self.stiffness_range
+        inside = lo * (1 - EDGE_TOLERANCE) <= scale <= hi * (1 + EDGE_TOLERANCE)
+        if on_edge == "raise" and not inside:
+            raise StiffnessOutOfTable(
+                f"stiffness scale {scale:.4g} is outside the response library's table "
+                f"({lo:g}-{hi:g}); pass on_edge='clamp' to use the nearest tabled level"
+            )
         s = np.log([lv.scale for lv in self.levels])
         x = float(np.clip(np.log(scale), s[0], s[-1]))
         values = np.stack([getattr(lv, attr) for lv in self.levels])
-        i = int(np.clip(np.searchsorted(s, x) - 1, 0, len(s) - 2)) if len(s) > 1 else 0
         if len(s) == 1:
             return values[0]
+        i = int(np.clip(np.searchsorted(s, x) - 1, 0, len(s) - 2))
         w = (x - s[i]) / (s[i + 1] - s[i])
         return (1 - w) * values[i] + w * values[i + 1]
 
-    def elastic(self, scale: float) -> NDArray:
-        return self._interp("elastic", scale)
+    def elastic(self, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        return self._interp("elastic", scale, on_edge)
 
-    def growth_refraction(self, scale: float) -> NDArray:
-        return self._interp("growth", scale)
+    def growth_refraction(self, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        return self._interp("growth", scale, on_edge)
 
-    def feedback(self, scale: float) -> NDArray:
-        return self._interp("feedback", scale)
+    def feedback(self, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        return self._interp("feedback", scale, on_edge)
 
     @property
     def valid_rate_time(self) -> float:
@@ -303,6 +335,7 @@ class Library:
         ratio: float,
         stiffness: Callable[[float], float],
         history_years: float = 0.0,
+        on_edge: OnEdge = "raise",
     ) -> NDArray:
         """Elastic and remodeled (M, J0, J45) changes at each age, (ages, 2, 3), D. The growth
         amplitudes start at zero `history_years` before the first age, grow over that history
@@ -312,7 +345,8 @@ class Library:
         so no step-size instability; Review Focus 3). With no history the amplitudes start at
         zero at the first age, and fast modes settle in the first interval from that state, not
         from the loads. The homeostatic intensity is multiplied by 1 − h. A growth exposure
-        r·(history + age span) beyond `valid_rate_time` is refused."""
+        r·(history + age span) beyond `valid_rate_time` is refused, and so is a stiffness outside
+        the table unless `on_edge` is "clamp"."""
         if not history_years >= 0:
             raise ValueError(f"the growth history must be non-negative, got {history_years}")
         ages = np.asarray(ages, dtype=float)
@@ -338,24 +372,26 @@ class Library:
         eig_cache: dict[float, tuple[NDArray, NDArray, NDArray]] = {}
         if history_years > 0:
             a = self._step(
-                a, L(ages[0]), rate_per_year * history_years, stiffness(ages[0]), eig_cache
+                a, L(ages[0]), rate_per_year * history_years, stiffness(ages[0]), eig_cache, on_edge
             )
         for i, age in enumerate(ages):
             if i > 0:
                 mid = 0.5 * (ages[i - 1] + age)
                 rdt = rate_per_year * (age - ages[i - 1])
-                a = self._step(a, L(mid), rdt, stiffness(mid), eig_cache)
+                a = self._step(a, L(mid), rdt, stiffness(mid), eig_cache, on_edge)
             s = stiffness(age)
-            el = L(age)[:n] @ self.elastic(s)
+            el = L(age)[:n] @ self.elastic(s, on_edge)
             out[i, 0] = el
-            out[i, 1] = el + a @ self.growth_refraction(s)
+            out[i, 1] = el + a @ self.growth_refraction(s, on_edge)
         return out
 
-    def _step(self, a: NDArray, L: NDArray, rdt: float, scale: float, cache: dict) -> NDArray:
+    def _step(
+        self, a: NDArray, L: NDArray, rdt: float, scale: float, cache: dict, on_edge: OnEdge
+    ) -> NDArray:
         """Exact solution over one interval of da/dτ = L + F a (τ = r t, Δτ = r dt), with
         F = V Λ V⁻¹: a ← V [e^{ΛΔτ} V⁻¹a + Δτ φ(ΛΔτ) V⁻¹L], φ(z) = (e^z − 1)/z, φ(0) = 1."""
         if scale not in cache:
-            lam, V = np.linalg.eig(self.feedback(scale))
+            lam, V = np.linalg.eig(self.feedback(scale, on_edge))
             cache[scale] = (lam, V, np.linalg.inv(V))
         lam, V, Vi = cache[scale]
         z = lam * rdt
@@ -490,7 +526,9 @@ def build_library(
             "reduced to the span of the load patterns enriched by a Krylov sequence (Galerkin), "
             "validated up to a growth exposure r·t of validRateTime; the reference eye's "
             "responses for every subject; patterns and feedback at the tabled stiffness, "
-            "interpolated in ln s. elastic: per unit load intensity; growth: per unit growth "
+            "interpolated in ln s (approximation: the Krylov patterns differ between levels; "
+            "outside the tabled scales the library refuses unless asked to clamp). "
+            "elastic: per unit load intensity; growth: per unit growth "
             "amplitude (the groups, then the Krylov patterns)."
         ),
     }

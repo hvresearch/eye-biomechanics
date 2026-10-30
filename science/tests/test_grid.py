@@ -54,6 +54,19 @@ def test_the_grid_validates_and_starts_at_its_baseline(grid):
             assert grid["cylinder"]["p50"][1][j][k][0] == pytest.approx(c, abs=1e-3)
 
 
+def test_the_grid_records_its_table_clamps(grid):
+    """M5 review rounds 2-3 (M6 plan, Task 6.5): the stiffness draws clamped to the response
+    library's table and the acuity table's blur limits are written to the grid."""
+    assert 0.0 <= grid["stiffnessClampedFraction"] <= 1.0
+    assert grid["acuityClipD"] == {"sphericalBlur": 4.0, "astigmaticBlur": 1.5}
+    steep = {**POSTERIOR, "best": {**BEST, "stiffness_age_slope": 0.08}}
+    g = predict_grid(steep, LIBRARY, near_hours=(0.0,), baseline_sph=(0.0,), baseline_cyl=(0.0,),
+                     draws=4)  # fmt: skip
+    # exp(0.08 × 40) ≈ 25 times the stiffness at 50 by 90: every draw leaves the 0.5-4 table.
+    assert g["stiffnessClampedFraction"] == 1.0
+    validate_predictions(g)
+
+
 def test_a_grid_of_the_wrong_shape_is_refused(grid):
     bad = json.loads(json.dumps(grid))
     bad["sphere"]["p50"] = bad["sphere"]["p50"][:1]
