@@ -1,4 +1,4 @@
-import { Line } from "@react-three/drei";
+import { Polyline } from "./Polyline";
 import { eyeOptics, useScene, type Side } from "../store/scene";
 import { usePalette } from "./usePalette";
 
@@ -11,7 +11,7 @@ export function RayFan({ side }: { side: Side }) {
   return (
     <group>
       {optics.fan.map((line, i) => (
-        <Line
+        <Polyline
           key={i}
           points={line.map(([x, y, z]) => [x, y, z] as [number, number, number])}
           color={i === chief ? palette.accentStrong : palette.accent}

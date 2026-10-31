@@ -1,4 +1,4 @@
-import { Line } from "@react-three/drei";
+import { Polyline } from "./Polyline";
 import { MUSCLE_NAMES, musclesFromDocument } from "@eye/eye-model";
 import { useMemo } from "react";
 import { useScene, type Side } from "../store/scene";
@@ -20,7 +20,7 @@ function InsertionMarker({ side, index, widthMm }: { side: Side; index: number; 
   if (pts.length < 2) return null;
   const target = { kind: "marker", side, index, marker: "insertion" } as const;
   return (
-    <Line
+    <Polyline
       points={pts}
       color={palette.nerve}
       lineWidth={INSERTION_LINE_PX}

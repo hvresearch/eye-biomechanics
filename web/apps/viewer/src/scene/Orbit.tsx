@@ -1,4 +1,4 @@
-import { Line } from "@react-three/drei";
+import { Polyline } from "./Polyline";
 import { GLOBE_RADIUS_MM, quatRotate, type Vec3 } from "@eye/eye-model";
 import { useMemo } from "react";
 import { Quaternion, Vector3 } from "three";
@@ -68,15 +68,15 @@ export function Orbit({ side }: { side: Side }) {
   const nervePointer = useStructurePointer("opticNerve", side);
   return (
     <group>
-      <Line points={rim} color={palette.orbit} lineWidth={1} transparent opacity={0.8} {...orbitPointer} />
+      <Polyline points={rim} color={palette.orbit} lineWidth={1} transparent opacity={0.8} {...orbitPointer} />
       {ribs.map((pts, i) => (
-        <Line key={i} points={pts} color={palette.orbit} lineWidth={1} transparent opacity={0.5} {...orbitPointer} />
+        <Polyline key={i} points={pts} color={palette.orbit} lineWidth={1} transparent opacity={0.5} {...orbitPointer} />
       ))}
       <mesh position={apex} name={`annulus (${side} eye)`} {...annulusPointer}>
         <torusGeometry args={[drawing.annulus.radiusMm, drawing.annulus.tubeMm, 8, 32]} />
         <meshStandardMaterial color={palette.nerve} roughness={0.7} />
       </mesh>
-      <Line points={[exit, apex]} color={palette.nerve} lineWidth={n.radiusMm * 2.2} />
+      <Polyline points={[exit, apex]} color={palette.nerve} lineWidth={n.radiusMm * 2.2} />
       <mesh position={nerve.mid} quaternion={nerve.q} name={`opticNerve (${side} eye)`} {...nervePointer}>
         <cylinderGeometry args={[n.radiusMm, n.radiusMm, nerve.len, 12, 1, true]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />

@@ -1,4 +1,4 @@
-import { Line } from "@react-three/drei";
+import { Polyline } from "./Polyline";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { gazeDirection, quatRotate, PRIMARY_DIRECTION } from "@eye/eye-model";
 import { useState } from "react";
@@ -61,8 +61,8 @@ export function Target() {
 
   return (
     <group>
-      <Line points={sight("right")} color={palette.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
-      <Line points={sight("left")} color={palette.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
+      <Polyline points={sight("right")} color={palette.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
+      <Polyline points={sight("left")} color={palette.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
       <mesh
         position={p}
         name="Target"
