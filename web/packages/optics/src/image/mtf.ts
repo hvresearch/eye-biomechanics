@@ -1,4 +1,4 @@
-import { fft2, fftShift } from "./fft";
+import { fft2, fftShift, scratchComplex } from "./fft";
 import type { Psf } from "./psf";
 
 /** Optical transfer function of a PSF: the FFT of the PSF normalized to unit sum, origin at index 0. */
@@ -52,8 +52,7 @@ export function otfPair(a: Psf, b: Psf): [Otf, Otf] {
     sa += a.intensity[i]!;
     sb += b.intensity[i]!;
   }
-  const re = new Float64Array(n * n);
-  const im = new Float64Array(n * n);
+  const [re, im] = scratchComplex(n, 0);
   for (let i = 0; i < n * n; i++) {
     re[i] = a.intensity[i]! / sa;
     im[i] = b.intensity[i]! / sb;

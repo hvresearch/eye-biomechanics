@@ -150,6 +150,17 @@ describe("intersect", () => {
     expect(intersect(conic(5), [0, -20, -1], [0, 1, 0])).toBe("miss");
   });
 
+  it("classifies by the aperture first when the ray also leaves the sag domain", () => {
+    // Inside the sag domain, outside the aperture: an aperture clip.
+    expect(intersect({ ...toric(7.5, 8, 0), apertureSemiDiamMm: 1 }, [2, 0, -3], [0, 0, 1])).toBeNull();
+    // Beyond both the aperture (6 mm) and the edge of the steep toric (7.5 mm): still the aperture.
+    expect(intersect(toric(7.5, 8, 0), [7.8, 0, -3], [0, 0, 1])).toBeNull();
+    expect(intersect(zern([0, 0, 0, 0.5], 7, -0.2), [0, 7.5, -3], [0, 0, 1])).toBeNull();
+    expect(intersect(conic(7), [0, 7.5, -3], [0, 0, 1])).toBeNull();
+    // Beyond the edge of a surface whose aperture is larger: a miss.
+    expect(intersect({ ...toric(7.5, 8, 0), apertureSemiDiamMm: 9 }, [7.8, 0, -3], [0, 0, 1])).toBe("miss");
+  });
+
   it("intersects tilted torics in their own frame: the axial ray meets the tilted vertex", () => {
     const hit = intersect({ ...toric(7, 7, 0), tilt: { xDeg: 2, yDeg: 0 } }, [0, 0, -1], [0, 0, 1]);
     if (hit === null || hit === "miss") throw new Error("expected a hit");

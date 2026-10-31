@@ -36,9 +36,9 @@
     "baseline_j0_mean": {
       "transform": "linear",
       "prior": "uniform",
-      "bounds": [-0.5, 1.0],
+      "bounds": [-1.0, 1.0],
       "start": 0.15,
-      "citation": "Nuisance: mean J0 of the cohort at the baseline age (the SyntEyes stand-in, data/synteyes); fitted mainly by the youngest axis-class band."
+      "citation": "Nuisance: mean J0 of the cohort at the baseline age (the SyntEyes stand-in, data/synteyes); fitted mainly by the youngest axis-class band. Lower bound widened from -0.5 to -1.0 D in M6 (plan Task 6.6): at -0.5 the least-squares optimum sat on the bound (M5), trading against the lid pressure (correlation -0.72); with -1.0 or -1.5 it lies inside, at -0.72 D with the lid pressure 3.5 times the table (1.8 prior SDs, about 28 mmHg, inside the 3.8-55 mmHg of Shaw et al.'s methods), cost 45.5 against 46.6. No source bounds the unloaded baseline (SyntEyes is a stand-in), so the bound is set not to bind."
     },
     "baseline_j_sd": {
       "transform": "log",

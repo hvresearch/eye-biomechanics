@@ -9,6 +9,7 @@ import pytest
 from eyebiomech.calib.fit import start_params
 from eyebiomech.calib.forward import (
     AGES,
+    axis_class_boundary_cos,
     class_weights,
     load_priors,
     make_cohort,
@@ -39,7 +40,8 @@ def _zero_library():
 
 def test_no_response_leaves_every_subject_at_baseline():
     p = start_params(PRIORS)
-    v = subject_vectors(p, _zero_library(), COHORT)
+    # The one-level library tables only the unit stiffness; the age stiffening clamps to it.
+    v = subject_vectors(p, _zero_library(), COHORT, on_edge="clamp")
     assert np.allclose(v, v[:, :1, :])
     assert np.allclose(v[:, 0, 1], p["baseline_j0_mean"] + p["baseline_j_sd"] * COHORT.z[:, 0])
 
@@ -82,6 +84,16 @@ def test_axis_classes(j0, cls):
     assert astig[0] == 1 and classes[0, cls] == 1
     oblique = class_weights(np.array([[0.0, 0.0, 0.5]]), 0.5)[1]
     assert oblique[0, 2] == 1
+
+
+def test_the_axis_class_boundaries_come_from_the_data():
+    """M5 review round 2 (M6 plan, Task 6.5): the 30° half-width is the data file's, not code's."""
+    assert axis_class_boundary_cos() == pytest.approx(0.5)
+    # An axis 40° from 180 (cos 2α = 0.17) is oblique with 30° classes, WTR with 45° ones.
+    a = np.radians(40.0)
+    v = np.array([[0.0, 0.5 * np.cos(2 * a), 0.5 * np.sin(2 * a)]])
+    assert class_weights(v, 0.5)[1][0, 2] == 1
+    assert class_weights(v, 0.5, boundary_cos=np.cos(np.radians(90.0)))[1][0, 0] == 1
 
 
 def test_soft_classes_approach_hard_ones():

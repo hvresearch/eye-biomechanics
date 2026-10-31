@@ -1,10 +1,11 @@
 import { useScene } from "../store/scene";
 import { formatSigned } from "./format";
-import { decompositionTooltip } from "./tooltips";
+import { decompositionTooltip, hasTiltOrDecenter } from "./tooltips";
 
 /** Corneal, lenticular, and axial parts of the right eye's refraction (spec §4.1). */
 export function Decomposition() {
   const d = useScene((s) => s.decomposition);
+  const tilted = useScene((s) => hasTiltOrDecenter(s.eyes.right));
   if (!d) return null;
   const rows: Array<[string, number, string]> = [
     ["Corneal", d.cornealD, "decomp-corneal"],
@@ -15,7 +16,7 @@ export function Decomposition() {
   return (
     <div className="decomposition">
       <h3>
-        <abbr title={decompositionTooltip()}>Refraction by mechanism</abbr>
+        <abbr title={decompositionTooltip(tilted)}>Refraction by mechanism</abbr>
       </h3>
       <table>
         <tbody>

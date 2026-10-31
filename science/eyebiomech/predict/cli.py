@@ -34,6 +34,18 @@ CITATION = (
 )
 
 
+def calibration_summary(path: Path | None = None) -> dict[str, str]:
+    """The calibration's stance and finding in words (data/results/calibration/summary-v1.json
+    by default), which the grid carries as `summary` for the viewer's timeline."""
+    p = path or data_root() / "results" / "calibration" / "summary-v1.json"
+    doc = read_json(p, "calibration summary")
+    out = {k: doc.get(k) for k in ("stance", "finding")}
+    bad = [k for k, v in out.items() if not isinstance(v, str) or not v.strip()]
+    if bad:
+        raise ValueError(f"calibration summary {p}: missing or empty {bad}")
+    return out
+
+
 def parse_profile(text: str, axis: float) -> SubjectProfile:
     values = {}
     for part in text.split(","):
@@ -84,18 +96,22 @@ def add_predict_arguments(p: argparse.ArgumentParser) -> None:
 def add_grid_arguments(p: argparse.ArgumentParser) -> None:
     p.add_argument("--posterior", type=Path, default=None)
     p.add_argument("--library", type=Path, default=None)
+    p.add_argument(
+        "--summary", type=Path, default=None, help="the calibration's stance and finding (JSON)"
+    )
     p.add_argument("--draws", type=int, default=200)
     p.add_argument("--out", required=True, type=Path)
 
 
 def run_predict(args: argparse.Namespace, argv: list[str]) -> int:
+    provenance = _provenance(argv)  # the tree as the run starts
     profile = parse_profile(args.profile, args.axis)
     posterior, library = _inputs(args)
     out = predict_profile(profile, posterior, library, draws=args.draws)
     out.update(
         remodeled=True,
         thresholds=acuity_table()["thresholds"],
-        provenance=_provenance(argv),
+        provenance=provenance,
         citation=CITATION,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)
@@ -111,9 +127,11 @@ def run_predict(args: argparse.Namespace, argv: list[str]) -> int:
 def run_grid(args: argparse.Namespace, argv: list[str]) -> int:
     started = time.time()
     posterior, library = _inputs(args)
+    summary = calibration_summary(args.summary)
     grid = predict_grid(posterior, library, draws=args.draws, provenance=_provenance(argv))
     grid["thresholds"] = acuity_table()["thresholds"]
     grid["citation"] = CITATION
+    grid["summary"] = summary
     validate_predictions(grid)
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(grid, separators=(",", ":")) + "\n")

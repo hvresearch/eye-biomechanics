@@ -49,4 +49,15 @@ describe("parsing loaded documents", () => {
     await expect(parseFiles([sideFile])).rejects.toThrow(/EyeParameters/);
     await expect(parseFiles([new File(["{"], "bad.eye.json")])).rejects.toThrow(LoadError);
   });
+
+  it("refuses a sidecar written for another document, naming both ids", async () => {
+    const raw = await RESULTS.find((r) => r.id === ID)!.load();
+    const eyeFile = new File([JSON.stringify(raw.eye)], "a.eye.json");
+    const other = { ...(raw.deformation as Record<string, unknown>), id: "some-other-result" };
+    const sideFile = new File([JSON.stringify(other)], "a.deformation.json");
+    const err = await parseFiles([eyeFile, sideFile]).catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(LoadError);
+    expect(String(err)).toContain("some-other-result");
+    expect(String(err)).toContain("navarro-1985-relaxed-fem");
+  });
 });

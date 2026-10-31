@@ -1,4 +1,4 @@
-import { fft2 } from "./fft";
+import { fft2, scratchComplex } from "./fft";
 import { otf, type Otf } from "./mtf";
 import type { Psf } from "./psf";
 import type { Bitmap } from "./targets";
@@ -32,8 +32,7 @@ export function retinalImage(target: Bitmap, p: Psf, transfer?: Otf): Bitmap {
   }
   const k = transfer ?? otf(p);
   const t = spectrum(target);
-  const re = new Float64Array(n * n);
-  const im = new Float64Array(n * n);
+  const [re, im] = scratchComplex(n, 0);
   for (let i = 0; i < n * n; i++) {
     const a = t.re[i]!;
     const b = t.im[i]!;
@@ -62,8 +61,7 @@ export function retinalImagePair(target: Bitmap, a: Psf, b: Psf, ka: Otf, kb: Ot
     }
   }
   const t = spectrum(target);
-  const re = new Float64Array(n * n);
-  const im = new Float64Array(n * n);
+  const [re, im] = scratchComplex(n, 0);
   for (let i = 0; i < n * n; i++) {
     const tr = t.re[i]!;
     const ti = t.im[i]!;

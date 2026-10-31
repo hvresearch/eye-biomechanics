@@ -11,7 +11,9 @@ import {
   type EyeParameters,
 } from "@eye/eye-model";
 import {
+  ChiefRayError,
   DEFAULT_LAUNCH_OFFSET_MM,
+  InsufficientRaysError,
   SPECTACLE_DEFAULTS,
   analyzeWavefront,
   autoPrescribe,
@@ -97,13 +99,20 @@ interface Stage {
   psf: Psf;
 }
 
-/** OPD map and fit at 555 nm, then the PSF (mono or polychromatic) of one configuration. */
+/**
+ * OPD map and fit at 555 nm, then the PSF (mono or polychromatic) of one configuration. Every
+ * wavelength's OPD is referenced to the 555 nm chief ray's image point, so the polychromatic PSF
+ * keeps the transverse chromatic aberration of the off-axis fovea as tilt.
+ */
 function stage(surfaces: Surface[], view: ViewSpec, w: WaveRequest): Stage {
   const a = analyzeWavefront(surfaces, view, { gridN: w.gridN });
   const p = w.polychromatic
     ? polychromaticPsf(
         PHOTOPIC.wavelengthsNm.map((wl, i) => ({
-          coeffsMicrons: wl === 555 ? a.fit.coeffsMicrons : analyzeWavefront(surfaces, view, { gridN: w.gridN, wavelengthNm: wl }).fit.coeffsMicrons,
+          coeffsMicrons:
+            wl === 555
+              ? a.fit.coeffsMicrons
+              : analyzeWavefront(surfaces, view, { gridN: w.gridN, wavelengthNm: wl, referenceImagePoint: a.map.imagePoint }).fit.coeffsMicrons,
           pupilRadiusMm: view.pupilRadiusMm,
           wavelengthNm: wl,
           weight: PHOTOPIC.weights[i] ?? 0,
@@ -174,8 +183,8 @@ function otherAccommodationD(req: EyeOpticsRequest, lens: Surface[], worn: boole
   if (req.amplitudeD === undefined || lens.length === 0) return req.accommodationD;
   const amplitudeD = req.amplitudeD;
   const response = (fp: number) => accommodationResponse(demandFromDistance(req.objectDistanceM, fp), amplitudeD);
-  const eyeFp = relaxedFarPointD(req.params);
-  const lensFp = relaxedFarPointD(req.params, lens);
+  const eyeFp = relaxedFarPointD(req.params, [], 2 * req.pupilSemiDiamMm);
+  const lensFp = relaxedFarPointD(req.params, lens, 2 * req.pupilSemiDiamMm);
   const [activeFp, otherFp] = worn ? [lensFp, eyeFp] : [eyeFp, lensFp];
   return Math.min(Math.max(req.accommodationD + response(otherFp) - response(activeFp), 0), Math.max(amplitudeD, 0));
 }
@@ -211,20 +220,54 @@ function eyeWave(req: EyeOpticsRequest, active: Surface[], lens: Surface[], worn
   const [uncorrected, corrected] = waveResults(eye, lens, lensEye, view, w, req.side);
   return { uncorrected, corrected, autoRx };
 }
-const relaxedCache = new Map<string, number>();
 
 /**
- * Far point of the relaxed document (clinical sign), with spectacle surfaces in front when given,
- * cached by contents: worker messages are structured clones, so object identity does not
- * survive between requests.
+ * The wave optics of one eye, or the reason they failed. A wave-optics failure (no chief ray
+ * through the pupil, too few rays for the fit) stays with its eye, so the other eye and this
+ * eye's paraxial readouts still arrive; other errors are bugs and fail the request.
  */
-export function relaxedFarPointD(params: EyeParameters, lens: Surface[] = []): number {
-  const key = JSON.stringify([params, lens]);
+function safeEyeWave(req: EyeOpticsRequest, active: Surface[], lens: Surface[], worn: boolean, w: WaveRequest): { wave: EyeWave | null; waveError: string | null } {
+  try {
+    return { wave: eyeWave(req, active, lens, worn, w), waveError: null };
+  } catch (e) {
+    if (e instanceof ChiefRayError || e instanceof InsufficientRaysError) return { wave: null, waveError: `${e.name}: ${e.message}` };
+    throw e;
+  }
+}
+/** Pupil grid of the far-point refraction (numerical; the spherical equivalent converges to well under 0.01 D). */
+const FAR_POINT_GRID_N = 32;
+/** Pupil diameters are rounded to this step for the far-point cache, mm (numerical; about 0.005 D of SA bias). */
+const FAR_POINT_PUPIL_STEP_MM = 0.05;
+const relaxedCache = new Map<string, number>();
+
+/** Paraxial far point of the relaxed document (clinical sign), with spectacle surfaces in front when given. */
+export function paraxialFarPointD(params: EyeParameters, lens: Surface[] = []): number {
+  const raw = farPointOf([...lens, ...buildSurfacesAt(params, 0)]);
+  return Number.isFinite(raw) ? raw : 0;
+}
+
+/**
+ * Far point of the relaxed document (clinical sign), with spectacle surfaces in front when given:
+ * the spherical equivalent of its minimum-RMS refraction for a distant object at this pupil, on
+ * the visual axis at 555 nm, the measure auto-prescribe zeroes. Demand uses it, so wearing the
+ * auto-prescription leaves a distant target in focus without accommodation (the paraxial far
+ * point differs from it by the spherical-aberration bias, about 0.25 D at a 3 mm pupil). Falls
+ * back to the paraxial far point when the wave analysis fails. Cached by contents: worker
+ * messages are structured clones, so object identity does not survive between requests.
+ */
+export function relaxedFarPointD(params: EyeParameters, lens: Surface[], pupilDiameterMm: number): number {
+  const pupil = Math.max(FAR_POINT_PUPIL_STEP_MM, Math.round(pupilDiameterMm / FAR_POINT_PUPIL_STEP_MM) * FAR_POINT_PUPIL_STEP_MM);
+  const key = JSON.stringify([params, lens, pupil]);
   let fp = relaxedCache.get(key);
   if (fp === undefined) {
-    const raw = farPointOf([...lens, ...buildSurfacesAt(params, 0)]);
-    fp = Number.isFinite(raw) ? raw : 0;
-    if (relaxedCache.size > 16) relaxedCache.clear();
+    try {
+      const a = analyzeWavefront([...lens, ...buildSurfacesAt(params, 0)], eyeView(params, Number.POSITIVE_INFINITY, pupil), { gridN: FAR_POINT_GRID_N });
+      fp = Number.isFinite(a.refraction.M) ? a.refraction.M : paraxialFarPointD(params, lens);
+    } catch (e) {
+      if (!(e instanceof ChiefRayError || e instanceof InsufficientRaysError)) throw e;
+      fp = paraxialFarPointD(params, lens);
+    }
+    if (relaxedCache.size > 64) relaxedCache.clear();
     relaxedCache.set(key, fp);
   }
   return fp;
@@ -291,14 +334,14 @@ function eyeOptics(req: EyeOpticsRequest): EyeOptics {
     lensSurfaces: worn ? lens : [],
     lensParameterA,
     paraxialPowerD: paraxialPower(surfaces).powerD,
-    farPointD: worn ? relaxedFarPointD(req.params, lens) : relaxedFarPointD(req.params),
+    farPointD: relaxedFarPointD(req.params, worn ? lens : [], 2 * req.pupilSemiDiamMm),
     defocusD: d.defocusD,
     bestFocusZMm: d.bestFocusZMm,
     retinaZMm: d.retinaZMm,
     rmsSpotMm: d.rmsSpotMm,
     fan,
     vignettedRays,
-    wave: req.wave ? eyeWave(req, surfaces, lens, worn, req.wave) : null,
+    ...(req.wave ? safeEyeWave(req, surfaces, lens, worn, req.wave) : { wave: null, waveError: null }),
     induced: req.induced ? inducedRefraction(req.params, req.induced.reference, 2 * req.pupilSemiDiamMm, req.side) : null,
   };
 }

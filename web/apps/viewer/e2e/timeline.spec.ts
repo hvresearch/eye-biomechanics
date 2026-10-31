@@ -2,8 +2,12 @@ import { readdirSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
 
+type Field = number[][][][];
 interface Grid {
   axes: { ages: number[]; nearHours: number[]; baselineSphereD: number[]; baselineCylinderD: number[] };
+  sphere: { p50: Field };
+  cylinder: { p50: Field };
+  logMAR?: { p50: Field };
   onset: { refraction: { p50: (number | null)[][][] }; acuity: { p50: (number | null)[][][] } };
 }
 
@@ -14,7 +18,11 @@ function committedGrid(): Grid {
   return JSON.parse(readFileSync(resolve(dir, last), "utf8")) as Grid;
 }
 
-/** A grid node whose median trajectory has (or has no) onset of either kind. */
+/**
+ * A grid node whose median trajectory has (or has no) onset of either kind. The viewer finds the
+ * onset on the plotted median (`onsetFromCurve`); the grid's own onsets come from the same median
+ * before rounding, so they agree on whether there is one.
+ */
 function nodeWhere(g: Grid, hasOnset: boolean) {
   const a = g.axes;
   for (let i = 0; i < a.nearHours.length; i++) {
@@ -48,7 +56,8 @@ async function clickAge(page: Page, age: number, ages: number[]) {
 }
 
 /**
- * A copy of the grid in which one node has no onset of either kind, served in place of the
+ * A copy of the grid in which one node has no onset of either kind (a flat, emmetropic median
+ * with good acuity), served in place of the
  * committed grid's chunk when the committed grid has no such node (the grid changes with each
  * calibration; data/results/README.md).
  */
@@ -61,6 +70,9 @@ function withQuietNode(g: Grid): { grid: Grid; node: { nearHours: number; sphere
       (copy.onset[kind] as Record<string, (number | null)[][][]>)[q]![i]![j]![k] = null;
     }
   }
+  copy.sphere.p50[i]![j]![k] = a.ages.map(() => 0);
+  copy.cylinder.p50[i]![j]![k] = a.ages.map(() => 0);
+  if (copy.logMAR) copy.logMAR.p50[i]![j]![k] = a.ages.map(() => -0.1);
   return { grid: copy, node: { nearHours: a.nearHours[i]!, sphere: a.baselineSphereD[j]!, cylinder: a.baselineCylinderD[k]! } };
 }
 
@@ -94,6 +106,37 @@ test("the timeline's age cursor changes the predicted cylinder, and an onset mar
   await setField(page, "baseline-cylinder", crossing!.cylinder);
   await expect(page.locator('[data-testid^="onset-"]').first()).toBeVisible();
   await expect(page.getByTestId("timeline-onset")).not.toContainText("no onset by 90");
+  // The label comes from the grid's logMAR threshold.
+  await expect(page.getByTestId("timeline-onset")).toContainText("acuity 20/40");
+});
+
+test("the onset marker sits on the plotted crossing and the 5–95% range is drawn", async ({ page }) => {
+  test.setTimeout(120_000);
+  const grid = committedGrid() as Grid & { onset: { refraction: { p05: (number | null)[][][] } } };
+  const a = grid.axes;
+  // A node with a refraction onset after the first age and a 5% onset age (a range to draw).
+  let node: { nearHours: number; sphere: number; cylinder: number; onset: number } | null = null;
+  for (let i = 0; i < a.nearHours.length && !node; i++) {
+    for (let j = 0; j < a.baselineSphereD.length && !node; j++) {
+      for (let k = 0; k < a.baselineCylinderD.length && !node; k++) {
+        const o = grid.onset.refraction.p50[i]![j]![k]!;
+        if (o !== null && o > a.ages[0]! && grid.onset.refraction.p05[i]![j]![k] !== null) {
+          node = { nearHours: a.nearHours[i]!, sphere: a.baselineSphereD[j]!, cylinder: a.baselineCylinderD[k]!, onset: o };
+        }
+      }
+    }
+  }
+  expect(node, "the committed grid has a later onset with a range").not.toBeNull();
+  await page.goto("/");
+  await expect(page.getByTestId("timeline-chart")).toBeVisible({ timeout: 30_000 });
+  await setField(page, "near-hours", node!.nearHours);
+  await setField(page, "baseline-sphere", node!.sphere);
+  await setField(page, "baseline-cylinder", node!.cylinder);
+  await expect(page.getByTestId("range-refraction")).toBeVisible();
+  const shown = Number(/refraction at (\d+\.\d) y/.exec(await text(page, "timeline-onset"))?.[1]);
+  // The plotted median is the grid's rounded to 0.001 D, so its crossing is within a year of the grid's.
+  expect(Math.abs(shown - node!.onset)).toBeLessThan(1);
+  await expect(page.getByTestId("timeline-onset")).toContainText("5–95%");
 });
 
 test("a profile that crosses no threshold shows no marker and says so", async ({ page }) => {

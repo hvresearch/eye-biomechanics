@@ -17,6 +17,8 @@ from contextlib import contextmanager
 from importlib.resources import files
 from pathlib import Path
 
+from eyebiomech.fem.units import kpa_to_mpa
+
 _REPOSITORY_DATA = Path(__file__).resolve().parents[3] / "data"
 _override: Path | None = None
 
@@ -65,6 +67,21 @@ def load_eom_table(path: Path | str | None = None) -> dict:
 
 def load_eom_forces(path: Path | str | None = None) -> dict:
     return _load(path, "eom", "forces.json")
+
+
+def load_orbital_foundation(path: Path | str | None = None) -> dict:
+    return _load(path, "eom", "orbital-foundation.json")
+
+
+def foundation_stiffness(
+    table: dict, shear_modulus_kpa: float | None = None
+) -> tuple[float, float]:
+    """(k_n, k_t) in N/mm³ of the orbital foundation: 3G/h and G/h (approximation: Winkler
+    springs on an incompressible layer; data/eom/orbital-foundation.json)."""
+    g = table["shearModulusKPa"]["value"] if shear_modulus_kpa is None else shear_modulus_kpa
+    g_mpa = kpa_to_mpa(g)
+    h = table["layerThicknessMm"]["value"]
+    return 3 * g_mpa / h, g_mpa / h
 
 
 def lame_lambda(mu: float, poisson_ratio: float) -> float:

@@ -18,7 +18,9 @@ from eyebiomech.remodel.growth import (
     cauchy_stress,
     grow,
     growth_rate,
+    growth_strain,
     load_growth_table,
+    tangent_projector,
 )
 
 RNG = np.random.default_rng(11)
@@ -178,6 +180,42 @@ def test_a_step_too_large_is_refused(sphere_case):
 def test_the_growth_table_names_its_law():
     t = load_growth_table()
     assert t["form"] == "rodriguez1994-inplane"
+    assert t["thickness"]["form"] == "none"  # the validated law (M6 plan, Task 6.6)
+    assert t["thickness"]["kappa"] > 0 and "assumption" in t["thickness"]["citation"]
     assert t["ratePerYear"]["default"] > 0
     assert t["homeostaticRatio"]["default"] == 1.0
     assert 0 < t["maxStepFraction"]["value"] < 1
+
+
+@pytest.fixture(scope="module")
+def sphere_drive():
+    """A coarse sphere's context and an in-plane drive: a tangent-plane tensor at every point."""
+    ctx = make_context(make_sphere_shell(10.0, 11.0, layers=1, n_face=4))
+    Pt = tangent_projector(ctx)
+    rng = np.random.default_rng(3)
+    A = rng.normal(size=(3, 3) + ctx.x_quad.shape[1:])
+    A = 0.5 * (A + np.swapaxes(A, 0, 1))
+    return ctx, np.einsum("ik...,kl...,lj...->ij...", Pt, A, Pt)
+
+
+def test_thickness_growth_adds_only_a_normal_component(sphere_drive):
+    """M6 plan, Task 6.6: "none" is the in-plane law; "isochoric" leaves tr εg = 0 (Jg = 1 to
+    first order); "stress" adds κ tr(drive)/2 through the thickness and keeps the in-plane
+    part."""
+    ctx, d = sphere_drive
+    n = ctx.shell.geometry.outer_normal(ctx.x_quad)
+    Pt = tangent_projector(ctx)
+    in_plane = lambda e: np.einsum("ik...,kl...,lj...->ij...", Pt, e, Pt)  # noqa: E731
+    normal = lambda e: np.einsum("i...,ij...,j...->...", n, e, n)  # noqa: E731
+    trace = np.einsum("ii...->...", d)
+    assert np.array_equal(growth_strain(d, ctx), d)
+    iso = growth_strain(d, ctx, "isochoric")
+    assert np.allclose(np.einsum("ii...->...", iso), 0, atol=1e-12)
+    assert np.allclose(in_plane(iso), d, atol=1e-12)
+    thick = growth_strain(d, ctx, "stress", kappa=2.0)
+    assert np.allclose(normal(thick), trace, atol=1e-12)
+    assert np.allclose(in_plane(thick), d, atol=1e-12)
+    with pytest.raises(ValueError, match="kappa"):
+        growth_strain(d, ctx, "stress")
+    with pytest.raises(ValueError, match="thickness"):
+        growth_strain(d, ctx, "volumetric")

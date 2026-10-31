@@ -1,0 +1,23 @@
+{
+  "name": "orbital-foundation-default",
+  "label": "Elastic foundation of the orbit (orbital fat behind the globe) for the FEM's elastic-orbit option (M6)",
+  "equation": "traction on the outer surface of the orbit's posterior hemisphere t = -(kNormal N N^T + kTangential (I - N N^T)) (u - u_rest), u_rest the pressurized eye; kNormal = 3 G / h (Young's modulus of incompressible fat over the layer thickness), kTangential = G / h, in N/mm^3 (MPa per mm)",
+  "shearModulusKPa": {
+    "value": 0.5,
+    "range": [
+      0.25,
+      0.9
+    ],
+    "citation": "Schoemaker et al., Elasticity, viscosity, and deformation of orbital fat, Invest Ophthalmol Vis Sci 47(11):4819-4826, 2006 (PubMed 17065493): elastic shear modulus G' of calf orbital fat 250-500 Pa and of monkey orbital fat 500-900 Pa by parallel-plate rheometry (search excerpt, 2026-10-31); the value is the calf upper and monkey lower bound."
+  },
+  "layerThicknessMm": {
+    "value": 15.0,
+    "range": [
+      10.0,
+      20.0
+    ],
+    "citation": "assumption: the depth of the retrobulbar fat between the globe and the orbital walls and apex that the Winkler layer stands for."
+  },
+  "note": "Winkler springs on an incompressible layer are an approximation (the real fat flows sideways and the globe slides within Tenon's capsule, Schoemaker et al. 2006). The FEM's production loads keep the linear perturbation of the pressurized eye (M5 plan, Deviation 11); this foundation is the M6 test of whether an elastic orbit makes the nonlinear solve agree with it (M6 plan, Task 6.6).",
+  "verified": false
+}

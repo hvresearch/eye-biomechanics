@@ -35,6 +35,26 @@ describe("chart color maps", () => {
     }
   });
 
+  it("steps both maps for the light theme: darker away from a light neutral and a light surface", () => {
+    const mid = divergingColor(0, "light");
+    for (const sign of [-1, 1]) {
+      let prev = luminance(mid);
+      for (let t = 0.1; t <= 1.0001; t += 0.1) {
+        const l = luminance(divergingColor(sign * t, "light"));
+        expect(l).toBeLessThan(prev);
+        prev = l;
+      }
+    }
+    let prev = 2;
+    for (let t = 0; t <= 1.0001; t += 0.05) {
+      const l = luminance(sequentialColor(t, "light"));
+      expect(l).toBeLessThan(prev);
+      prev = l;
+    }
+    // The default is the dark theme the viewer starts in.
+    expect(sequentialColor(0.3)).toEqual(sequentialColor(0.3, "dark"));
+  });
+
   it("takes a symmetric limit from the largest finite magnitude", () => {
     expect(symmetricLimit([0.1, -0.4, Number.NaN, 0.3])).toBe(0.4);
     expect(symmetricLimit([0, 0])).toBeGreaterThan(0);

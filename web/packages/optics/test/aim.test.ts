@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { pupilBundle } from "../src/trace/aim";
 import { traceRay } from "../src/trace/sequential";
-import { onAxisView, thinSpectacle } from "./helpers/systems";
+import { opdMap } from "../src/wavefront/opd";
+import { onAxisView, stigmaticEllipsoid, thinSpectacle } from "./helpers/systems";
 
 function crossings(rays: ReturnType<typeof pupilBundle>["rays"], front: Parameters<typeof traceRay>[1], zp: number) {
   return rays.map((ray) => {
@@ -53,5 +54,33 @@ describe("pupilBundle", () => {
     expect(b.chief.dir[0]).toBeCloseTo(0, 15);
     expect(b.chief.dir[1]).toBeCloseTo(0, 15);
     expect(b.chief.origin[2]).toBeCloseTo(-2000, 9);
+  });
+
+  it("flags rays whose aiming failed and keeps them out of the OPD map", () => {
+    // A +20 D lens 13 mm before the pupil: a ray reaching the pupil edge (2.5 mm) enters the
+    // lens about 3.4 mm off axis, beyond the 3 mm aperture, so aiming fails for the outer
+    // samples. Launched unaimed at their samples they would pass the lens and land elsewhere.
+    const front = thinSpectacle(20).map((s) => ({ ...s, apertureSemiDiamMm: 3 }));
+    const b = pupilBundle(onAxisView(2.5), 15, 555, front);
+    expect(b.unaimed).toBeGreaterThan(0);
+    expect(b.converged.length).toBe(b.rays.length);
+    const failed = Array.from(b.converged).filter((c) => c === 0).length;
+    expect(failed).toBe(b.unaimed);
+    b.converged.forEach((c, i) => {
+      const r = Math.hypot(b.pupilXYMm[2 * i] ?? 0, b.pupilXYMm[2 * i + 1] ?? 0);
+      if (r < 2) expect(c).toBe(1);
+    });
+    const eye = stigmaticEllipsoid();
+    const map = opdMap([...front, ...eye], b);
+    b.converged.forEach((c, i) => {
+      if (c === 0) expect(map.valid[i]).toBe(0);
+    });
+    expect(map.validFraction).toBeLessThanOrEqual(1 - failed / b.rays.length + 1e-12);
+  });
+
+  it("marks every ray converged without front surfaces", () => {
+    const b = pupilBundle(onAxisView(2), 9, 555);
+    expect(Array.from(b.converged).every((c) => c === 1)).toBe(true);
+    expect(b.chiefConverged).toBe(true);
   });
 });

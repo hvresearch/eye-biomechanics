@@ -29,7 +29,9 @@ from eyebiomech.remodel.library import (
     VALID_RATE_TIME,
     LevelResponse,
     Library,
+    StiffnessOutOfTable,
     build_library,
+    merge_libraries,
 )
 
 DOC = json.loads((DATA_DIR / "fixtures" / "navarro-1985-preset.eye.json").read_text())
@@ -121,13 +123,22 @@ def test_superposed_groups_match_a_direct_nonlinear_solve(library, pressurized):
 
 def test_the_library_is_enriched_bounded_and_labeled(library):
     """The growth basis is the load patterns and their Krylov sequence, and the library records
-    the growth exposure it is validated for (M5 plan, Task 5.14, Step 4). Stability is not
-    asserted: with the enriched basis a spherical growth mode grows at the calibrated
-    stiffness."""
+    the growth exposure it is validated for (M5 plan, Task 5.14, Step 4) and its growth law.
+    Stability is not asserted: with the enriched basis and the in-plane law (the growth
+    table's default) a spherical growth mode grows at the calibrated stiffness."""
     F = library.feedback(1.0)
     assert F.shape == ((1 + KRYLOV_DEPTH) * len(GROUPS),) * 2
-    assert np.all(np.isfinite(np.linalg.eigvals(F)))
+    lam, V = np.linalg.eig(F)
+    assert np.all(np.isfinite(lam))
+    # The documented structure (data/results/README.md): exactly one growing mode, and its
+    # refraction is mostly spherical (M5 review round 3).
+    growing = np.flatnonzero(lam.real > 0)
+    assert growing.size == 1
+    refraction = np.real(V[:, growing[0]] @ library.growth_refraction(1.0))
+    assert abs(refraction[0]) > 0.9 * np.linalg.norm(refraction)
     doc = library.to_json()
+    law = load_growth_table()["thickness"]
+    assert doc["growthLaw"] == {"thickness": law["form"], "kappa": law["kappa"]}
     assert doc["elastic"] is True and doc["remodeled"] is True
     assert doc["krylovDepth"] == KRYLOV_DEPTH and doc["validRateTime"] == VALID_RATE_TIME
     back = Library.from_json(json.loads(json.dumps(doc)))
@@ -135,6 +146,7 @@ def test_the_library_is_enriched_bounded_and_labeled(library):
     assert np.allclose(back.feedback(1.0), F)
     assert back.valid_rate_time == VALID_RATE_TIME
     assert "linear superposition" in doc["citation"] and "Krylov" in doc["citation"]
+    assert "interpolated in ln s (approximation" in doc["citation"]
 
 
 def test_growth_beyond_the_validated_exposure_is_refused(library):
@@ -219,16 +231,76 @@ def test_a_negative_growth_history_is_refused():
         _constant_loads(np.arange(6.0, 8.0), history_years=-1.0)
 
 
-def test_stiffness_interpolation_is_linear_in_log_scale():
-    def level(s, value):
-        n = len(GROUPS)
-        return LevelResponse(s, np.full((n, 3), value), np.zeros((n, 3)), -np.eye(n),
-                             np.eye(n), np.ones(n))  # fmt: skip
+def _level(s, value):
+    n = len(GROUPS)
+    return LevelResponse(s, np.full((n, 3), value), np.zeros((n, 3)), -np.eye(n),
+                         np.eye(n), np.ones(n))  # fmt: skip
 
-    lib = Library(GROUPS, [level(1.0, 1.0), level(4.0, 3.0)])
+
+def test_libraries_built_level_by_level_merge():
+    """M6 plan, Task 6.6: levels built in separate runs from one tree join into one table;
+    parts from different trees, with different settings, or with a repeated scale are refused."""
+    meta = {"mesh": {"nFace": 20}, "krylovDepth": KRYLOV_DEPTH, "eyeId": "e"}
+
+    def part(s, value, git="abc", **extra):
+        prov = {"generatedBy": f"eyebiomech library --scales {s}", "gitHash": git}
+        return Library(GROUPS, [_level(s, value)], {**meta, **extra, "provenance": prov})
+
+    merged = merge_libraries([part(4.0, 3.0), part(1.0, 1.0)], {"generatedBy": "merge"})
+    assert merged.stiffness_range == (1.0, 4.0)
+    assert merged.elastic(2.0)[0, 0] == pytest.approx(2.0)
+    prov = merged.to_json()["provenance"]
+    assert prov["gitHash"] == "abc" and prov["generatedBy"] == "merge"
+    assert [p["generatedBy"] for p in prov["parts"]] == [
+        "eyebiomech library --scales 4.0",
+        "eyebiomech library --scales 1.0",
+    ]
+    with pytest.raises(ValueError, match="different trees"):
+        merge_libraries([part(1.0, 1.0), part(4.0, 3.0, git="def")])
+    with pytest.raises(ValueError, match="mesh"):
+        merge_libraries([part(1.0, 1.0), part(4.0, 3.0, mesh={"nFace": 16})])
+    with pytest.raises(ValueError, match="twice"):
+        merge_libraries([part(1.0, 1.0), part(1.0, 3.0)])
+
+
+def test_stiffness_interpolation_is_linear_in_log_scale():
+    lib = Library(GROUPS, [_level(1.0, 1.0), _level(4.0, 3.0)])
     assert lib.elastic(1.0)[0, 0] == 1.0 and lib.elastic(4.0)[0, 0] == 3.0
     assert lib.elastic(2.0)[0, 0] == pytest.approx(2.0)
-    assert lib.elastic(8.0)[0, 0] == 3.0  # clamped to the table
+    assert lib.elastic(8.0, on_edge="clamp")[0, 0] == 3.0  # clamped to the table on request
+
+
+def test_stiffness_outside_the_table_is_refused_by_default():
+    """M5 review rounds 2-3 (M6 plan, Task 6.5): no silent clamp at either edge."""
+    lib = Library(GROUPS, [_level(0.5, 1.0), _level(4.0, 3.0)])
+    assert lib.stiffness_range == (0.5, 4.0)
+    with pytest.raises(StiffnessOutOfTable, match="0.4"):
+        lib.elastic(0.4)
+    with pytest.raises(StiffnessOutOfTable, match="4.5"):
+        lib.feedback(4.5)
+    assert lib.growth_refraction(0.4, on_edge="clamp")[0, 0] == 0.0
+    assert lib.elastic(0.4, on_edge="clamp")[0, 0] == 1.0
+    with pytest.raises(ValueError, match="on_edge"):
+        lib.elastic(1.0, on_edge="extrapolate")
+    L = np.zeros(len(GROUPS))
+    kw = {"rate_per_year": 0.0, "ratio": 1.0, "stiffness": lambda a: 6.0}
+    with pytest.raises(StiffnessOutOfTable):
+        lib.simulate(lambda a: L, np.array([6.0, 7.0]), **kw)
+    assert lib.simulate(lambda a: L, np.array([6.0, 7.0]), on_edge="clamp", **kw).shape == (2, 2, 3)
+
+
+@pytest.mark.slow
+def test_thickness_growth_makes_every_tabled_stiffness_restoring():
+    """M6 plan, Task 6.6: with stress-driven thickness growth at the table's kappa the
+    spherical growth mode is restoring at every stiffness scale of the production table, while
+    the in-plane law (the default) grows it at each (+0.67 to +1.03 per unit r·t on this
+    mesh)."""
+    kappa = load_growth_table()["thickness"]["kappa"]
+    for s in (0.5, 1.0, 2.0, 4.0):
+        thick = build_library(DOC, stiffness_scales=(s,), thickness="stress", kappa=kappa, **COARSE)
+        assert np.max(np.linalg.eigvals(thick.feedback(s)).real) < 0, s
+        inplane = build_library(DOC, stiffness_scales=(s,), thickness="none", **COARSE)
+        assert np.max(np.linalg.eigvals(inplane.feedback(s)).real) > 0, s
 
 
 @pytest.mark.slow

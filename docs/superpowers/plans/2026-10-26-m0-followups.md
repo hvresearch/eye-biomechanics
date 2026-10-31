@@ -5,6 +5,10 @@ Milestone 1. Each line names the milestone or task that should absorb it.
 Resolve an item in the task that touches the same file, and delete its line here
 in that commit.
 
+Every item that named Milestone 6 was absorbed by the Milestone 6 plan
+(`2026-10-30-m6-polish-scenarios-performance.md`, "Follow-ups absorbed from earlier
+milestones") and removed here on 2026-10-30.
+
 ## Spec and literature
 
 - `docs/literature/README.md`: DOIs still "to be added" for Feil 2017,
@@ -15,9 +19,6 @@ in that commit.
 
 ## Schema and validators
 
-- `schemas/scenario.schema.json` uses `$ref` to the EyeParameters schema; no test
-  compiles it. Add an Ajv2020 compile test in TS and, in Python, resolve the
-  reference with `referencing.Registry`. (M6, Task 6.1)
 - Negative schema tests assert only `ok === false`; also assert the error names
   the offending key. (first task that edits `schema.test.ts`)
 - Python `re.fullmatch(..., re.ASCII)` and the TS regex agree, but the schema
@@ -28,9 +29,6 @@ in that commit.
 - `web/package.json` engines is `>=22.12`; Vitest 5 excludes Node 25. Works in
   practice and the cloud VM runs Node 22. No action unless CI breaks.
 
-## Python
-
-
 ## CI and workflows (edit locally; cloud tokens lack the workflow scope)
 
 - Setup steps are duplicated between `ci.yml` and `pages.yml`; extract a
@@ -39,8 +37,6 @@ in that commit.
   it. Main is protected by required checks, so a red commit cannot land anyway.
 - Remove the `hashFiles` guard on the Playwright steps now that
   `web/apps/viewer/e2e/` exists (M1 added it). Local follow-up PR.
-- The viewer bundle is ~1.3 MB minified (three.js); add a `manualChunks` split
-  for `three` if Pages load time matters. (M6)
 
 ## Docs
 

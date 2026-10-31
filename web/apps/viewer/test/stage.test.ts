@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dragToTarget } from "../src/scene/dragTarget";
-import { PALETTE, activationColor } from "../src/scene/palette";
+import { THEMES, activationColor, paletteFor } from "../src/scene/palette";
 import { taperedRadius } from "../src/scene/tube";
 
 describe("taperedRadius", () => {
@@ -18,11 +18,12 @@ describe("taperedRadius", () => {
 });
 
 describe("activationColor", () => {
-  it("runs from the resting muscle tone to the hot token", () => {
-    expect(activationColor(0)).toBe(PALETTE.muscleRest);
-    expect(activationColor(1)).toBe(PALETTE.hot);
-    expect(activationColor(2)).toBe(PALETTE.hot);
-    expect(activationColor(Number.NaN)).toBe(PALETTE.muscleRest);
+  it.each(THEMES)("runs from the resting muscle tone to the hot token (%s)", (theme) => {
+    const p = paletteFor(theme);
+    expect(activationColor(0, theme)).toBe(p.muscleRest);
+    expect(activationColor(1, theme)).toBe(p.hot);
+    expect(activationColor(2, theme)).toBe(p.hot);
+    expect(activationColor(Number.NaN, theme)).toBe(p.muscleRest);
   });
 });
 
@@ -45,5 +46,26 @@ describe("dragToTarget", () => {
   it("returns null for a ray parallel to or pointing away from the plane", () => {
     expect(dragToTarget([0, 0, 0], [1, 0, 0], -300)).toBeNull();
     expect(dragToTarget([0, 0, 0], [0, 0, 1], -300)).toBeNull();
+  });
+});
+
+describe("insertionArc", () => {
+  it("spans the insertion width across the muscle on the globe", async () => {
+    const { insertionArc, MARKER_LIFT } = await import("../src/scene/markers");
+    const { musclePath, defaultMuscles, QUAT_IDENTITY, GLOBE_RADIUS_MM } = await import("@eye/eye-model");
+    const m = defaultMuscles()[0]!;
+    const path = musclePath(m, QUAT_IDENTITY);
+    const arc = insertionArc(path, m.insertionWidthMm);
+    const R = GLOBE_RADIUS_MM * MARKER_LIFT;
+    for (const p of arc) expect(Math.hypot(...p)).toBeCloseTo(R, 9);
+    let len = 0;
+    for (let i = 1; i < arc.length; i++) len += Math.hypot(arc[i]![0] - arc[i - 1]![0], arc[i]![1] - arc[i - 1]![1], arc[i]![2] - arc[i - 1]![2]);
+    expect(len).toBeCloseTo(m.insertionWidthMm * MARKER_LIFT, 2);
+    // Across the muscle: the arc's chord is perpendicular to the muscle's last segment.
+    const n = path.points.length;
+    const [p, q] = [path.points[n - 1]!, path.points[n - 2]!];
+    const chord = arc[arc.length - 1]!.map((v, i) => v - arc[0]![i]!);
+    const seg = q.map((v, i) => v - p[i]!);
+    expect(Math.abs(chord[0]! * seg[0]! + chord[1]! * seg[1]! + chord[2]! * seg[2]!) / (Math.hypot(...chord) * Math.hypot(...seg))).toBeLessThan(1e-6);
   });
 });

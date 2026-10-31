@@ -1,18 +1,21 @@
 import {
+  accommodationResponse,
   applyRefraction,
   applyRefractivePreset,
   buildSurfacesAt,
+  demandFromDistance,
   deriveBinocular,
+  eyeView,
   defaultScene,
   lensParameterFor,
   loadPreset,
   type EyeParameters,
   type SceneState,
 } from "@eye/eye-model";
-import { DEFAULT_LAUNCH_OFFSET_MM, SPECTACLE_DEFAULTS, lensSurfaces, paraxialPower, type Surface } from "@eye/optics";
+import { DEFAULT_LAUNCH_OFFSET_MM, SPECTACLE_DEFAULTS, analyzeWavefront, lensSurfaces, paraxialPower, type Surface } from "@eye/optics";
 import { describe, expect, it } from "vitest";
 import { OpticsClient, StaleRequestError } from "../src/worker/client";
-import { handle, lensPrescription, relaxedFarPointD } from "../src/worker/handle";
+import { handle, lensPrescription, paraxialFarPointD, relaxedFarPointD } from "../src/worker/handle";
 import { WAVE_REQUEST } from "../src/store/scene";
 import { transferables, type ClinicalLens, type OpticsRequest, type OpticsWorkerMessage } from "../src/worker/messages";
 
@@ -59,8 +62,33 @@ describe("handle", () => {
     const right = res.eyes[0]!;
     expect(right.lensParameterA).toBeCloseTo(A, 12);
     expect(right.paraxialPowerD).toBeCloseTo(paraxialPower(buildSurfacesAt(eye, A)).powerD, 12);
-    expect(right.farPointD).toBeCloseTo(relaxedFarPointD(eye), 12);
-    expect(Math.abs(right.farPointD)).toBeLessThan(0.05); // the Navarro fixture is emmetropic
+    const pupilMm = 2 * request().eyes[0]!.pupilSemiDiamMm;
+    expect(right.farPointD).toBe(relaxedFarPointD(eye, [], pupilMm));
+    expect(Math.abs(paraxialFarPointD(eye))).toBeLessThan(0.05); // the Navarro fixture is paraxially emmetropic
+  });
+
+  it("takes the far point from the minimum-RMS refraction of the relaxed eye at its pupil", () => {
+    const pupilMm = 3;
+    const a = analyzeWavefront(buildSurfacesAt(eye, 0), eyeView(eye, Number.POSITIVE_INFINITY, pupilMm), { gridN: 64 });
+    expect(relaxedFarPointD(eye, [], pupilMm)).toBeCloseTo(a.refraction.M, 2);
+    // Spherical aberration makes the paraxially emmetropic eye read slightly myopic.
+    expect(relaxedFarPointD(eye, [], pupilMm)).toBeLessThan(paraxialFarPointD(eye) - 0.1);
+  });
+
+  it("leaves a distant target in focus without accommodation behind the auto-prescription", () => {
+    for (const distanceM of [6, Number.POSITIVE_INFINITY]) {
+      const far: SceneState = { ...scene, targetDistanceM: distanceM };
+      const pupilMm = deriveBinocular(far, { left: eye, right: eye }).right.pupilMm;
+      const base = { side: "right" as const, params: eye, accommodationD: 0, objectDistanceM: distanceM, pupilSemiDiamMm: pupilMm / 2, fanRays: 0 };
+      const bare = handle({ id: 1, eyes: [{ ...base, wave: { ...WAVE_REQUEST, autoPrescribe: true } }] }).eyes[0]!;
+      const { residualRmsMicrons: _r, ...auto } = bare.wave!.autoRx!;
+      const worn = handle({ id: 2, eyes: [{ ...base, spectacles: auto, corrected: true }] }).eyes[0]!;
+      const amplitudeD = deriveBinocular(far, { left: eye, right: eye }).right.amplitudeD;
+      const acc = (fp: number) => accommodationResponse(demandFromDistance(distanceM, fp), amplitudeD);
+      // Before M6 the paraxial far point made the auto lens add 0.2–0.36 D of accommodation.
+      expect(acc(worn.farPointD) - acc(bare.farPointD)).toBeLessThan(0.05);
+      expect(acc(paraxialFarPointD(eye, lensSurfaces(lensPrescription(auto, "right"))))).toBeGreaterThan(0.1);
+    }
   });
 
   it("aims the drawn fan at the same plane as the defocus bundle", () => {
@@ -88,9 +116,9 @@ describe("handle", () => {
   });
 
   it("caches the relaxed far point per document contents", () => {
-    const a = relaxedFarPointD(eye);
+    const a = relaxedFarPointD(eye, [], 3);
     const copy = JSON.parse(JSON.stringify(eye)) as EyeParameters;
-    expect(relaxedFarPointD(copy)).toBe(a);
+    expect(relaxedFarPointD(copy, [], 3)).toBe(a);
   });
 
   it("returns wave optics for the right eye: PSF, MTF, retinal image, and a refraction near 0 for the emmetrope at 6 m", () => {
@@ -138,7 +166,7 @@ describe("handle", () => {
     expect(Math.abs(w.corrected!.refraction.cylinderD - emm.refraction.cylinderD)).toBeLessThan(0.1);
     expect(w.corrected!.rmsMicrons).toBeLessThan(0.25 * w.uncorrected.rmsMicrons);
     // Worn: the far point and defocus follow the corrected eye; the lens surfaces come back for drawing.
-    expect(Math.abs(e.farPointD)).toBeLessThan(0.15);
+    expect(Math.abs(e.farPointD - relaxedFarPointD(eye, [], 3))).toBeLessThan(0.15);
     expect(Math.abs(e.defocusD)).toBeLessThan(0.3);
     expect(e.lensSurfaces).toHaveLength(2);
     expect(e.surfaces).toHaveLength(5);
@@ -164,8 +192,9 @@ describe("handle", () => {
   // A young hyperope at 6 m accommodates about 2 D uncorrected; refraction must relax that away.
   const hyperope = applyRefractivePreset(eye, "hyperope+2-axial", farPointOf);
   const far6: SceneState = { ...scene, targetDistanceM: 6, ageYears: 30 };
+  const hyperopePupilMm = deriveBinocular(far6, { left: hyperope, right: hyperope }).right.pupilMm;
   const hyperopeRequest = (over: Partial<OpticsRequest["eyes"][number]>): OpticsRequest => {
-    const fp = relaxedFarPointD(hyperope);
+    const fp = relaxedFarPointD(hyperope, [], hyperopePupilMm);
     const b = deriveBinocular(far6, { left: hyperope, right: hyperope }, { farPointD: { left: fp, right: fp } });
     const r = b.right;
     return {
@@ -184,13 +213,14 @@ describe("handle", () => {
 
   it("analyzes each configuration at its own accommodation: a +2 D lens not worn still corrects the hyperope", () => {
     const w = handle(hyperopeRequest({ spectacles: lens(2), corrected: false })).eyes[0]!.wave!;
-    const accEmm = deriveBinocular(far6, { left: eye, right: eye }).right.accommodationD;
+    const fpEmm = relaxedFarPointD(eye, [], hyperopePupilMm);
+    const accEmm = deriveBinocular(far6, { left: eye, right: eye }, { farPointD: { left: fpEmm, right: fpEmm } }).right.accommodationD;
     const emm = handle({ id: 5, eyes: [{ ...hyperopeRequest({}).eyes[0]!, params: eye, accommodationD: accEmm }] }).eyes[0]!.wave!.uncorrected;
     // Uncorrected, the hyperope accommodates onto the target; with the lens it relaxes and stays in focus.
     expect(Math.abs(w.uncorrected.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
     expect(Math.abs(w.corrected!.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
     // Worn, the uncorrected comparison row accommodates as the bare eye would.
-    const fpWorn = relaxedFarPointD(hyperope, lensSurfaces(lensPrescription(lens(2), "right")));
+    const fpWorn = relaxedFarPointD(hyperope, lensSurfaces(lensPrescription(lens(2), "right")), hyperopePupilMm);
     const accWorn = deriveBinocular(far6, { left: hyperope, right: hyperope }, { farPointD: { left: fpWorn, right: fpWorn } }).right.accommodationD;
     const worn = handle(hyperopeRequest({ spectacles: lens(2), corrected: true, accommodationD: accWorn })).eyes[0]!.wave!;
     expect(Math.abs(worn.uncorrected.refraction.M - emm.refraction.M)).toBeLessThan(0.3);
@@ -199,19 +229,22 @@ describe("handle", () => {
 
   it("takes the far point of an astigmat as its spherical equivalent, whatever the cylinder axis", () => {
     const meridianFp = (doc: EyeParameters, deg: number) => paraxialPower(buildSurfacesAt(doc, 0), 1, { meridianDeg: deg }).farPointD;
+    const pupilMm = 2 * request().eyes[0]!.pupilSemiDiamMm;
     const fps = [90, 180, 45].map((axisDegTabo) => {
       const astigmat = applyRefraction(eye, { mechanism: "corneal", sphereD: 0, cylinderD: -1.5, axisDegTabo }, farPointOf);
       const se = (meridianFp(astigmat, 0) + meridianFp(astigmat, 90)) / 2;
-      expect(relaxedFarPointD(astigmat)).toBeCloseTo(se, 9);
-      const b = deriveBinocular(scene, { left: astigmat, right: astigmat }, { farPointD: { left: se, right: se } });
+      expect(paraxialFarPointD(astigmat)).toBeCloseTo(se, 9);
+      const fp = relaxedFarPointD(astigmat, [], pupilMm);
+      const b = deriveBinocular(scene, { left: astigmat, right: astigmat }, { farPointD: { left: fp, right: fp } });
       const res = handle({ ...request(), eyes: [{ ...request().eyes[0]!, params: astigmat, accommodationD: b.right.accommodationD }] });
-      expect(res.eyes[0]!.farPointD).toBeCloseTo(se, 9);
-      return se;
+      expect(res.eyes[0]!.farPointD).toBe(fp);
+      return fp;
     });
-    // −1.5 D of cylinder about plano: −0.75 D spherical equivalent, the same at every axis.
+    // −1.5 D of cylinder about plano: −0.75 D spherical equivalent, nearly the same at every axis
+    // (the visual axis is off the optical axis, so oblique astigmatism adds a little).
     for (const fp of fps) {
-      expect(fp).toBeCloseTo(fps[0]!, 3);
-      expect(fp - relaxedFarPointD(eye)).toBeCloseTo(-0.75, 1);
+      expect(fp).toBeCloseTo(fps[0]!, 1);
+      expect(fp - relaxedFarPointD(eye, [], pupilMm)).toBeCloseTo(-0.75, 1);
     }
   });
 
@@ -282,6 +315,7 @@ describe("induced refraction of a biomechanics result", () => {
     const ind = res.eyes[0]!.induced!;
     expect(Number.isFinite(ind.delta.cylinderD)).toBe(true);
     expect(ind.delta.cylinderD).toBeLessThanOrEqual(0); // minus cylinder
+    expect(Math.abs(ind.delta.cylinderD)).toBeGreaterThan(1e-3); // and the loads do induce some
     expect(ind.delta.axisDeg).toBeGreaterThan(0);
     expect(ind.delta.axisDeg).toBeLessThanOrEqual(180);
     expect(handle(request({}, 0)).eyes[0]!.induced).toBeNull();

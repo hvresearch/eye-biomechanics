@@ -4,7 +4,9 @@ import { Biomechanics } from "./Biomechanics";
 import { Decomposition } from "./Decomposition";
 import { MuscleTable } from "./MuscleTable";
 import { NumberField } from "./NumberField";
+import { Scenarios } from "./Scenarios";
 import { Spectacles } from "./Spectacles";
+import { StagePanel } from "./StagePanel";
 import { Timeline } from "./Timeline";
 
 const MIN_M = 0.1;
@@ -49,6 +51,10 @@ export function Inspector() {
           Optics worker: {workerError}
         </div>
       )}
+
+      <Scenarios />
+
+      <StagePanel />
 
       <section className="panel">
         <h2>Scene</h2>

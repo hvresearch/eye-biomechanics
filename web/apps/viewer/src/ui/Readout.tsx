@@ -1,7 +1,8 @@
 import { eyeOptics, useScene } from "../store/scene";
 import { formatSigned } from "./format";
 import { WaveFigures, refractionText } from "./optics/WaveFigures";
-import { gazeTooltip, opticsTooltips, readoutTooltips, vergenceTooltip } from "./tooltips";
+import { vergenceDemandMA } from "@eye/eye-model";
+import { gazeTooltip, hasTiltOrDecenter, opticsTooltips, pupilDetail, readoutTooltips, vergenceTooltip } from "./tooltips";
 
 function Stat({
   k,
@@ -41,13 +42,15 @@ export function Readout() {
   const vergenceDeg = useScene((s) => s.binocular.vergenceDeg);
   const pupilModel = useScene((s) => s.eyes.right.pupil.model);
   const unverified = useScene((s) => s.eyes.right.lensAccommodationModel?.unverified);
+  const tilted = useScene((s) => hasTiltOrDecenter(s.eyes.right));
+  const ipdMm = useScene((s) => s.scene.ipdMm);
   const powerD = optics?.paraxialPowerD ?? Number.NaN;
   const focusOffsetMm = optics ? optics.bestFocusZMm - optics.retinaZMm : Number.NaN;
   const corrected = useScene((s) => s.corrected);
   const wave = optics?.wave ?? null;
   const active = wave ? (corrected && wave.corrected ? wave.corrected : wave.uncorrected) : null;
   const otips = opticsTooltips();
-  const tips = readoutTooltips(eye.pupilMm, pupilModel, Array.isArray(unverified) ? unverified.map(String) : []);
+  const tips = readoutTooltips(eye.pupilMm, pupilModel, Array.isArray(unverified) ? unverified.map(String) : [], tilted);
 
   return (
     <section className="readout" aria-label="Readout">
@@ -106,7 +109,7 @@ export function Readout() {
           v={eye.pupilMm.toFixed(1)}
           u="mm"
           testId="pupil"
-          title={`${tips.pupil} Light-adapted ${eye.pupilBaseMm.toFixed(2)} mm, near miosis ${(eye.pupilBaseMm - eye.pupilMm).toFixed(2)} mm.`}
+          title={`${tips.pupil} ${pupilDetail(eye.pupilBaseMm, eye.pupilMm, vergenceDemandMA(vergenceDeg, ipdMm))}`}
         />
         <Stat
           k={corrected && wave?.corrected ? "Refraction (worn)" : "Refraction"}

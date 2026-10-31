@@ -51,11 +51,13 @@ export function taperedTube(path: MusclePath, tendonMm: number, mirror = false):
 export function Muscle({ side, index }: { side: Side; index: number }) {
   const path = useScene((s) => s.binocular[side].eomPaths[index]);
   const activation = useScene((s) => s.binocular[side].eomActivation[index] ?? 0);
+  const theme = useScene((s) => s.theme);
   const tendonMm = useScene(
     (s) => s.eyes[side].extraocularMuscles?.find((m) => m.name === MUSCLE_NAMES[index])?.tendon.slackLengthMm ?? 0,
   );
   const hovered = useScene((s) => s.hovered?.kind === "muscle" && s.hovered.side === side && s.hovered.index === index);
   const setHovered = useScene((s) => s.setHovered);
+  const togglePin = useScene((s) => s.togglePin);
   const isSO = MUSCLE_NAMES[index] === "superiorOblique";
   // The superior oblique's modeled path (trochlea to insertion) is all tendon.
   const mirror = side === "left";
@@ -71,8 +73,8 @@ export function Muscle({ side, index }: { side: Side; index: number }) {
   if (!geometry) return null;
   const material = (
     <meshStandardMaterial
-      color={activationColor(activation)}
-      emissive={activationColor(activation)}
+      color={activationColor(activation, theme)}
+      emissive={activationColor(activation, theme)}
       emissiveIntensity={hovered ? 0.45 : 0.12 + 0.25 * activation}
       roughness={0.6}
       side={DoubleSide}
@@ -85,6 +87,10 @@ export function Muscle({ side, index }: { side: Side; index: number }) {
         setHovered({ kind: "muscle", side, index });
       }}
       onPointerOut={() => setHovered(null)}
+      onClick={(e) => {
+        e.stopPropagation();
+        togglePin({ kind: "muscle", side, index });
+      }}
     >
       <mesh geometry={geometry} name={`${side} ${MUSCLE_NAMES[index]}`}>
         {material}
