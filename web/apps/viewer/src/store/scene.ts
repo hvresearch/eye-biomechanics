@@ -403,9 +403,12 @@ export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner; storag
           dynamics,
           scrubS: null,
           paramError: null,
+          // Marked pending in the same `set` as the new state (one store notification per update,
+          // so every subscriber's selector runs once per dragged frame, not twice; Task 6.8).
+          pending: true,
         });
         dropStaleAutoRx();
-        schedule();
+        request();
       } catch (e) {
         set({ paramError: message(e) });
       }

@@ -1,15 +1,24 @@
 import { useFrame } from "@react-three/fiber";
 import { MUSCLE_NAMES } from "@eye/eye-model";
-import { useMemo, useRef } from "react";
+import { memo, useMemo, useRef } from "react";
 import { Plane, type Group } from "three";
 import { useScene, type Side } from "../store/scene";
 import { cutPlane } from "./cut";
-import { DeformationMap } from "./DeformationMap";
-import { EyeCutaway } from "./EyeCutaway";
-import { Markers } from "./Markers";
-import { Muscle } from "./Muscle";
-import { Orbit } from "./Orbit";
-import { RayFan } from "./RayFan";
+import { DeformationMap as DeformationMapPart } from "./DeformationMap";
+import { EyeCutaway as EyeCutawayPart } from "./EyeCutaway";
+import { Markers as MarkersPart } from "./Markers";
+import { Muscle as MusclePart } from "./Muscle";
+import { Orbit as OrbitPart } from "./Orbit";
+import { RayFan as RayFanPart } from "./RayFan";
+
+// Every part subscribes to the store for what it draws and takes only stable props, so memoized
+// it re-renders on its own state, not on each gaze change that turns the globe (Task 6.8).
+const DeformationMap = memo(DeformationMapPart);
+const EyeCutaway = memo(EyeCutawayPart);
+const Markers = memo(MarkersPart);
+const Muscle = memo(MusclePart);
+const Orbit = memo(OrbitPart);
+const RayFan = memo(RayFanPart);
 
 /**
  * One eye in the head frame (x to the subject's right, y up, z posterior, mm). The group

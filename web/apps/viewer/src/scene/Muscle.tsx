@@ -1,10 +1,10 @@
 import { EOM_TABLE, MUSCLE_NAMES, type MusclePath, type Vec3 } from "@eye/eye-model";
-import { useEffect, useMemo } from "react";
-import { CatmullRomCurve3, DoubleSide, TubeGeometry, Vector3 } from "three";
+import { useEffect, useLayoutEffect, useMemo } from "react";
+import { DoubleSide, type BufferGeometry } from "three";
 import drawing from "../../../../../data/anatomy/orbit-drawing.json";
 import { useScene, type Side } from "../store/scene";
 import { activationColor } from "./palette";
-import { taperedRadius } from "./tube";
+import { createTube, writeTaperedTube, type TubeShape } from "./tube";
 
 const M = drawing.muscle;
 
@@ -21,29 +21,18 @@ function obliqueBelly(trochlea: Vec3): MusclePath {
   return { points: [ANNULUS_MM, mid, trochlea], lengthMm: len, pullDir: [0, 0, 1], arcMm: 0, tangentPoint: trochlea };
 }
 
+/** The muscle tubes' resolution and drawn radii (data/anatomy/orbit-drawing.json). */
+const SHAPE: TubeShape = {
+  tubularSegments: M.tubularSegments,
+  radialSegments: M.radialSegments,
+  bellyRadiusMm: M.bellyRadiusMm,
+  tendonRadiusMm: M.tendonRadiusMm,
+};
+
 /** Tube along a muscle path whose radius tapers from belly to tendon (drawing only); `mirror` flips x (left eye). */
-export function taperedTube(path: MusclePath, tendonMm: number, mirror = false): TubeGeometry {
-  const sx = mirror ? -1 : 1;
-  const pts = path.points.map(([x, y, z]) => new Vector3(sx * x, y, z));
-  const curve = new CatmullRomCurve3(pts, false, "centripetal");
-  const g = new TubeGeometry(curve, M.tubularSegments, 1, M.radialSegments, false);
-  const pos = g.getAttribute("position");
-  const tendonFraction = path.lengthMm > 0 ? tendonMm / path.lengthMm : 0;
-  const c = new Vector3();
-  const v = new Vector3();
-  const ring = M.radialSegments + 1;
-  for (let i = 0; i <= M.tubularSegments; i++) {
-    const u = i / M.tubularSegments;
-    curve.getPointAt(u, c);
-    const r = taperedRadius(u, M.bellyRadiusMm, M.tendonRadiusMm, tendonFraction);
-    for (let j = 0; j < ring; j++) {
-      const k = i * ring + j;
-      v.fromBufferAttribute(pos, k).sub(c).multiplyScalar(r).add(c);
-      pos.setXYZ(k, v.x, v.y, v.z);
-    }
-  }
-  pos.needsUpdate = true;
-  g.computeVertexNormals();
+export function taperedTube(path: MusclePath, tendonMm: number, mirror = false): BufferGeometry {
+  const g = createTube(SHAPE);
+  writeTaperedTube(g, path.points, path.lengthMm, tendonMm, mirror, SHAPE);
   return g;
 }
 
@@ -61,16 +50,18 @@ export function Muscle({ side, index }: { side: Side; index: number }) {
   const isSO = MUSCLE_NAMES[index] === "superiorOblique";
   // The superior oblique's modeled path (trochlea to insertion) is all tendon.
   const mirror = side === "left";
-  const geometry = useMemo(
-    () => (path ? taperedTube(path, isSO ? path.lengthMm : tendonMm, mirror) : null),
-    [path, tendonMm, isSO, mirror],
-  );
+  // One geometry for the muscle's lifetime, rewritten in place when its path moves (every
+  // frame of a gaze change), instead of a new geometry and GPU buffers per frame.
+  const geometry = useMemo(() => createTube(SHAPE), []);
+  useLayoutEffect(() => {
+    if (path) writeTaperedTube(geometry, path.points, path.lengthMm, isSO ? path.lengthMm : tendonMm, mirror, SHAPE);
+  }, [geometry, path, tendonMm, isSO, mirror]);
   const origin = path?.points[0];
   const bellyKey = origin ? origin.join(",") : "";
   const belly = useMemo(() => (isSO && origin ? taperedTube(obliqueBelly(origin), 0, mirror) : null), [isSO, bellyKey, mirror]);
-  useEffect(() => () => geometry?.dispose(), [geometry]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => belly?.dispose(), [belly]);
-  if (!geometry) return null;
+  if (!path) return null;
   const material = (
     <meshStandardMaterial
       color={activationColor(activation, theme)}

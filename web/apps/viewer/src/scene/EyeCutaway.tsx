@@ -1,11 +1,13 @@
-import { useEffect, useMemo } from "react";
-import { DoubleSide, type Plane } from "three";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import { DoubleSide, type BufferGeometry, type Plane } from "three";
 import { eyeOptics, useScene, type Side } from "../store/scene";
 import type { StructureKey } from "../ui/hoverInfo";
-import { lathe } from "./lathe";
+import { lathe, writeLathe } from "./lathe";
 import type { StructureColors } from "./palette";
 import { usePalette } from "./usePalette";
 import { globeProfiles, type ProfilePoint } from "./profiles";
+
+type GlobeProfiles = ReturnType<typeof globeProfiles>;
 
 interface StructureSpec {
   key: keyof ReturnType<typeof globeProfiles> & keyof StructureColors;
@@ -28,18 +30,37 @@ const STRUCTURES: StructureSpec[] = [
 /** Structures drawn for an uncut eye (the inner media would be hidden by the sclera anyway). */
 const CLOSED = new Set<StructureSpec["key"]>(["sclera", "cornea", "iris"]);
 
+/** Whether two meridian profiles have the same points. */
+function sameProfile(a: readonly ProfilePoint[], b: readonly ProfilePoint[]): boolean {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const p = a[i];
+    const q = b[i];
+    if (!p || !q || p[0] !== q[0] || p[1] !== q[1]) return false;
+  }
+  return true;
+}
+
 /**
- * One cutaway structure. Its lathe is rebuilt only when its own profile changes, so the
- * cornea, sclera, retina, and ciliary body are not regenerated on every accommodation step.
+ * One cutaway structure. Its lathe is rewritten only when its own profile changes, so the
+ * cornea, sclera, retina, and ciliary body are not touched on every accommodation step.
  * Hover shows its readout; a click pins it.
  */
-function Structure({ spec, profile, side, clip }: { spec: StructureSpec; profile: ProfilePoint[]; side: Side; clip: Plane | null }) {
+const Structure = memo(function Structure({ spec, profile, side, clip }: { spec: StructureSpec; profile: ProfilePoint[]; side: Side; clip: Plane | null }) {
   const setHovered = useScene((s) => s.setHovered);
   const togglePin = useScene((s) => s.togglePin);
-  const signature = profile.map(([r, z]) => `${r},${z}`).join(";");
-  // The signature stands in for the profile's contents, which arrive as a new array each update.
-  // The whole revolution is built: the cut plane may have any orientation.
-  const geometry = useMemo(() => lathe(profile, true), [signature]);
+  // The whole revolution is built: the cut plane may have any orientation. A new geometry only
+  // when the profile's point count changes; otherwise the existing buffers are rewritten in
+  // place, and only when a point moved (profiles arrive as new arrays on every worker reply,
+  // and accommodation reshapes the lens on every frame of a target drag).
+  const geometry = useMemo(() => lathe(profile, true), [profile.length]);
+  const written = useRef<{ geometry: BufferGeometry; profile: readonly ProfilePoint[] } | null>(null);
+  useLayoutEffect(() => {
+    const prev = written.current;
+    if (prev && prev.geometry === geometry && !sameProfile(prev.profile, profile)) writeLathe(geometry, profile, true);
+    written.current = { geometry, profile };
+  }, [geometry, profile]);
   // React Three Fiber disposes objects only on unmount, not when a `geometry` prop is
   // replaced, so free each superseded geometry's GPU buffers.
   useEffect(() => () => geometry.dispose(), [geometry]);
@@ -72,7 +93,7 @@ function Structure({ spec, profile, side, clip }: { spec: StructureSpec; profile
       />
     </mesh>
   );
-}
+});
 
 /** Resolution of the drawn pupil, mm (a drawing choice). */
 const PUPIL_DRAW_STEP_MM = 0.05;
@@ -87,10 +108,20 @@ export function EyeCutaway({ side, clip }: { side: Side; clip: Plane | null }) {
   const params = useScene((s) => s.eyes[side]);
   // Rounded so the near miosis during an animation does not regenerate the eye every frame (drawing only).
   const pupilMm = useScene((s) => Math.round(s.binocular[side].pupilMm / PUPIL_DRAW_STEP_MM) * PUPIL_DRAW_STEP_MM);
-  const profiles = useMemo(
-    () => (surfaces ? globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm, pupilMm) : null),
-    [surfaces, params, pupilMm],
-  );
+  // Each structure keeps its previous profile array while its points are unchanged, so the
+  // memoized structures that did not move (all but the lens and its neighbors during an
+  // accommodation change) skip rendering when a worker reply brings new surfaces.
+  const previous = useRef<GlobeProfiles | null>(null);
+  const profiles = useMemo(() => {
+    if (!surfaces) return null;
+    const next = globeProfiles(surfaces, params.axialLengthMm, params.retina.radiusMm, pupilMm);
+    const prev = previous.current;
+    if (prev) for (const key of Object.keys(next) as (keyof GlobeProfiles)[]) if (sameProfile(prev[key], next[key])) next[key] = prev[key];
+    return next;
+  }, [surfaces, params, pupilMm]);
+  useEffect(() => {
+    previous.current = profiles;
+  }, [profiles]);
 
   if (!profiles) return null;
   return (

@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect, useMemo } from "react";
 import { Line2 } from "three/examples/jsm/lines/Line2.js";
 import { LineGeometry } from "three/examples/jsm/lines/LineGeometry.js";
 import { LineMaterial } from "three/examples/jsm/lines/LineMaterial.js";
+import { writeLinePositions } from "./lineBuffer";
 
 type P3 = readonly [number, number, number];
 
@@ -28,25 +29,24 @@ export interface PolylineProps {
  * which releases the shader program and recompiles it on the next frame; lines that move every
  * frame (sight lines, the ray fan, insertion arcs while the gaze changes) then compiled three
  * programs per frame and held the stage to a few frames per second under software WebGL. Here
- * only the geometry is replaced (and disposed) when the points change.
+ * the material and geometry live as long as the component and only the points are rewritten.
  */
 export function Polyline({ points, color, lineWidth = 1, dashed = false, dashSize = 1, gapSize = 1, transparent = false, opacity = 1, ...rest }: PolylineProps) {
   const size = useThree((s) => s.size);
   const line = useMemo(() => new Line2(), []);
   const material = useMemo(() => new LineMaterial(), []);
-  const geometry = useMemo(() => {
-    const g = new LineGeometry();
-    g.setPositions(points.flatMap((p) => [p[0], p[1], p[2]]));
-    return g;
-  }, [points]);
+  // A new geometry only when the point count changes; otherwise its buffers are rewritten in
+  // place (writeLinePositions).
+  const geometry = useMemo(() => new LineGeometry(), [points.length]);
   useEffect(() => () => geometry.dispose(), [geometry]);
   useEffect(() => () => material.dispose(), [material]);
 
   useLayoutEffect(() => {
     line.geometry = geometry;
     line.material = material;
-    if (dashed) line.computeLineDistances();
-  }, [line, geometry, material, dashed]);
+  }, [line, geometry, material]);
+
+  useLayoutEffect(() => writeLinePositions(geometry, points, dashed), [geometry, points, dashed]);
 
   useLayoutEffect(() => {
     material.color.set(color);

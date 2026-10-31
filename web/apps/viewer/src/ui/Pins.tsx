@@ -3,13 +3,16 @@ import { hoverInfo, targetId, type HoverInfo, type HoverTarget } from "./hoverIn
 
 /** The live readout of a stage target, from the current eyes and shown state. */
 export function useHoverInfo(t: HoverTarget | null): HoverInfo | null {
-  const eyes = useScene((s) => s.eyes);
-  const binocular = useScene((s) => s.binocular);
-  const deformation = useScene((s) => s.loadedResult?.deformation ?? null);
+  // Nothing is subscribed while nothing is hovered, so the idle hover card does not re-render
+  // on every gaze change (Task 6.8).
+  const side = t?.side;
+  const eye = useScene((s) => (side ? s.eyes[side] : null));
+  const shown = useScene((s) => (side ? s.binocular[side] : null));
+  const deformation = useScene((s) => (side ? (s.loadedResult?.deformation ?? null) : null));
   const exaggeration = useScene((s) => s.exaggeration);
-  if (!t) return null;
+  if (!t || !eye || !shown) return null;
   try {
-    return hoverInfo(t, eyes[t.side], binocular[t.side], { heatMap: deformation ? { maxUm: deformation.maxUm, exaggeration } : null });
+    return hoverInfo(t, eye, shown, { heatMap: deformation ? { maxUm: deformation.maxUm, exaggeration } : null });
   } catch {
     // A document without the structure's surfaces (or a muscle table) has no readout for it.
     return null;
