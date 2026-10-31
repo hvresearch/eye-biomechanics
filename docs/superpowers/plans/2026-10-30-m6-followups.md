@@ -54,6 +54,19 @@ session that can read the papers should transcribe each, set `verified: true` wi
   in US patent 8408707), replace the stand-in and its lookup table, and regenerate the
   prediction grid. (any session with document access)
 
+## Model
+
+- Loads other than IOP still act as a linear perturbation of the pressurized eye (M5 plan,
+  Deviation 11). The M6 elastic orbit (`orbit_foundation`, `data/eom/orbital-foundation.json`;
+  M6 plan, Outcome notes, Task 6.6 step 1) at any stiffness from 0.3× to 100× the
+  tabled orbital-fat value leaves the direct nonlinear J0 under the full near-gaze load 55–62% from
+  the linear one on the coarse mesh; the remaining nonlinearity is local scleral pull-out
+  under the inferior rectus footprint (the assumed 1 mm length in `data/eom/forces.json`).
+  Next: transcribe a tendon-insertion footprint (the tendon fibers blend into the sclera over
+  more than 1 mm), or refine the mesh at the insertions, and repeat the comparison with the
+  foundation (a 3 mm footprint and `n_face 10` run did not finish within the session's
+  30-minute background limit). (a later session; no milestone of the master plan owns it)
+
 ## Verification
 
 - Spec §7 / master plan Task 4.2: reproduce a published corneal inflation curve (apex rise

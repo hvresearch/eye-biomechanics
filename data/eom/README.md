@@ -6,6 +6,7 @@
 | `activation.json` | Length-proxy activation constants (baseline, gain) | approximation by design (spec §4.4 v1); `verified: false` |
 | `forces.json` | Force capacity per muscle (gram-force, converted to N) and the insertion footprint length for the M4 force export | horizontal recti from Collins et al. 1981 by excerpt; vertical recti derived from the Collins horizontal mean and the vertical-to-horizontal ratios of Shin et al. 2023 by excerpt (M5); obliques assumed; footprint length assumed; `verified: false` |
 | `passive-orbit.json` | Passive rotational stiffness of the orbit (vertical, horizontal, torsional; gram-force per degree at the 12 mm globe radius) for the static equilibrium of the muscle forces (M5) | horizontal from Collins et al. 1981 and torsional from a 1986 Arch Ophthalmol study by excerpt; vertical assumed equal to horizontal; linear form an approximation; `verified: false` |
+| `orbital-foundation.json` | Elastic foundation of the orbit (Winkler springs on the posterior hemisphere, normal 3G/h and tangential G/h) for the FEM's elastic-orbit option (M6 Task 6.6) | orbital fat shear modulus from Schoemaker et al. 2006 by excerpt; layer thickness assumed; Winkler form an approximation; `verified: false` |
 | `dynamics.json` | Saccade main sequence, vergence and accommodation latencies and time constants | partly confirmed by excerpt (main sequence, vergence latency); the time constants are the master plan's values; `verified: false` |
 
 ## Frame

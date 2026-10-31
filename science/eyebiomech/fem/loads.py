@@ -49,6 +49,11 @@ from eyebiomech.forces.from_viewer import rotation_matrix
 # Half-width of the band that carries the ciliary line load, mm (numerical: a line load needs a
 # finite band on a continuum surface; it is spread over this arc and normalized to the line).
 CILIARY_BAND_MM = 0.5
+# Midpoint grid (polar angle, azimuth) of the surface integral that normalizes each lid band's
+# resultant (numerical): cells of about 0.02 mm on the globe, so the integral is independent of
+# the mesh (M6 plan, Task 6.6: the band edges cut through facets, and the facet quadrature of
+# its indicator changed with the mesh).
+LID_BAND_GRID = (1800, 3600)
 
 
 def _inv_det(F: NDArray) -> tuple[NDArray, NDArray]:
@@ -329,7 +334,7 @@ class Loads:
             elif kind == "ciliary":
                 total += _ciliary_traction(item, ctx.shell, x, dx)
             elif kind == "eyelid":
-                total += _eyelid_traction(item, x, N, self._gaze)
+                total += _eyelid_traction(item, x, N, self._gaze, dx, ctx.shell.geometry)
         if any(item["kind"] == "orbitalSupport" for item in self.items):
             total += _orbital_reaction(total, x, dx, self._gaze)
         return _surface_vector(ctx, fb, total)
@@ -413,16 +418,64 @@ def _orbit(x: NDArray, R: NDArray) -> NDArray:
     return np.einsum("ij,j...->i...", R, x)
 
 
-def _eyelid_traction(item: dict, x: NDArray, N: NDArray, R: NDArray) -> NDArray:
+def _eyelid_traction(
+    item: dict, x: NDArray, N: NDArray, R: NDArray, dx: NDArray | None = None, geometry=None
+) -> NDArray:
+    """Normal pressure on each lid band. With the facet weights `dx` and the shell `geometry`,
+    each band's quadrature resultant is made equal to the resultant integrated on the outer
+    surface itself (`_band_vector_area`): the pressure is scaled along it, as the muscle
+    contact bands are normalized, and a uniform traction over the band removes the remaining
+    difference in direction (numerical; it vanishes as the mesh is refined)."""
     xo = _orbit(x, R)
     up, low = item.get("upperMarginMm"), item.get("lowerMarginMm")
     if up is None:  # documents of the M4 summary shape
         up, low = item["apertureMm"] / 2, -item["apertureMm"] / 2
     y, front = xo[1], xo[2] < 0
-    upper = front & (y >= up) & (y <= up + item["upperHeightMm"])
-    lower = front & (y <= low) & (y >= low - item["lowerHeightMm"])
-    p = upper * kpa_to_mpa(item["upperKPa"]) + lower * kpa_to_mpa(item["lowerKPa"])
-    return -p * N
+    out = np.zeros_like(x)
+    bands = (
+        (item["upperKPa"], up, up + item["upperHeightMm"]),
+        (item["lowerKPa"], low - item["lowerHeightMm"], low),
+    )
+    for p_kpa, lo, hi in bands:
+        if p_kpa == 0 or not hi > lo:
+            continue
+        band = front & (y >= lo) & (y <= hi)
+        t = -kpa_to_mpa(p_kpa) * band * N
+        if dx is not None and geometry is not None and np.any(band):
+            res = np.einsum("iea,ea->i", t, dx)
+            target = -kpa_to_mpa(p_kpa) * _band_vector_area(geometry, R, lo, hi)
+            t = t * (np.dot(target, res) / np.dot(res, res))
+            # The facet quadrature also errs in the direction of the resultant: a uniform
+            # traction over the band, small against the pressure, makes it exact.
+            res = np.einsum("iea,ea->i", t, dx)
+            t = t + band * ((target - res) / float(np.sum(band * dx)))[:, None, None]
+        out += t
+    return out
+
+
+def _band_vector_area(geometry, R: NDArray, lo: float, hi: float) -> NDArray:
+    """∫ N dA over the outer surface where the orbit-frame point R x has z < 0 and
+    lo ≤ y ≤ hi, by the midpoint rule on `LID_BAND_GRID` in the surface's polar angle θ and
+    azimuth φ (x = r(θ) d(θ, φ), N dA = x_φ × x_θ dθ dφ)."""
+    n_theta, n_phi = LID_BAND_GRID
+    d_theta, d_phi = np.pi / n_theta, 2 * np.pi / n_phi
+    theta = (np.arange(n_theta) + 0.5) * d_theta
+    r = geometry.r_out(theta)
+    dr = np.gradient(r, theta)
+    phi = (np.arange(n_phi) + 0.5) * d_phi
+    cp, sp = np.cos(phi), np.sin(phi)
+    total = np.zeros(3)
+    for rows in np.array_split(np.arange(n_theta), 30):
+        ct, st = np.cos(theta[rows])[:, None], np.sin(theta[rows])[:, None]
+        rr, drr = r[rows][:, None], dr[rows][:, None]
+        d = np.stack(np.broadcast_arrays(st * cp, st * sp, -ct))
+        d_t = np.stack(np.broadcast_arrays(ct * cp, ct * sp, st))
+        d_p = np.stack(np.broadcast_arrays(-st * sp, st * cp, 0.0 * st))
+        area = np.cross(rr * d_p, drr * d + rr * d_t, axis=0)
+        xo = _orbit(rr * d, R)
+        band = (xo[2] < 0) & (xo[1] >= lo) & (xo[1] <= hi)
+        total += np.einsum("ijk,jk->i", area, band)
+    return total * d_theta * d_phi
 
 
 def _torque_balanced(forces: NDArray, centers: NDArray, directions: NDArray) -> NDArray:

@@ -39,6 +39,41 @@ LU_OPTIONS = {
 }
 
 
+@dataclass
+class Foundation:
+    """An elastic foundation: the force K (u − u_rest) it adds to the internal forces and the
+    stiffness K it adds to the tangent (`orbit_foundation`)."""
+
+    matrix: sparse.csr_matrix
+    u_rest: NDArray
+
+
+def orbit_foundation(
+    ctx: Context, normal_n_per_mm3: float, tangential_n_per_mm3: float, gaze: NDArray | None = None
+) -> sparse.csr_matrix:
+    """Stiffness of Winkler springs on the outer surface of the orbit's posterior hemisphere
+    (orbit-frame z > 0 for the globe orientation `gaze`, a rotation matrix; identity in primary
+    position): traction −(k_n N Nᵀ + k_t (I − N Nᵀ)) u, N the reference outer normal
+    (data/eom/orbital-foundation.json; M6 plan, Task 6.6)."""
+    if not (normal_n_per_mm3 >= 0 and tangential_n_per_mm3 >= 0):
+        raise ValueError("foundation stiffnesses must be non-negative")
+    fb = ctx.fb_outer
+    x = np.asarray(fb.global_coordinates())
+    R = np.eye(3) if gaze is None else np.asarray(gaze, dtype=float)
+    region = np.einsum("j,j...->...", R[2], x) > 0
+    elements = np.flatnonzero(region.any(axis=1))
+    if elements.size == 0:
+        raise ValueError("no posterior surface to carry the foundation")
+    N = np.asarray(fb.normals)[:, elements]
+    Phi = asm.basis_values(fb, elements)  # (e, q, a, 3)
+    w = (np.asarray(fb.dx) * region)[elements]
+    PN = np.einsum("eqai,ieq->eqa", Phi, N)
+    Ke = tangential_n_per_mm3 * np.einsum("eqai,eqbi,eq->eab", Phi, Phi, w) + (
+        normal_n_per_mm3 - tangential_n_per_mm3
+    ) * np.einsum("eqa,eqb,eq->eab", PN, PN, w)
+    return asm.scatter_matrix(ctx.n, fb.element_dofs[:, elements], Ke).tocsr()
+
+
 class NewtonDidNotConverge(RuntimeError):
     def __init__(self, message: str, residual_history: list[float]):
         super().__init__(message)
@@ -182,6 +217,7 @@ def solve(
     ramp: str = "all",
     max_cuts: int = MAX_STEP_CUTS,
     growth=None,
+    foundation: Foundation | None = None,
 ) -> Solution:
     """Displacement under `loads` by incremental loading and Newton's method.
 
@@ -191,7 +227,8 @@ def solve(
     (non-finite values, an inverted element, or no convergence in `max_iter`) is retried at half
     the size, at most `max_cuts` times in a row; then `NewtonDidNotConverge` is raised with the
     residual history. `growth` (a `GrowthState`) solves the grown shell (M5, Task 5.7); `ramp=
-    "none"` holds every load at full value and only re-equilibrates (after a growth step)."""
+    "none"` holds every load at full value and only re-equilibrates (after a growth step).
+    `foundation` adds an elastic foundation (`orbit_foundation`) about its rest state."""
     if steps < 1:
         raise ValueError("steps must be at least 1")
     if ramp not in ("all", "dead", "none"):
@@ -218,6 +255,9 @@ def solve(
                 with np.errstate(all="ignore"):
                     f_int, K_int = internal(ctx, materials, v, growth=growth)
                     f_ext, K_ext = loads.assemble(ctx, v, s_iop, s_dead)
+                    if foundation is not None:
+                        f_int = f_int + foundation.matrix @ (v - foundation.u_rest)
+                        K_int = K_int + foundation.matrix
             except np.linalg.LinAlgError:
                 raise _IncrementFailed("a singular deformation gradient") from None
             r = f_int - f_ext
@@ -287,14 +327,16 @@ def tangent_at(
     support: str = "optic_nerve",
     optic_nerve_radius_mm: float | None = None,
     growth=None,
+    foundation: Foundation | None = None,
 ) -> Tangent:
     """Factorize K = ∂f_int/∂u − ∂f_ext/∂u at `solution` (`loads` supplies the follower terms,
-    normally the IOP of that state)."""
+    normally the IOP of that state), plus the foundation's stiffness when given."""
     ctx = solution.context
     _, K_int = internal(ctx, materials, solution.u, growth=growth)
+    if foundation is not None:
+        K_int = K_int + foundation.matrix
     _, K_ext = loads.assemble(ctx, solution.u, 1.0)
     K = K_int if K_ext is None else K_int - K_ext
     fixed = support_dofs(ctx, support, optic_nerve_radius_mm)
     free = np.setdiff1d(np.arange(ctx.n), fixed)
     return Tangent(ctx, free, splu(K[free][:, free].tocsc(), **LU_OPTIONS))
-
