@@ -76,6 +76,12 @@ session that can read the papers should transcribe each, set `verified: true` wi
   default law, set `VALID_RATE_TIME` from that comparison, widen the growth-rate prior, and
   recalibrate. Until then the remodeling form of the hypothesis stays untested beyond
   negligible growth. (a later session; no milestone of the master plan owns it)
+- The calibration chain (`posterior-v1.json`, M6 plan, Outcome notes, Task 6.6 steps 4–5) has
+  2 500 kept steps at autocorrelation 86–129 steps (19–29 τ), and the estimate was still
+  growing. Continue it to 50 τ (about 6 500 kept steps, two to three hours) with
+  `eyebiomech calibrate --method mcmc --starts 3 --steps 1500 --burn 500 --chain FILE.npz` in
+  resumed segments (the chain file is not committed, so a new session starts the chain again),
+  then regenerate the grid. (a later session; no milestone of the master plan owns it)
 
 ## Verification
 

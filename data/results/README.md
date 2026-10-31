@@ -384,6 +384,19 @@ every envelope. The grid keeps the axis-shift posterior.
 
 ## The prediction grid (M5, Task 5.11; regenerated in Task 5.14 Step 5)
 
+**Regenerated in M6 (Task 6.6, 2026-10-31)** from the recalibrated posterior (clean tree
+`bbe8c4e`, same command, 21 s). 17.5% of the draws leave the library's stiffness table at some
+grid age and are clamped to its edge (`stiffnessClampedFraction`). The larger lid load on a more
+against-the-rule baseline makes the late against-the-rule shift stronger than in M5 (the M5
+numbers follow below for comparison): a child emmetropic at 6 without cylinder reaches cylinder
+−0.25 D at 60 and −0.82 D at 90 (5–95% −0.62 to −1.07) with no near work, and −0.54 and −1.38 D
+with 8 h a day; the sphere moves hyperopic by +0.46 D by 90 (+1.05 D with 8 h). The refraction
+onset of the median trajectory comes at 84, 71, 67, and 64 years with 0, 4, 6, and 8 h of near
+work (M5: not by 90 below 4 h, then 84, 75, 71), and still no acuity onset on the median. The
+example profile `age=12,nearHours=4,sphere=0,cyl=-0.5` keeps about −0.6 D with the rule to 50,
+passes near zero around 60, and reaches −0.61 D at 90 (5–95% −0.37 to −0.94; axis not read here),
+crossing no threshold on the median. Before 50 the change is again under about 0.1 D.
+
 200 posterior draws, 395 kB, 28 s.
 - **Before 50.** Each subject starts from its observed refraction at 6, and the grid moves it
   by the model's change since then. Little changes before 50 (under 0.1 D: at most 0.071 D in
