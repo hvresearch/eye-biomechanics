@@ -31,6 +31,7 @@ from eyebiomech.remodel.library import (
     Library,
     StiffnessOutOfTable,
     build_library,
+    merge_libraries,
 )
 
 DOC = json.loads((DATA_DIR / "fixtures" / "navarro-1985-preset.eye.json").read_text())
@@ -234,6 +235,32 @@ def _level(s, value):
     n = len(GROUPS)
     return LevelResponse(s, np.full((n, 3), value), np.zeros((n, 3)), -np.eye(n),
                          np.eye(n), np.ones(n))  # fmt: skip
+
+
+def test_libraries_built_level_by_level_merge():
+    """M6 plan, Task 6.6: levels built in separate runs from one tree join into one table;
+    parts from different trees, with different settings, or with a repeated scale are refused."""
+    meta = {"mesh": {"nFace": 20}, "krylovDepth": KRYLOV_DEPTH, "eyeId": "e"}
+
+    def part(s, value, git="abc", **extra):
+        prov = {"generatedBy": f"eyebiomech library --scales {s}", "gitHash": git}
+        return Library(GROUPS, [_level(s, value)], {**meta, **extra, "provenance": prov})
+
+    merged = merge_libraries([part(4.0, 3.0), part(1.0, 1.0)], {"generatedBy": "merge"})
+    assert merged.stiffness_range == (1.0, 4.0)
+    assert merged.elastic(2.0)[0, 0] == pytest.approx(2.0)
+    prov = merged.to_json()["provenance"]
+    assert prov["gitHash"] == "abc" and prov["generatedBy"] == "merge"
+    assert [p["generatedBy"] for p in prov["parts"]] == [
+        "eyebiomech library --scales 4.0",
+        "eyebiomech library --scales 1.0",
+    ]
+    with pytest.raises(ValueError, match="different trees"):
+        merge_libraries([part(1.0, 1.0), part(4.0, 3.0, git="def")])
+    with pytest.raises(ValueError, match="mesh"):
+        merge_libraries([part(1.0, 1.0), part(4.0, 3.0, mesh={"nFace": 16})])
+    with pytest.raises(ValueError, match="twice"):
+        merge_libraries([part(1.0, 1.0), part(1.0, 3.0)])
 
 
 def test_stiffness_interpolation_is_linear_in_log_scale():

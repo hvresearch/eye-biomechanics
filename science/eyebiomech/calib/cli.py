@@ -1,5 +1,7 @@
 """`eyebiomech calibrate --out POSTERIOR.json`: fit the forward model to the population targets
-(M5 plan, Task 5.10)."""
+(M5 plan, Task 5.10). `--starts N` runs the least squares from N growth rates across their
+bounds, `--no-growth` fits the nested model with the rate at zero, and `--chain FILE.npz`
+continues the MCMC chain saved there (or starts it) and saves it again (M6 plan, Task 6.6)."""
 
 from __future__ import annotations
 
@@ -11,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from eyebiomech.calib.fit import fit, with_rate_floor
+from eyebiomech.calib.fit import fit, rate_starts, with_rate_floor
 from eyebiomech.calib.forward import load_priors, make_cohort, targets
 from eyebiomech.fem.cli import _git_hash
 from eyebiomech.fem.data import data_root
@@ -40,6 +42,21 @@ def add_arguments(p: argparse.ArgumentParser) -> None:
         help="override the growth rate's lower bound in data/calibration/priors.json "
         "(sensitivity fit; the committed calibration uses the priors' bound)",
     )
+    p.add_argument(
+        "--starts",
+        type=int,
+        default=1,
+        help="least-squares starts with the growth rate log-spaced over its bounds",
+    )
+    p.add_argument(
+        "--no-growth", action="store_true", help="nested model: the growth rate held at zero"
+    )
+    p.add_argument(
+        "--chain",
+        type=Path,
+        default=None,
+        help="MCMC chain file (.npz): continued when it exists, then saved with the new steps",
+    )
 
 
 def posterior_document(post, data, library_path: Path, provenance: dict) -> dict:
@@ -58,6 +75,9 @@ def posterior_document(post, data, library_path: Path, provenance: dict) -> dict
         if post.autocorr_steps is None
         else dict(zip(post.names, np.round(post.autocorr_steps, 2).tolist(), strict=True)),
         "chainStepsAfterBurn": post.chain_steps,
+        "chainSegments": None if post.chain_state is None else post.chain_state["segments"],
+        "fixed": post.fixed,
+        "starts": post.starts,
         "fit": {"cost": post.cost, "dof": post.dof, "perTarget": post.per_target},
         "data": sorted({t["source"] for t in data}),
         "library": str(library_path),
@@ -79,6 +99,12 @@ def run(args: argparse.Namespace, argv: list[str]) -> int:
     if args.rate_floor is not None:
         priors = with_rate_floor(priors, args.rate_floor)
     data = targets(priors, bound_sphere=args.bound_sphere)
+    previous = None
+    if args.chain is not None and args.chain.suffix != ".npz":
+        raise SystemExit(f"--chain must name a .npz file, got {args.chain}")
+    if args.chain is not None and args.chain.exists():
+        with np.load(args.chain) as z:
+            previous = {k: z[k] for k in ("chain", "lps", "accepted", "segments")}
     post = fit(
         None,
         data,
@@ -90,7 +116,13 @@ def run(args: argparse.Namespace, argv: list[str]) -> int:
         n_walkers=args.walkers,
         n_steps=args.steps,
         burn=args.burn,
+        growth=not args.no_growth,
+        starts=rate_starts(priors, library, args.starts) if args.starts > 1 else None,
+        previous=previous,
     )
+    if args.chain is not None and post.chain_state is not None:
+        args.chain.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(args.chain, **post.chain_state)
     provenance = {
         "generatedBy": "eyebiomech " + " ".join(argv),
         "gitHash": _git_hash(),

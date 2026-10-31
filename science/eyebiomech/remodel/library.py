@@ -474,6 +474,38 @@ _LEVEL_KEYS = {
 }
 
 
+def merge_libraries(parts: list[Library], provenance: dict | None = None) -> Library:
+    """One library from libraries of the same eye and settings built at different stiffness
+    scales (each level is independent, so a table too slow for one run is built level by level;
+    M6 plan, Task 6.6). The parts must share every setting and one source tree (`gitHash`);
+    their provenances are kept under `provenance.parts`."""
+    if not parts:
+        raise ValueError("nothing to merge")
+    shared = ("mesh", "krylovDepth", "growthLaw", "validRateTime", "ageYears", "iopMmHg",
+              "eyeId", "stiffnessRelativeTo", "citation")  # fmt: skip
+    first = parts[0].meta
+    for lib in parts[1:]:
+        for key in shared:
+            if lib.meta.get(key) != first.get(key):
+                raise ValueError(
+                    f"the libraries differ in {key}: {first.get(key)!r} and {lib.meta.get(key)!r}"
+                )
+    hashes = {lib.meta.get("provenance", {}).get("gitHash") for lib in parts}
+    if len(hashes) != 1:
+        raise ValueError(f"the libraries come from different trees: {sorted(map(str, hashes))}")
+    levels = sorted((lv for lib in parts for lv in lib.levels), key=lambda lv: lv.scale)
+    scales = [lv.scale for lv in levels]
+    if len(set(scales)) != len(scales):
+        raise ValueError(f"a stiffness scale appears twice: {scales}")
+    meta = dict(first)
+    meta["provenance"] = {
+        **(provenance or {}),
+        "gitHash": hashes.pop(),
+        "parts": [lib.meta.get("provenance", {}) for lib in parts],
+    }
+    return Library(parts[0].groups, levels, meta)
+
+
 def load_library(path: Path | str | None = None) -> Library:
     p = Path(path or data_root() / "results" / "response" / "library-v1.json")
     return Library.from_json(json.loads(p.read_text()))
