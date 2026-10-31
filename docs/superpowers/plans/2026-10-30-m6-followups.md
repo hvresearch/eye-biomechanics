@@ -66,6 +66,16 @@ session that can read the papers should transcribe each, set `verified: true` wi
   more than 1 mm), or refine the mesh at the insertions, and repeat the comparison with the
   foundation (a 3 mm footprint and `n_face 10` run did not finish within the session's
   30-minute background limit). (a later session; no milestone of the master plan owns it)
+- Growth beyond r·t = 0.01 (M6 plan, Outcome notes, Task 6.6 step 3): the stress-driven
+  thickness law (`thickness="stress"`, κ = 2 in `data/remodeling/growth.json`) makes every
+  mode of the reduced model restoring at all tabled stiffness scales, but explicit FEM growth
+  still inverts an element at r·t = 0.011 with either law. Model the lamina cribrosa and nerve
+  head (the clamped cap cannot grow: its IOP stress is not tensile in-plane), write an
+  implicit growth integrator (the explicit step limit needs about 500 Newton solves per 0.1 of
+  exposure), validate the reduced model on the production mesh to r·t = 0.1, then switch the
+  default law, set `VALID_RATE_TIME` from that comparison, widen the growth-rate prior, and
+  recalibrate. Until then the remodeling form of the hypothesis stays untested beyond
+  negligible growth. (a later session; no milestone of the master plan owns it)
 
 ## Verification
 

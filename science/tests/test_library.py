@@ -122,9 +122,9 @@ def test_superposed_groups_match_a_direct_nonlinear_solve(library, pressurized):
 
 def test_the_library_is_enriched_bounded_and_labeled(library):
     """The growth basis is the load patterns and their Krylov sequence, and the library records
-    the growth exposure it is validated for (M5 plan, Task 5.14, Step 4). Stability is not
-    asserted: with the enriched basis a spherical growth mode grows at the calibrated
-    stiffness."""
+    the growth exposure it is validated for (M5 plan, Task 5.14, Step 4) and its growth law.
+    Stability is not asserted: with the enriched basis and the in-plane law (the growth
+    table's default) a spherical growth mode grows at the calibrated stiffness."""
     F = library.feedback(1.0)
     assert F.shape == ((1 + KRYLOV_DEPTH) * len(GROUPS),) * 2
     lam, V = np.linalg.eig(F)
@@ -136,6 +136,8 @@ def test_the_library_is_enriched_bounded_and_labeled(library):
     refraction = np.real(V[:, growing[0]] @ library.growth_refraction(1.0))
     assert abs(refraction[0]) > 0.9 * np.linalg.norm(refraction)
     doc = library.to_json()
+    law = load_growth_table()["thickness"]
+    assert doc["growthLaw"] == {"thickness": law["form"], "kappa": law["kappa"]}
     assert doc["elastic"] is True and doc["remodeled"] is True
     assert doc["krylovDepth"] == KRYLOV_DEPTH and doc["validRateTime"] == VALID_RATE_TIME
     back = Library.from_json(json.loads(json.dumps(doc)))
@@ -258,6 +260,20 @@ def test_stiffness_outside_the_table_is_refused_by_default():
     with pytest.raises(StiffnessOutOfTable):
         lib.simulate(lambda a: L, np.array([6.0, 7.0]), **kw)
     assert lib.simulate(lambda a: L, np.array([6.0, 7.0]), on_edge="clamp", **kw).shape == (2, 2, 3)
+
+
+@pytest.mark.slow
+def test_thickness_growth_makes_every_tabled_stiffness_restoring():
+    """M6 plan, Task 6.6: with stress-driven thickness growth at the table's kappa the
+    spherical growth mode is restoring at every stiffness scale of the production table, while
+    the in-plane law (the default) grows it at each (+0.67 to +1.03 per unit r·t on this
+    mesh)."""
+    kappa = load_growth_table()["thickness"]["kappa"]
+    for s in (0.5, 1.0, 2.0, 4.0):
+        thick = build_library(DOC, stiffness_scales=(s,), thickness="stress", kappa=kappa, **COARSE)
+        assert np.max(np.linalg.eigvals(thick.feedback(s)).real) < 0, s
+        inplane = build_library(DOC, stiffness_scales=(s,), thickness="none", **COARSE)
+        assert np.max(np.linalg.eigvals(inplane.feedback(s)).real) > 0, s
 
 
 @pytest.mark.slow

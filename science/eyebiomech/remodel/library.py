@@ -28,7 +28,10 @@ superposes it:
    refraction change at time t is Σ_k L_k e_k (elastic) + Σ_l a_l γ_l (growth); "remodeled" is
    their sum. The reduction is validated up to a growth exposure r·t of `VALID_RATE_TIME`, and
    `simulate` refuses longer exposures: the slow growth modes, among them a spherical mode that
-   grows at the calibrated stiffness, do not converge with the Krylov depth.
+   grows at the calibrated stiffness, do not converge with the Krylov depth, and the explicit
+   FEM growth the bound is checked against runs away at the edge of the clamped optic-nerve
+   cap shortly beyond it. The growth table's thickness option (M6) makes every mode restoring
+   but does not move the FEM's runaway, so the in-plane law stays the default.
 
 Responses are tabled at several stiffness scales (relative to the calibrated stiffness) and
 interpolated linearly in ln s (an approximation: the Krylov patterns differ between levels, and
@@ -65,8 +68,11 @@ from eyebiomech.forces.from_viewer import load_force_table
 from eyebiomech.optics.paraxial import induced_refraction
 from eyebiomech.remodel.growth import (
     GrowthState,
+    Thickness,
     cauchy_stress,
+    growth_law,
     growth_mask,
+    growth_strain,
     membrane_stress,
     tangent_projector,
 )
@@ -95,7 +101,9 @@ KRYLOV_RTOL = 1e-6
 # Largest growth exposure r·t (rate times the time since growth started) at which the reduced
 # model is validated (numerical: beyond it the Krylov depths stop agreeing, because the slow
 # growth modes, including an unstable spherical one, are not converged in the basis; the slow
-# test `test_reduced_growth_follows_the_fem_growth` checks it against explicit FEM growth).
+# test `test_reduced_growth_follows_the_fem_growth` checks it against explicit FEM growth, which
+# inverts an element at the edge of the clamped optic-nerve cap at r·t = 0.011 with the in-plane
+# and the thickness law alike, so the bound stands; M6 plan, Task 6.6).
 VALID_RATE_TIME = 0.01
 COMPONENTS = ("M", "J0", "J45")
 
@@ -155,9 +163,13 @@ def build_level(
     reference: str = "unloaded",
     steps: int = 2,
     krylov: int = KRYLOV_DEPTH,
+    thickness: Thickness | None = None,
+    kappa: float | None = None,
 ) -> LevelResponse:
     """Steps 1-5 of the module notes at one stiffness scale, with `krylov` rounds of the
-    Krylov enrichment."""
+    Krylov enrichment; a drive pattern g grows as `growth_strain(g, thickness, kappa)`, the
+    growth table's law unless given."""
+    thickness, kappa = growth_law(thickness, kappa)
     shell = make_shell_mesh(doc, layers=layers, n_face=n_face)
     mats = region_materials(materials, age_years, shell.geometry, scale=scale)
     on = materials["opticNerve"]["radiusMm"]
@@ -216,7 +228,8 @@ def build_level(
         if size == 0:
             return np.zeros(3), np.zeros_like(g)
         eta = GROWTH_PROBE / size
-        plus, minus = GrowthState(eta * g), GrowthState(-eta * g)
+        eps = growth_strain(g, ctx, thickness, kappa)
+        plus, minus = GrowthState(eta * eps), GrowthState(-eta * eps)
         f_plus, _ = internal(ctx, mats, u0, tangent=False, growth=plus)
         f_minus, _ = internal(ctx, mats, u0, tangent=False, growth=minus)
         growth_u = linear(-(f_plus - f_minus) / (2 * eta))
@@ -480,11 +493,14 @@ def build_library(
     krylov: int = KRYLOV_DEPTH,
     provenance: dict | None = None,
     progress: Callable[[str], None] | None = None,
+    thickness: Thickness | None = None,
+    kappa: float | None = None,
 ) -> Library:
     """The library of `doc` at the given stiffness scales (relative to the calibrated stiffness
     of the materials table; the calibration's age and IOP unless given)."""
     materials = copy.deepcopy(materials or load_materials())
     eom = eom or load_eom_table()
+    thickness, kappa = growth_law(thickness, kappa)
     calibrated = materials.get("calibration", {}).get("stiffnessScale", 1.0)
     age = materials["ageStiffening"]["referenceAgeYears"] if age_years is None else age_years
     iop = materials["intraocularPressure"]["meanMmHg"]
@@ -506,6 +522,8 @@ def build_library(
                 iop_mmhg=iop,
                 reference=reference,
                 krylov=krylov,
+                thickness=thickness,
+                kappa=kappa,
             )
         )
     for lv, s in zip(levels, sorted(stiffness_scales), strict=True):
@@ -515,6 +533,7 @@ def build_library(
         or {"generatedBy": "build_library", "date": date.today().isoformat()},
         "mesh": {"nFace": n_face, "layers": layers, "reference": reference},
         "krylovDepth": krylov,
+        "growthLaw": {"thickness": thickness, "kappa": kappa},
         "validRateTime": VALID_RATE_TIME,
         "ageYears": age,
         "iopMmHg": iop,
