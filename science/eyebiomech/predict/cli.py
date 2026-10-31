@@ -104,13 +104,14 @@ def add_grid_arguments(p: argparse.ArgumentParser) -> None:
 
 
 def run_predict(args: argparse.Namespace, argv: list[str]) -> int:
+    provenance = _provenance(argv)  # the tree as the run starts
     profile = parse_profile(args.profile, args.axis)
     posterior, library = _inputs(args)
     out = predict_profile(profile, posterior, library, draws=args.draws)
     out.update(
         remodeled=True,
         thresholds=acuity_table()["thresholds"],
-        provenance=_provenance(argv),
+        provenance=provenance,
         citation=CITATION,
     )
     args.out.parent.mkdir(parents=True, exist_ok=True)

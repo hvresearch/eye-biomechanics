@@ -93,6 +93,7 @@ def posterior_document(post, data, library_path: Path, provenance: dict) -> dict
 
 def run(args: argparse.Namespace, argv: list[str]) -> int:
     started = time.time()
+    git_hash = _git_hash()  # the tree as the run starts (see `eyebiomech.fem.cli.run_fem`)
     lib_path = args.library or data_root() / "results" / "response" / "library-v1.json"
     library = load_library(lib_path)
     priors = load_priors()
@@ -125,7 +126,7 @@ def run(args: argparse.Namespace, argv: list[str]) -> int:
         np.savez(args.chain, **post.chain_state)
     provenance = {
         "generatedBy": "eyebiomech " + " ".join(argv),
-        "gitHash": _git_hash(),
+        "gitHash": git_hash,
         "date": date.today().isoformat(),
     }
     rel = lib_path.relative_to(data_root()) if lib_path.is_relative_to(data_root()) else lib_path
