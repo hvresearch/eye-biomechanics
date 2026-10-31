@@ -2,7 +2,7 @@ import { MIN_TARGET_DISTANCE_M, loadPreset } from "@eye/eye-model";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it, vi } from "vitest";
-import { DEFAULT_LENS, MAX_DIRECTION_DEG, MAX_PINS, WAVE_REQUEST, autoRxKey, clampDirectionDeg, createSceneStore, eyeOptics, mirrorLens } from "../src/store/scene";
+import { DEFAULT_LENS, THEME_STORAGE_KEY, MAX_DIRECTION_DEG, MAX_PINS, WAVE_REQUEST, autoRxKey, clampDirectionDeg, createSceneStore, eyeOptics, mirrorLens } from "../src/store/scene";
 import { handle } from "../src/worker/handle";
 import { runEyesJob, type EyesJob, type EyesJobResult } from "../src/worker/jobs";
 import { synthetic } from "./syntheticGrid";
@@ -398,5 +398,34 @@ describe("stage controls in the store", () => {
     expect(store.getState().cut.depthMm).toBeCloseTo(store.getState().eyes.right.axialLengthMm / 2, 12);
     store.getState().setCut({ side: "left", orientation: "frontal" });
     expect(store.getState().cut).toMatchObject({ side: "left", orientation: "frontal" });
+  });
+
+  it("starts in the stored theme and persists a change", () => {
+    const saved = new Map<string, string>([[THEME_STORAGE_KEY, "light"]]);
+    const storage = { getItem: (k: string) => saved.get(k) ?? null, setItem: (k: string, v: string) => void saved.set(k, v) };
+    const store = createSceneStore({ storage });
+    expect(store.getState().theme).toBe("light");
+    store.getState().setTheme("dark");
+    expect(store.getState().theme).toBe("dark");
+    expect(saved.get(THEME_STORAGE_KEY)).toBe("dark");
+    // An unknown stored value falls back to the dark default.
+    saved.set(THEME_STORAGE_KEY, "sepia");
+    expect(createSceneStore({ storage }).getState().theme).toBe("dark");
+  });
+
+  it("keeps working when storage throws (private mode, blocked site data)", () => {
+    const storage = {
+      getItem: () => {
+        throw new Error("denied");
+      },
+      setItem: () => {
+        throw new Error("denied");
+      },
+    };
+    const store = createSceneStore({ storage });
+    expect(store.getState().theme).toBe("dark");
+    expect(() => store.getState().setTheme("light")).not.toThrow();
+    expect(store.getState().theme).toBe("light");
+    expect(createSceneStore({ storage: null }).getState().theme).toBe("dark");
   });
 });

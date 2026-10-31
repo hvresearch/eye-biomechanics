@@ -3,25 +3,26 @@ import { DoubleSide, type Plane } from "three";
 import { eyeOptics, useScene, type Side } from "../store/scene";
 import type { StructureKey } from "../ui/hoverInfo";
 import { lathe } from "./lathe";
+import type { StructureColors } from "./palette";
+import { usePalette } from "./usePalette";
 import { globeProfiles, type ProfilePoint } from "./profiles";
 
 interface StructureSpec {
-  key: keyof ReturnType<typeof globeProfiles>;
+  key: keyof ReturnType<typeof globeProfiles> & keyof StructureColors;
   hover: StructureKey;
-  color: string;
   opacity: number;
 }
 
 const STRUCTURES: StructureSpec[] = [
-  { key: "sclera", hover: "sclera", color: "#ece7df", opacity: 0.95 },
-  { key: "retina", hover: "retina", color: "#d77a5a", opacity: 0.95 },
-  { key: "vitreous", hover: "vitreous", color: "#d9e6ea", opacity: 0.18 },
-  { key: "ciliaryBody", hover: "ciliary", color: "#c88a8a", opacity: 0.9 },
-  { key: "zonules", hover: "zonules", color: "#e2d6bf", opacity: 0.6 },
-  { key: "iris", hover: "iris", color: "#4d6b8a", opacity: 0.95 },
-  { key: "lens", hover: "lens", color: "#f1d9a3", opacity: 0.55 },
-  { key: "aqueous", hover: "aqueous", color: "#cfe8f2", opacity: 0.16 },
-  { key: "cornea", hover: "cornea", color: "#a9d6ea", opacity: 0.45 },
+  { key: "sclera", hover: "sclera", opacity: 0.95 },
+  { key: "retina", hover: "retina", opacity: 0.95 },
+  { key: "vitreous", hover: "vitreous", opacity: 0.18 },
+  { key: "ciliaryBody", hover: "ciliary", opacity: 0.9 },
+  { key: "zonules", hover: "zonules", opacity: 0.6 },
+  { key: "iris", hover: "iris", opacity: 0.95 },
+  { key: "lens", hover: "lens", opacity: 0.55 },
+  { key: "aqueous", hover: "aqueous", opacity: 0.16 },
+  { key: "cornea", hover: "cornea", opacity: 0.45 },
 ];
 
 /** Structures drawn for an uncut eye (the inner media would be hidden by the sclera anyway). */
@@ -43,6 +44,7 @@ function Structure({ spec, profile, side, clip }: { spec: StructureSpec; profile
   // replaced, so free each superseded geometry's GPU buffers.
   useEffect(() => () => geometry.dispose(), [geometry]);
   const target = { kind: "structure", key: spec.hover, side } as const;
+  const color = usePalette().structures[spec.key];
 
   return (
     <mesh
@@ -59,7 +61,7 @@ function Structure({ spec, profile, side, clip }: { spec: StructureSpec; profile
       }}
     >
       <meshStandardMaterial
-        color={spec.color}
+        color={color}
         transparent={spec.opacity < 1}
         opacity={spec.opacity}
         roughness={0.55}

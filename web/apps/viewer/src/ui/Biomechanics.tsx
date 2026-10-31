@@ -16,6 +16,7 @@ export function Biomechanics() {
   const loadError = useScene((s) => s.loadError);
   const exaggeration = useScene((s) => s.exaggeration);
   const showHeatMap = useScene((s) => s.showHeatMap);
+  const theme = useScene((s) => s.theme);
   const induced = useScene((s) => eyeOptics(s.optics, "right")?.induced ?? null);
   const loadResult = useScene((s) => s.loadResult);
   const loadEyeFiles = useScene((s) => s.loadEyeFiles);
@@ -24,7 +25,7 @@ export function Biomechanics() {
   const setShowHeatMap = useScene((s) => s.setShowHeatMap);
   const deformation = loaded?.deformation ?? null;
   const readouts = inducedReadouts(induced, deformation !== null);
-  const gradient = `linear-gradient(to right, ${Array.from({ length: STOPS }, (_, i) => heatMapRamp(i / (STOPS - 1))).join(", ")})`;
+  const gradient = `linear-gradient(to right, ${Array.from({ length: STOPS }, (_, i) => heatMapRamp(i / (STOPS - 1), theme)).join(", ")})`;
 
   return (
     <section className="panel" data-testid="biomechanics">

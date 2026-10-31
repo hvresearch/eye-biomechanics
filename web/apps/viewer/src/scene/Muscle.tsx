@@ -51,6 +51,7 @@ export function taperedTube(path: MusclePath, tendonMm: number, mirror = false):
 export function Muscle({ side, index }: { side: Side; index: number }) {
   const path = useScene((s) => s.binocular[side].eomPaths[index]);
   const activation = useScene((s) => s.binocular[side].eomActivation[index] ?? 0);
+  const theme = useScene((s) => s.theme);
   const tendonMm = useScene(
     (s) => s.eyes[side].extraocularMuscles?.find((m) => m.name === MUSCLE_NAMES[index])?.tendon.slackLengthMm ?? 0,
   );
@@ -72,8 +73,8 @@ export function Muscle({ side, index }: { side: Side; index: number }) {
   if (!geometry) return null;
   const material = (
     <meshStandardMaterial
-      color={activationColor(activation)}
-      emissive={activationColor(activation)}
+      color={activationColor(activation, theme)}
+      emissive={activationColor(activation, theme)}
       emissiveIntensity={hovered ? 0.45 : 0.12 + 0.25 * activation}
       roughness={0.6}
       side={DoubleSide}

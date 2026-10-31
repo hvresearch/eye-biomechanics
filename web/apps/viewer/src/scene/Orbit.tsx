@@ -6,7 +6,7 @@ import drawing from "../../../../../data/anatomy/orbit-drawing.json";
 import { useScene, type Side } from "../store/scene";
 import type { StructureKey } from "../ui/hoverInfo";
 import { ANNULUS_MM } from "./Muscle";
-import { PALETTE } from "./palette";
+import { usePalette } from "./usePalette";
 
 const ANNULUS = ANNULUS_MM;
 
@@ -34,6 +34,7 @@ function useStructurePointer(key: StructureKey, side: Side) {
 
 /** Orbit outline (rim ellipse plus four lines to the apex), annulus of Zinn, and optic nerve, eye-local frame. */
 export function Orbit({ side }: { side: Side }) {
+  const palette = usePalette();
   const gaze = useScene((s) => s.binocular[side].gaze);
   const sx = side === "left" ? -1 : 1; // eye-local x is temporal; the left eye's temporal side is head −x
   const o = drawing.orbit;
@@ -67,15 +68,15 @@ export function Orbit({ side }: { side: Side }) {
   const nervePointer = useStructurePointer("opticNerve", side);
   return (
     <group>
-      <Line points={rim} color={PALETTE.orbit} lineWidth={1} transparent opacity={0.8} {...orbitPointer} />
+      <Line points={rim} color={palette.orbit} lineWidth={1} transparent opacity={0.8} {...orbitPointer} />
       {ribs.map((pts, i) => (
-        <Line key={i} points={pts} color={PALETTE.orbit} lineWidth={1} transparent opacity={0.5} {...orbitPointer} />
+        <Line key={i} points={pts} color={palette.orbit} lineWidth={1} transparent opacity={0.5} {...orbitPointer} />
       ))}
       <mesh position={apex} name={`annulus (${side} eye)`} {...annulusPointer}>
         <torusGeometry args={[drawing.annulus.radiusMm, drawing.annulus.tubeMm, 8, 32]} />
-        <meshStandardMaterial color={PALETTE.nerve} roughness={0.7} />
+        <meshStandardMaterial color={palette.nerve} roughness={0.7} />
       </mesh>
-      <Line points={[exit, apex]} color={PALETTE.nerve} lineWidth={n.radiusMm * 2.2} />
+      <Line points={[exit, apex]} color={palette.nerve} lineWidth={n.radiusMm * 2.2} />
       <mesh position={nerve.mid} quaternion={nerve.q} name={`opticNerve (${side} eye)`} {...nervePointer}>
         <cylinderGeometry args={[n.radiusMm, n.radiusMm, nerve.len, 12, 1, true]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />

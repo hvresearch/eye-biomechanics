@@ -5,9 +5,10 @@ import { Vector3 } from "three";
 import { useScene } from "../store/scene";
 import { InfoCard, Pins, useHoverInfo } from "../ui/Pins";
 import { useShortcuts, type ShortcutAction } from "../ui/shortcuts";
+import { ThemeToggle } from "../ui/ThemeToggle";
 import { Transport } from "../ui/Transport";
 import { Globe } from "./Globe";
-import { PALETTE } from "./palette";
+import { usePalette } from "./usePalette";
 import { Target } from "./Target";
 import { VIEW_TRANSITION_S, cameraFor } from "./views";
 
@@ -86,6 +87,7 @@ function HoverCard() {
 }
 
 export function Stage() {
+  const palette = usePalette();
   const preset = useScene((s) => s.eyes.right.label);
   const view = useScene((s) => s.view);
   const setView = useScene((s) => s.setView);
@@ -104,9 +106,9 @@ export function Stage() {
         camera={{ position: [0, 175, 120], fov: 32, near: 1, far: 5000 }}
         gl={{ localClippingEnabled: true, antialias: true, preserveDrawingBuffer: true }}
         dpr={[1, 2]}
-        onCreated={({ gl }) => gl.setClearColor(PALETTE.bg)}
-      >
-        <hemisphereLight args={["#dfe8ef", "#1a2129", 0.9]} />
+        >
+        <color attach="background" args={[palette.bg]} />
+        <hemisphereLight args={[palette.sky, palette.ground, 0.9]} />
         <directionalLight position={[60, 120, -80]} intensity={1.4} />
         <directionalLight position={[-80, -20, -60]} intensity={0.5} />
         <Animator />
@@ -130,6 +132,7 @@ export function Stage() {
       <div className="stage-title">
         <h1>Both eyes, {cutSide} eye in section</h1>
         <p>{preset}</p>
+        <ThemeToggle />
       </div>
       <HoverCard />
       <Pins />

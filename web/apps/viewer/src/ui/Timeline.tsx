@@ -166,9 +166,23 @@ export function Timeline() {
       </div>
       {t ? (
         <>
+          <div className="chart-legend" aria-hidden="true">
+            <span>
+              <i className="swatch" style={{ background: "var(--chart-1)" }} />
+              sphere
+            </span>
+            <span>
+              <i className="swatch" style={{ background: "var(--chart-2)" }} />
+              cylinder
+            </span>
+            <span>
+              <i className="swatch band" />
+              5–95%
+            </span>
+          </div>
           <svg
             ref={svgRef}
-            className="timeline-chart"
+            className="timeline-chart chart-svg"
             data-testid="timeline-chart"
             viewBox={`0 0 ${W} ${H}`}
             role="slider"
@@ -221,12 +235,6 @@ export function Timeline() {
               ),
             )}
             <line className="cursor" data-testid="age-cursor" x1={x(cursorAge)} x2={x(cursorAge)} y1={PAD.top - 6} y2={H - PAD.bottom} />
-            <text className="legend sphere" x={W - PAD.right - 44} y={PAD.top - 5} textAnchor="end">
-              sphere
-            </text>
-            <text className="legend cylinder" x={W - PAD.right} y={PAD.top - 5} textAnchor="end">
-              cylinder
-            </text>
           </svg>
           <div className="readout-grid">
             <div className="stat wide" data-testid="timeline-rx">

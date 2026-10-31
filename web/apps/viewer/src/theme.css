@@ -1,44 +1,92 @@
-/* Eye Biomechanics design tokens: clinical, restrained; one hot color reserved for
-   muscle activation (Milestone 2). Charts and the 3D stage share these. */
+/* Eye Biomechanics design tokens: clinical and restrained, one hot color reserved for muscle
+   activation (spec §6.2). Charts and the 3D stage share these: src/scene/palette.ts mirrors
+   the stage colors and src/ui/optics/colormap.ts the chart ink (test/contrast.test.ts checks
+   that they agree, that every text token meets WCAG AA on every background, that chart marks
+   meet 3:1 on the surface, and that nothing but --hot sits in the hot hue family). */
 :root {
   --font-ui: "Inter", "SF Pro Text", -apple-system, "Segoe UI", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
 
+  /* Type scale: chart labels, captions, small UI, body, headings, hero figures. */
+  --fs-0: 10px;
+  --fs-1: 11px;
+  --fs-2: 12.5px;
+  --fs-3: 14px;
+  --fs-4: 18px;
+  --fs-5: 26px;
+
+  /* Spacing scale (4 px grid). */
+  --sp-0: 0;
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+/* Dark (default): a near-black stage, slate surfaces. */
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
   --bg: #0f1419;
-  --bg-elev: #161c23;
-  --bg-panel: rgba(22, 28, 35, 0.92);
+  --stage: #0f1419;
+  --surface: #161c23;
+  --overlay: rgba(22, 28, 35, 0.92);
   --line: #273039;
   --text: #e6ebef;
-  --text-dim: #9aa6b2;
-  --text-faint: #5f6b77;
+  --text-muted: #9aa6b2;
+  --text-faint: #808c98;
 
   --accent: #6fc3c1; /* rays, controls */
   --accent-strong: #8fe0dd;
+  --accent-wash: rgba(111, 195, 193, 0.14);
+  --on-accent: #0f1419;
   --warn: #e0b35a;
+  --warn-wash: rgba(224, 179, 90, 0.08);
   --hot: #ff6a3d; /* reserved: muscle activation */
-  --ok: #7cc98b;
+  --hot-wash: rgba(255, 106, 61, 0.06);
 
-  --cornea: #a9d6ea;
-  --aqueous: #cfe8f2;
-  --iris: #4d6b8a;
-  --lens: #f1d9a3;
-  --ciliary: #c88a8a;
-  --vitreous: #d9e6ea;
-  --retina: #d77a5a;
-  --sclera: #ece7df;
+  /* Chart ink (dataviz-validated on --surface): two series, the reference curve, a spare hue
+     that never shares a chart with --chart-1; recessive grid and axis. */
+  --chart-1: #3987e5;
+  --chart-2: #199e70;
+  --chart-3: #898781;
+  --chart-4: #9085e9;
+  --chart-grid: #2c3238;
+  --chart-axis: #4a525a;
+}
 
-  --radius: 10px;
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
+/* Light: white surfaces, a mid-gray studio backdrop so the pale anatomy still reads. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #eef1f4;
+  --stage: #c9d1d9;
+  --surface: #fbfcfd;
+  --overlay: rgba(251, 252, 253, 0.94);
+  --line: #d5dbe1;
+  --text: #0f1720;
+  --text-muted: #3f4a55;
+  --text-faint: #46515c;
 
-  --fs-xs: 11px;
-  --fs-sm: 12.5px;
-  --fs-md: 14px;
-  --fs-lg: 18px;
-  --fs-xl: 26px;
+  --accent: #1f7f7c;
+  --accent-strong: #145855;
+  --accent-wash: rgba(31, 127, 124, 0.12);
+  --on-accent: #ffffff;
+  --warn: #6f4a00;
+  --warn-wash: rgba(154, 103, 0, 0.08);
+  --hot: #d9502a;
+  --hot-wash: rgba(217, 80, 42, 0.07);
+
+  --chart-1: #2a78d6;
+  --chart-2: #148a60;
+  --chart-3: #6b6964;
+  --chart-4: #6250d6;
+  --chart-grid: #e1e0d9;
+  --chart-axis: #b5b4ab;
 }
 
 * {
@@ -56,7 +104,7 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-ui);
-  font-size: var(--fs-md);
+  font-size: var(--fs-3);
   line-height: 1.4;
   -webkit-font-smoothing: antialiased;
 }
@@ -81,28 +129,28 @@ body {
 
 .stage-title {
   position: absolute;
-  top: var(--space-4);
-  left: var(--space-5);
+  top: var(--sp-4);
+  left: var(--sp-5);
   pointer-events: none;
 }
 
 .stage-title h1 {
   margin: 0;
-  font-size: var(--fs-lg);
+  font-size: var(--fs-4);
   font-weight: 600;
   letter-spacing: 0.01em;
 }
 
 .stage-title p {
   margin: 2px 0 0;
-  color: var(--text-dim);
-  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
 }
 
 .hover-label {
   position: absolute;
-  left: var(--space-5);
-  bottom: calc(var(--space-4) + 52px);
+  left: var(--sp-5);
+  bottom: calc(var(--sp-4) + 52px);
   max-width: 420px;
   pointer-events: none;
 }
@@ -110,20 +158,20 @@ body {
 .info-card {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--bg-panel);
-  color: var(--text-dim);
-  font-size: var(--fs-sm);
+  background: var(--overlay);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
 }
 
 .info-card-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-2);
+  gap: var(--sp-2);
 }
 
 .info-card strong {
@@ -134,7 +182,7 @@ body {
 .info-card dl {
   display: grid;
   grid-template-columns: auto auto;
-  gap: 1px var(--space-3);
+  gap: 1px var(--sp-3);
   margin: 0;
 }
 
@@ -143,7 +191,7 @@ body {
 }
 
 .info-card dt {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .info-card dd {
@@ -156,46 +204,46 @@ body {
 
 .info-card small {
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
 }
 
 .info-card .unpin {
   border: none;
   background: none;
-  color: var(--text-dim);
-  font-size: var(--fs-md);
+  color: var(--text-muted);
+  font-size: var(--fs-3);
   line-height: 1;
   cursor: pointer;
 }
 
 .pins {
   position: absolute;
-  top: var(--space-4);
-  right: var(--space-4);
+  top: var(--sp-4);
+  right: var(--sp-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--sp-2);
   width: 300px;
-  max-height: calc(100% - 2 * var(--space-4) - 52px);
+  max-height: calc(100% - 2 * var(--sp-4) - 52px);
   overflow: auto;
 }
 
 .structure-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
-  margin: 0 0 var(--space-3);
+  gap: var(--sp-1);
+  margin: 0 0 var(--sp-3);
   padding: 0;
   list-style: none;
 }
 
 .structure-list button {
-  padding: 2px var(--space-2);
+  padding: 2px var(--sp-2);
   border: 1px solid var(--line);
   border-radius: 999px;
   background: var(--bg);
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
   cursor: pointer;
 }
 
@@ -208,7 +256,7 @@ body {
 .field output {
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
   text-align: right;
 }
 
@@ -225,8 +273,8 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
-  padding: var(--space-4) var(--space-4) var(--space-5);
-  background: var(--bg-elev);
+  padding: var(--sp-4) var(--sp-4) var(--sp-5);
+  background: var(--surface);
 }
 
 .readout {
@@ -234,17 +282,17 @@ body {
   max-height: 50%;
   overflow: auto;
   border-top: 1px solid var(--line);
-  background: var(--bg-elev);
-  padding: var(--space-3) var(--space-4) var(--space-4);
+  background: var(--surface);
+  padding: var(--sp-3) var(--sp-4) var(--sp-4);
 }
 
 .panel + .panel {
-  margin-top: var(--space-5);
+  margin-top: var(--sp-5);
 }
 
 .panel h2 {
-  margin: 0 0 var(--space-3);
-  font-size: var(--fs-xs);
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-1);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -255,13 +303,13 @@ body {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
-  gap: var(--space-2) var(--space-3);
-  margin-bottom: var(--space-3);
+  gap: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-3);
 }
 
 .field label {
-  color: var(--text-dim);
-  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
 }
 
 .field input[type="range"] {
@@ -275,11 +323,11 @@ body {
   width: 96px;
   padding: 4px 6px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
   text-align: right;
 }
 
@@ -291,25 +339,25 @@ body {
 }
 
 .note {
-  margin: var(--space-2) 0 0;
+  margin: var(--sp-2) 0 0;
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
 }
 
 .banner {
-  margin: 0 0 var(--space-4);
-  padding: var(--space-2) var(--space-3);
+  margin: 0 0 var(--sp-4);
+  padding: var(--sp-2) var(--sp-3);
   border: 1px solid var(--warn);
   border-radius: var(--radius);
-  background: rgba(224, 179, 90, 0.08);
+  background: var(--warn-wash);
   color: var(--warn);
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
 }
 
 .readout-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--space-2) var(--space-4);
+  gap: var(--sp-2) var(--sp-4);
 }
 
 .stat {
@@ -320,29 +368,29 @@ body {
 
 .stat .k {
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .stat .v {
   font-family: var(--font-mono);
-  font-size: var(--fs-lg);
+  font-size: var(--fs-4);
   font-variant-numeric: tabular-nums;
 }
 
 .readout .stat .v {
-  font-size: var(--fs-md);
+  font-size: var(--fs-3);
 }
 
 .stat .v.big {
-  font-size: var(--fs-xl);
+  font-size: var(--fs-5);
   color: var(--accent-strong);
 }
 
 .stat .u {
-  color: var(--text-dim);
-  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  font-size: var(--fs-2);
   margin-left: 4px;
 }
 
@@ -363,8 +411,8 @@ abbr[title] {
 }
 
 .readout h2 {
-  margin: 0 0 var(--space-2);
-  font-size: var(--fs-xs);
+  margin: 0 0 var(--sp-2);
+  font-size: var(--fs-1);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -375,7 +423,7 @@ abbr[title] {
 table.muscles {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
   font-variant-numeric: tabular-nums;
 }
 
@@ -388,7 +436,7 @@ table.muscles td {
 
 table.muscles thead th {
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   border-bottom: 1px solid var(--line);
@@ -397,7 +445,7 @@ table.muscles thead th {
 table.muscles th[scope="row"],
 table.muscles thead th:first-child {
   text-align: left;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 table.muscles td {
@@ -405,10 +453,10 @@ table.muscles td {
 }
 
 table.muscles .eye-row th {
-  padding-top: var(--space-3);
+  padding-top: var(--sp-3);
   text-align: left;
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -416,14 +464,14 @@ table.muscles .eye-row th {
 table.muscles tr.hovered th[scope="row"],
 table.muscles tr.hovered td {
   color: var(--text);
-  background: rgba(255, 106, 61, 0.06);
+  background: var(--hot-wash);
 }
 
 table.muscles td.activation {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: var(--space-2);
+  gap: var(--sp-2);
 }
 
 table.muscles .bar {
@@ -442,25 +490,25 @@ table.muscles .bar > span {
 
 .transport {
   position: absolute;
-  left: var(--space-5);
-  right: var(--space-5);
-  bottom: var(--space-4);
+  left: var(--sp-5);
+  right: var(--sp-5);
+  bottom: var(--sp-4);
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: var(--bg-panel);
-  font-size: var(--fs-sm);
-  color: var(--text-dim);
+  background: var(--overlay);
+  font-size: var(--fs-2);
+  color: var(--text-muted);
 }
 
 .transport button {
   min-width: 64px;
   padding: 4px 10px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--accent-strong);
   font: inherit;
@@ -468,7 +516,7 @@ table.muscles .bar > span {
 }
 
 .transport button[aria-pressed="true"] {
-  background: rgba(111, 195, 193, 0.14);
+  background: var(--accent-wash);
 }
 
 .transport .time {
@@ -486,7 +534,7 @@ table.muscles .bar > span {
 .transport .mode {
   min-width: 64px;
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
   text-align: right;
@@ -499,8 +547,8 @@ table.muscles .bar > span {
   min-width: 0;
   overflow-x: auto;
   border-top: 1px solid var(--line);
-  background: var(--bg-elev);
-  padding: var(--space-2) var(--space-4) var(--space-3);
+  background: var(--surface);
+  padding: var(--sp-2) var(--sp-4) var(--sp-3);
 }
 
 .optics-strip.pending .optics-panels {
@@ -510,13 +558,13 @@ table.muscles .bar > span {
 .optics-strip header {
   display: flex;
   align-items: center;
-  gap: var(--space-5);
-  margin-bottom: var(--space-2);
+  gap: var(--sp-5);
+  margin-bottom: var(--sp-2);
 }
 
 .optics-strip h2 {
   margin: 0;
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -526,9 +574,9 @@ table.muscles .bar > span {
 .optics-strip .legend,
 .optics-strip .toggles {
   display: flex;
-  gap: var(--space-4);
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
+  gap: var(--sp-4);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
 }
 
 .optics-strip .toggles {
@@ -538,7 +586,7 @@ table.muscles .bar > span {
 .optics-strip .toggles label {
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--sp-1);
   cursor: pointer;
 }
 
@@ -557,13 +605,13 @@ table.figures i {
 }
 
 .optics-strip i.dashed {
-  background: repeating-linear-gradient(90deg, #898781 0 4px, transparent 4px 7px);
+  background: repeating-linear-gradient(90deg, var(--chart-3) 0 4px, transparent 4px 7px);
 }
 
 .optics-panels {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3) var(--space-4);
+  gap: var(--sp-3) var(--sp-4);
   align-items: flex-start;
 }
 
@@ -574,16 +622,16 @@ table.figures i {
 }
 
 .optics-panel figcaption {
-  margin-bottom: var(--space-1);
+  margin-bottom: var(--sp-1);
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .optics-panel .pair {
   display: flex;
-  gap: var(--space-2);
+  gap: var(--sp-2);
 }
 
 .optics-panel .pair-item {
@@ -593,8 +641,8 @@ table.figures i {
 }
 
 .optics-panel .pair-label {
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
 }
 
 .optics-image {
@@ -606,7 +654,7 @@ table.figures i {
 
 .optics-panel .scale {
   display: block;
-  margin-top: var(--space-1);
+  margin-top: var(--sp-1);
 }
 
 .chart {
@@ -619,21 +667,21 @@ table.figures i {
   top: 100%;
   z-index: 2;
   max-width: 320px;
-  padding: var(--space-1) var(--space-2);
+  padding: var(--sp-1) var(--sp-2);
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: var(--bg-panel);
+  border-radius: var(--radius-sm);
+  background: var(--overlay);
   color: var(--text);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
 
 table.figures {
   width: 100%;
-  margin-top: var(--space-3);
+  margin-top: var(--sp-3);
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
   font-variant-numeric: tabular-nums;
 }
 
@@ -648,17 +696,17 @@ table.figures td {
 table.figures th[scope="row"] {
   text-align: left;
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
 }
 
 table.figures thead th {
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
 }
 
 table.figures td {
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   color: var(--text);
 }
 
@@ -674,18 +722,18 @@ table.figures td.rx {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-2);
-  margin-bottom: var(--space-3);
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-3);
 }
 
 .button-row button {
   padding: 4px 10px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--accent-strong);
   font: inherit;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
   cursor: pointer;
 }
 
@@ -695,9 +743,9 @@ table.figures td.rx {
 }
 
 .auto-rx {
-  color: var(--text-dim);
+  color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
 }
 
 .field input[type="checkbox"] {
@@ -706,9 +754,9 @@ table.figures td.rx {
 }
 
 .decomposition h3 {
-  margin: var(--space-2) 0 var(--space-1);
+  margin: var(--sp-2) 0 var(--sp-1);
   color: var(--text-faint);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -717,14 +765,14 @@ table.figures td.rx {
 .decomposition table {
   width: 100%;
   border-collapse: collapse;
-  font-size: var(--fs-sm);
+  font-size: var(--fs-2);
   font-variant-numeric: tabular-nums;
 }
 
 .decomposition th {
   text-align: left;
   font-weight: 400;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .decomposition td {
@@ -738,7 +786,7 @@ table.figures td.rx {
 
 /* Biomechanics heat-map legend: the ramp drawn on the globe, 0 to the largest displacement. */
 .heatmap-legend {
-  margin: 0 0 var(--space-3);
+  margin: 0 0 var(--sp-3);
 }
 
 .heatmap-legend .bar {
@@ -750,24 +798,24 @@ table.figures td.rx {
 .heatmap-legend .labels {
   display: flex;
   justify-content: space-between;
-  margin-top: var(--space-1);
-  color: var(--text-dim);
+  margin-top: var(--sp-1);
+  color: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: var(--fs-xs);
+  font-size: var(--fs-1);
   font-variant-numeric: tabular-nums;
 }
 
 .field input[type="file"] {
   grid-column: 1 / span 2;
-  color: var(--text-dim);
-  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
 }
 
 .timeline-chart {
   display: block;
   width: 100%;
   height: auto;
-  margin-bottom: var(--space-2);
+  margin-bottom: var(--sp-2);
   cursor: ew-resize;
   touch-action: none;
 }
@@ -777,25 +825,8 @@ table.figures td.rx {
   outline-offset: 2px;
 }
 
-.timeline-chart .grid {
-  stroke: var(--line);
-  stroke-width: 0.5;
-}
-
 .timeline-chart .axis.zero {
-  stroke: var(--text-faint);
-  stroke-width: 0.75;
-}
-
-.timeline-chart text {
-  font-family: var(--font-ui);
-  font-size: 8px;
-  fill: var(--text-dim);
-}
-
-.timeline-chart .tick {
-  fill: var(--text-faint);
-  font-variant-numeric: tabular-nums;
+  stroke: var(--chart-axis);
 }
 
 .timeline-chart .band {
@@ -803,19 +834,20 @@ table.figures td.rx {
   opacity: 0.22;
 }
 
-.timeline-chart .median {
-  fill: none;
-  stroke-width: 1.5;
-}
-
 .timeline-chart .sphere {
-  fill: var(--accent);
-  stroke: var(--accent);
+  fill: var(--chart-1);
+  stroke: var(--chart-1);
 }
 
 .timeline-chart .cylinder {
-  fill: var(--lens);
-  stroke: var(--lens);
+  fill: var(--chart-2);
+  stroke: var(--chart-2);
+}
+
+.timeline-chart .median {
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
 }
 
 .timeline-chart .median.sphere,
@@ -823,18 +855,14 @@ table.figures td.rx {
   fill: none;
 }
 
-.timeline-chart text.legend {
-  stroke: none;
-}
-
 .timeline-chart .onset line {
-  stroke: var(--text-dim);
-  stroke-width: 0.75;
+  stroke: var(--text-muted);
+  stroke-width: 1;
   stroke-dasharray: 3 2;
 }
 
 .timeline-chart .onset-range {
-  fill: var(--text-dim);
+  fill: var(--text-muted);
   opacity: 0.12;
   stroke: none;
 }
@@ -844,12 +872,104 @@ table.figures td.rx {
   stroke-width: 1;
 }
 
+/* Shared chart anatomy (dataviz skill): recessive grid and axes, 2 px series lines with round
+   joins, a dashed reference curve, and every label in an ink token, never a series color. */
+.chart-svg {
+  overflow: visible;
+}
+
+.chart-svg text {
+  font-family: var(--font-ui);
+  font-size: var(--fs-0);
+  fill: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.chart-svg .grid {
+  stroke: var(--chart-grid);
+  stroke-width: 1;
+}
+
+.chart-svg .axis {
+  stroke: var(--chart-axis);
+  stroke-width: 1;
+}
+
+.chart-svg .crosshair {
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.chart-svg .series {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.chart-svg .reference {
+  fill: none;
+  stroke: var(--chart-3);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 3;
+}
+
+.chart-legend {
+  display: flex;
+  gap: var(--sp-4);
+  margin-bottom: var(--sp-1);
+  color: var(--text-muted);
+  font-size: var(--fs-1);
+}
+
+.chart-legend .swatch {
+  display: inline-block;
+  width: 10px;
+  height: 3px;
+  margin-right: var(--sp-1);
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.chart-legend .swatch.band {
+  height: 8px;
+  background: var(--text-muted);
+  opacity: 0.3;
+}
+
+/* Theme toggle in the stage title bar. */
+.theme-toggle {
+  padding: 2px var(--sp-2);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--overlay);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: var(--fs-1);
+  cursor: pointer;
+}
+
+.stage-title .theme-toggle {
+  margin-top: var(--sp-2);
+  pointer-events: auto;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
 /* Scenarios panel: bundled scenarios as a compact list of toggle buttons. */
 .scenario-list {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
-  margin: 0 0 var(--space-3);
+  gap: var(--sp-2);
+  margin: 0 0 var(--sp-3);
   padding: 0;
   list-style: none;
 }
@@ -857,7 +977,7 @@ table.figures td.rx {
 .scenario-list button {
   padding: 4px 10px;
   border: 1px solid var(--accent);
-  border-radius: 6px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: inherit;
   font: inherit;
@@ -866,9 +986,9 @@ table.figures td.rx {
 
 .scenario-list button[aria-pressed="true"] {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--on-accent);
 }
 
 .scenario-current p {
-  margin: 0 0 var(--space-2);
+  margin: 0 0 var(--sp-2);
 }

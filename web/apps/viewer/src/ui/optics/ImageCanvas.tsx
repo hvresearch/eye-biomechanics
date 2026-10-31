@@ -20,8 +20,8 @@ export function ImageCanvas({
   size: number;
   label: string;
   testId?: string;
-  /** Changes when the image changes (redraw trigger). */
-  version: unknown;
+  /** The values the image depends on (redraw trigger; compared element by element, fixed length per call site). */
+  version: readonly unknown[];
 }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const c = Math.max(1, Math.min(n, Math.round(crop)));
@@ -43,6 +43,7 @@ export function ImageCanvas({
       }
     }
     ctx.putImageData(img, 0, 0);
-  }, [version, c, n]);
+    // `pixel` is a fresh closure each render; `version` names what it reads.
+  }, [...version, c, n]);
   return <canvas ref={ref} width={c} height={c} className="optics-image" style={{ width: size, height: size }} role="img" aria-label={label} data-testid={testId} />;
 }

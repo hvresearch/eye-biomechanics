@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { dragToTarget } from "../src/scene/dragTarget";
-import { PALETTE, activationColor } from "../src/scene/palette";
+import { THEMES, activationColor, paletteFor } from "../src/scene/palette";
 import { taperedRadius } from "../src/scene/tube";
 
 describe("taperedRadius", () => {
@@ -18,11 +18,12 @@ describe("taperedRadius", () => {
 });
 
 describe("activationColor", () => {
-  it("runs from the resting muscle tone to the hot token", () => {
-    expect(activationColor(0)).toBe(PALETTE.muscleRest);
-    expect(activationColor(1)).toBe(PALETTE.hot);
-    expect(activationColor(2)).toBe(PALETTE.hot);
-    expect(activationColor(Number.NaN)).toBe(PALETTE.muscleRest);
+  it.each(THEMES)("runs from the resting muscle tone to the hot token (%s)", (theme) => {
+    const p = paletteFor(theme);
+    expect(activationColor(0, theme)).toBe(p.muscleRest);
+    expect(activationColor(1, theme)).toBe(p.hot);
+    expect(activationColor(2, theme)).toBe(p.hot);
+    expect(activationColor(Number.NaN, theme)).toBe(p.muscleRest);
   });
 });
 

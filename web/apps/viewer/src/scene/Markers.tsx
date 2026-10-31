@@ -3,7 +3,7 @@ import { MUSCLE_NAMES, musclesFromDocument } from "@eye/eye-model";
 import { useMemo } from "react";
 import { useScene, type Side } from "../store/scene";
 import { insertionArc } from "./markers";
-import { PALETTE } from "./palette";
+import { usePalette } from "./usePalette";
 
 /** Drawn size of a pulley marker, mm (drawing). */
 const PULLEY_MARKER_MM = 0.9;
@@ -11,6 +11,7 @@ const PULLEY_MARKER_MM = 0.9;
 const INSERTION_LINE_PX = 3;
 
 function InsertionMarker({ side, index, widthMm }: { side: Side; index: number; widthMm: number }) {
+  const palette = usePalette();
   const path = useScene((s) => s.binocular[side].eomPaths[index]);
   const setHovered = useScene((s) => s.setHovered);
   const togglePin = useScene((s) => s.togglePin);
@@ -21,7 +22,7 @@ function InsertionMarker({ side, index, widthMm }: { side: Side; index: number; 
   return (
     <Line
       points={pts}
-      color={PALETTE.nerve}
+      color={palette.nerve}
       lineWidth={INSERTION_LINE_PX}
       name={`${side} ${MUSCLE_NAMES[index]} insertion`}
       onPointerOver={(e) => {
@@ -44,6 +45,7 @@ function InsertionMarker({ side, index, widthMm }: { side: Side; index: number; 
  * none: "fixed pulleys not tabled").
  */
 export function Markers({ side }: { side: Side }) {
+  const palette = usePalette();
   const eye = useScene((s) => s.eyes[side]);
   const muscles = useMemo(() => musclesFromDocument(eye), [eye]);
   const setHovered = useScene((s) => s.setHovered);
@@ -73,7 +75,7 @@ export function Markers({ side }: { side: Side }) {
             }}
           >
             <octahedronGeometry args={[PULLEY_MARKER_MM]} />
-            <meshStandardMaterial color={PALETTE.nerve} roughness={0.6} />
+            <meshStandardMaterial color={palette.nerve} roughness={0.6} />
           </mesh>
         );
       })}

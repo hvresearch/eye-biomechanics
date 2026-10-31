@@ -32,6 +32,7 @@ import type { ClinicalLens, EyeOptics, OpticsRequest, OpticsResponse, WaveReques
 import { throttle } from "./throttle";
 import { DEFAULT_CUT, clampDepthMm, type CutSettings } from "../scene/cut";
 import type { ViewName } from "../scene/views";
+import { THEMES, type Theme } from "../scene/palette";
 import { sameTarget, type HoverTarget } from "../ui/hoverInfo";
 
 export const DEFAULT_PRESET: PresetName = "navarro-1985";
@@ -169,6 +170,9 @@ export interface SceneStore {
   useAutoRx: () => void;
   psfScale: PsfScale;
   setPsfScale: (s: PsfScale) => void;
+  /** UI theme (stage, panels, charts); persisted in local storage when it is available. */
+  theme: Theme;
+  setTheme: (t: Theme) => void;
   polychromatic: boolean;
   setPolychromatic: (on: boolean) => void;
   setPlaying: (on: boolean) => void;
@@ -281,6 +285,30 @@ function getClient(): OpticsClient | null {
   return sharedClient;
 }
 
+/** Local-storage key of the chosen theme. */
+export const THEME_STORAGE_KEY = "eye-viewer-theme";
+
+/** The part of `Storage` the theme uses; null when there is none (tests, workers). */
+export type ThemeStorage = Pick<Storage, "getItem" | "setItem"> | null;
+
+function defaultStorage(): ThemeStorage {
+  try {
+    return typeof localStorage === "undefined" ? null : localStorage;
+  } catch {
+    return null; // access itself can throw when site data is blocked
+  }
+}
+
+/** The stored theme, or dark when none is stored, the value is unknown, or storage throws. */
+function readTheme(storage: ThemeStorage): Theme {
+  try {
+    const v = storage?.getItem(THEME_STORAGE_KEY);
+    return THEMES.find((t) => t === v) ?? "dark";
+  } catch {
+    return "dark";
+  }
+}
+
 /** Runs an eye job (preset solving, the decomposition) and resolves with its result. */
 export type JobRunner = (job: EyesJob) => Promise<EyesJobResult>;
 
@@ -293,8 +321,9 @@ const defaultRunJob: JobRunner = (job) => getClient()?.job(job) ?? Promise.resol
  * paraxial power, defocus, ray fan, preset solving, the decomposition) runs in the worker, and
  * the store applies its results when they arrive.
  */
-export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner } = {}) {
+export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner; storage?: ThemeStorage } = {}) {
   const runJob = init.runJob ?? defaultRunJob;
+  const storage = init.storage === undefined ? defaultStorage() : init.storage;
   return create<SceneStore>((set, get) => {
     const fallbackEyes: Eyes = { left: loadPreset(DEFAULT_PRESET), right: loadPreset(DEFAULT_PRESET) };
     const scene0 = defaultScene(DEFAULT_PRESET);
@@ -457,6 +486,7 @@ export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner } = {})
       corrected: false,
       autoPending: false,
       psfScale: "log",
+      theme: readTheme(storage),
       polychromatic: false,
       eyes: eyes0,
       farPointD: zero,
@@ -549,6 +579,14 @@ export function createSceneStore(init: { eyes?: Eyes; runJob?: JobRunner } = {})
         get().setSpectacles(lens);
       },
       setPsfScale: (psfScale) => set({ psfScale }),
+      setTheme: (theme) => {
+        set({ theme });
+        try {
+          storage?.setItem(THEME_STORAGE_KEY, theme);
+        } catch {
+          // Not persisted (private mode or blocked site data); the choice still holds for this visit.
+        }
+      },
       setPolychromatic: (on) => {
         set({ polychromatic: on });
         schedule();
