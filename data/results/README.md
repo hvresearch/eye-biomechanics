@@ -119,6 +119,15 @@ used the load patterns alone as the growth basis. The committed file is the rebu
 Krylov-enriched basis (Task 5.14 Step 5, 4 810 s, from 25b9160; see "The growth basis against
 the FEM" below). The elastic responses are the same in both builds.
 
+**Regenerated in M6 (Task 6.6, 2026-10-31)** from a clean tree (`fe00df3`) with the exact lid-band
+resultants: one `eyebiomech library --scales s` process per stiffness scale (about 41–48 min
+each, two at a time; a level takes about 4.8 GB at this mesh), joined with `eyebiomech library
+--merge` (the parts' commands are under `provenance.parts`). Only the lid groups change: their
+ΔM and ΔJ0 by 0.5–1.7% at the four scales (lids at near gaze, scale 1: ΔM −0.316, ΔJ0 +0.252,
+ΔJ45 +0.007 D; at distance −0.084, +0.194, 0.000); the muscle, ciliary, and homeostatic groups and
+the growth feedback are the same to the printed digits (largest feedback eigenvalue +1.056,
++1.007, +0.941, +0.835 at scales 0.5, 1, 2, 4). The table below is from the M5 build.
+
 Elastic induced refraction per unit intensity at the calibrated stiffness (scale 1), D:
 
 | Group | ΔM | ΔJ0 | ΔJ45 |
