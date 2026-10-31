@@ -74,6 +74,10 @@ with-the-rule J0 is larger than M4's (+0.020 D), mostly because the calibrated t
 and the equilibrium forces differ; in M4 the lids gave with-the-rule and the muscles
 against-the-rule astigmatism, and the response library (Task 5.8) splits the groups again.
 
+**Regenerated in M6 (Task 6.6, 2026-10-31)** with the exact lid-band resultants, from the clean
+tree `d88c92f`, same command: anterior c(2,−2) −0.200, c(2,0) +0.942, c(2,2) −1.058 µm; ΔM +0.064,
+ΔJ0 +0.102, ΔJ45 −0.017 D (the numbers above are M5's, which differ by under 1.5%).
+
 **Mesh study (Task 5.5, Step 3).** Same input and loads; times are wall-clock on the cloud
 session's 4 cores shared with other jobs, so they are only indicative:
 
