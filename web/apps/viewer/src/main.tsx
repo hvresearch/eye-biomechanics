@@ -14,7 +14,8 @@ document.documentElement.dataset.theme = useScene.getState().theme;
 /**
  * `?perf` is the performance test's hook (e2e/perf.spec.ts): `?perf=baseline` renders an empty
  * stage canvas, the frame rate the browser reaches with nothing to draw; any other value renders
- * the app and exposes the store so the test can drive the target the way a drag does.
+ * the app and exposes the store so the test can drive the target the way a drag does
+ * (e2e/acceptance.spec.ts uses it too, for a target at infinity and an exact pupil).
  */
 const perf = new URLSearchParams(window.location.search).get("perf");
 if (perf !== null && perf !== "baseline") (window as unknown as { __eyeScene: typeof useScene }).__eyeScene = useScene;

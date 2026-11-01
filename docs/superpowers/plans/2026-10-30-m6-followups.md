@@ -54,6 +54,38 @@ session that can read the papers should transcribe each, set `verified: true` wi
   in US patent 8408707), replace the stand-in and its lookup table, and regenerate the
   prediction grid. (any session with document access)
 
+### Release gate: further unverified default-preset files
+
+`web/packages/eye-model/test/release-gate.test.ts` (M6 plan, Task 6.9 and Deviation 1)
+allowlists every data file the app imports for its default state that still has a
+`verified: false` flag. The files above (Zapata-Díaz, geometry, forces, visual axis) and the two
+pupil files in `2026-10-28-m3-followups.md` are on that list; the lines below own the rest.
+Remove a file from the allowlist in the commit that verifies it.
+
+- `data/accommodation/anderson-2008-amplitude.json`: compare the sigmoid fit with the paper's
+  group means (Anderson et al. 2008, IOVS 49:2919-2926) and set `verified: true` with
+  `verifiedDate`. (any session with document access)
+- `data/accommodation/lag-default.json`: the lag slope and onset are an assumption; transcribe
+  adult stimulus-response data (spec §4.2) and verify. (any session with document access)
+- `data/acuity/optotypes.json`: check the 5 × 5 stroke grid and 1 arcmin stroke against the text
+  of ISO 8596:2017. (any session with document access)
+- `data/dispersion/escudero-sanz-1999.json`: compare Table 2 (refractive indices at four
+  wavelengths), transcribed from two agreeing excerpts, with the paper (JOSA A 16:1881-1891).
+  (any session with document access)
+- `data/eom/dynamics.json`: the saccade, vergence, and accommodation blocks are partly confirmed
+  from excerpts only (M2 plan, Deviation 2); verify each block against its cited paper. (any
+  session with document access)
+- `data/eom/activation.json`: activation v1 is the length-proxy approximation (spec §4.4), not a
+  measurement. The owner decides whether a labeled model approximation counts as verified for
+  the release gate, or whether it waits for a force-based activation model. (owner)
+- `data/anatomy/globe-cutaway.json` and `data/anatomy/orbit-drawing.json`: drawing values
+  (scleral and choroidal thickness, orbit proportions) pending transcription; they shape the
+  picture, not any computed readout. Transcribe the cited typical values, or the owner exempts
+  drawing-only files from the gate. (owner, or any session with document access)
+- `data/scene/defaults.json` and `data/spectacles/defaults.json`: design defaults (starting
+  scene, lens design), not physiological constants, except `ipdMm` (63 mm, the spec's typical
+  adult value, not transcribed). Transcribe `ipdMm` from a population source; the owner decides whether design defaults are in the gate's scope. (owner)
+
 ## Model
 
 - Loads other than IOP still act as a linear perturbation of the pressurized eye (M5 plan,
