@@ -10,7 +10,8 @@ import { describe, expect, it } from "vitest";
  * `optics`, or the viewer imports statically: everything the app can show before the user
  * loads a scenario, result, or prediction (those are reached through `import.meta.glob` and
  * carry their own provenance). A file counts as unverified when any `verified` flag in it,
- * at any depth, is false.
+ * at any depth, is false, or when it lists named constants under a non-empty `unverified`
+ * array at any depth (a file verified as a whole can still carry unverified coefficients).
  *
  * The literature hosts were unreachable from the cloud sessions that built M1–M6 (M6 plan,
  * Deviation 1), so the gate runs against an explicit allowlist of the files still unverified.
@@ -52,6 +53,7 @@ const UNVERIFIED_ALLOWLIST: Record<string, Owner> = {
   "pupil/near-response.json": { followups: M3 },
   "pupil/watson-yellott-2012.json": { followups: M3 },
   "scene/defaults.json": { followups: M6 },
+  "schematic-eyes/navarro-1985.json": { followups: M6 },
   "schematic-eyes/zapata-diaz-2019.json": { followups: M6 },
   "spectacles/defaults.json": { followups: M6 },
   "visual-axis/defaults.json": { followups: M6 },
@@ -87,6 +89,20 @@ function verifiedFlags(node: unknown): unknown[] {
   return Object.entries(node).flatMap(([key, value]) => (key === "verified" ? [value, ...verifiedFlags(value)] : verifiedFlags(value)));
 }
 
+/** Every non-empty `unverified` list of named constants in a JSON document, at any depth. */
+function unverifiedLists(node: unknown): unknown[][] {
+  if (Array.isArray(node)) return node.flatMap(unverifiedLists);
+  if (node === null || typeof node !== "object") return [];
+  return Object.entries(node).flatMap(([key, value]) =>
+    key === "unverified" && Array.isArray(value) && value.length > 0 ? [value, ...unverifiedLists(value)] : unverifiedLists(value),
+  );
+}
+
+/** Whether a document is unverified: a false `verified` flag or a non-empty `unverified` list. */
+function isUnverified(doc: unknown): boolean {
+  return verifiedFlags(doc).includes(false) || unverifiedLists(doc).length > 0;
+}
+
 function readData(rel: string): unknown {
   return JSON.parse(readFileSync(join(DATA, rel), "utf8"));
 }
@@ -108,8 +124,16 @@ describe("release gate: default-preset data is verified (master plan Verificatio
     }
   });
 
+  it("counts a file verified as a whole but listing unverified constants as unverified", () => {
+    expect(isUnverified({ verified: true })).toBe(false);
+    expect(isUnverified({ verified: true, block: { unverified: [] } })).toBe(false);
+    expect(isUnverified({ verified: true, block: { unverified: ["anteriorConicPerLn"] } })).toBe(true);
+    expect(isUnverified({ verified: true, list: [{ verified: false }] })).toBe(true);
+    expect(isUnverified(readData("schematic-eyes/navarro-1985.json"))).toBe(true);
+  });
+
   it("has verified: true everywhere except the allowlisted files, and the allowlist is exact", () => {
-    const unverified = files.filter((rel) => verifiedFlags(readData(rel)).includes(false));
+    const unverified = files.filter((rel) => isUnverified(readData(rel)));
     const allowlisted = Object.keys(UNVERIFIED_ALLOWLIST).sort();
     const newlyUnverified = unverified.filter((rel) => !(rel in UNVERIFIED_ALLOWLIST));
     const noLongerUnverified = allowlisted.filter((rel) => !unverified.includes(rel));

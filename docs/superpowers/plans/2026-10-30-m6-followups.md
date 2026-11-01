@@ -58,7 +58,8 @@ session that can read the papers should transcribe each, set `verified: true` wi
 
 `web/packages/eye-model/test/release-gate.test.ts` (M6 plan, Task 6.9 and Deviation 1)
 allowlists every data file the app imports for its default state that still has a
-`verified: false` flag. The files above (Zapata-Díaz, geometry, forces, visual axis) and the two
+`verified: false` flag or a non-empty `unverified` list of named constants. The files above
+(Zapata-Díaz, the Navarro Table 4 conic coefficients, geometry, forces, visual axis) and the two
 pupil files in `2026-10-28-m3-followups.md` are on that list; the lines below own the rest.
 Remove a file from the allowlist in the commit that verifies it.
 
@@ -123,3 +124,26 @@ Remove a file from the allowlist in the commit that verifies it.
   32:11-19; donors 50–95, laser apex monitoring to 60 mmHg, stiffening transition at 12–20
   mmHg) and 2010 (57 donors aged 30–99), with no apex-rise points. Needs the owner's decision
   to accept again, or a session with document access. (owner)
+
+## Review round 1 of PR #21: Minor findings not fixed
+
+- `data/results/calibration/posterior-v1-no-growth.json` and `posterior-v1-rate-floor.json`
+  carry `gitHash` `8c68a1b…-dirty`, while `data/results/README.md` says the calibration was
+  redone from clean trees. Regenerate the two sensitivity fits from a clean tree, or correct the
+  wording. (any session)
+- `web/apps/viewer/src/store/scene.ts` `loadScenario`: apply `clampDistance` and
+  `clampDirectionDeg` to the scenario's starting scene, as playback and the UI setters do; an
+  imported `targetDistanceM: 0.05` currently loads unclamped. (any session)
+- `loadScenario` applies the scene, eyes, and prescription before `loadResult` can fail, so a
+  bad result id leaves a half-loaded state reported only in the Biomechanics panel; and it does
+  not set `refractivePreset`, so the preset select (and any later preset job) keeps the old
+  name after loading the astigmat scenario. Validate the result before applying, and record
+  the preset. (any session)
+- `playScenario` sets `ageYears` directly, so an applied prediction is not re-derived while the
+  age sweeps; detach the prediction during playback or route age changes through `setAge`.
+  (any session)
+- `web/apps/viewer/src/main.tsx`: `window.__eyeScene` is exposed in production builds for any
+  `?perf=` value; gate it to the e2e build or document it as a debug hook. (any session)
+- `data/results/calibration/posterior-v1.json`: `generatedBy` records only the second chain
+  segment's command; record both segments' commands and seeds so the 3 000-step chain is
+  reproducible from the repository. (any session)
