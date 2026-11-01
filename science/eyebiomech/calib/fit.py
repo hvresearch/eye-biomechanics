@@ -8,6 +8,12 @@ bounded by the response library's validated growth exposure. `fit(..., method="l
 SciPy's trust-region least squares and a Gauss–Newton covariance; `method="mcmc"` then samples
 the posterior exp(−½ Σ r²) with the ensemble sampler (Deviation 4) from walkers around the
 least-squares optimum.
+
+M6 (plan Task 6.6): `starts` runs the least squares from several starting points and keeps every
+optimum (the M5 likelihood was multimodal in the rate); the walkers start around the best one.
+`growth=False` fits the nested model with the growth rate held at zero. `previous` continues a
+chain from the last walkers of an earlier segment, so a chain longer than one session's
+computation can be built in segments (each segment draws from its own seed, `seed + segments`).
 """
 
 from __future__ import annotations
@@ -44,16 +50,21 @@ class Posterior:
     acceptance: float | None = None
     autocorr_steps: NDArray | None = None  # per parameter, MCMC only
     chain_steps: int | None = None  # MCMC steps after the burn-in
+    fixed: dict[str, float] = field(default_factory=dict)  # held out of the fit (nested model)
+    starts: list[dict] = field(default_factory=list)  # every least-squares start and optimum
+    chain_state: dict | None = None  # the whole chain, to continue it (`fit(previous=...)`)
 
     def sd_transformed(self) -> NDArray:
         return np.sqrt(np.diag(self.cov))
 
 
 class Space:
-    """Transforms between natural parameters and the fitted vector."""
+    """Transforms between natural parameters and the fitted vector; `fixed` parameters are held
+    at their values and added to every parameter set."""
 
-    def __init__(self, priors: dict, names=PARAM_NAMES):
-        self.names = tuple(names)
+    def __init__(self, priors: dict, names=PARAM_NAMES, fixed: dict | None = None):
+        self.fixed = dict(fixed or {})
+        self.names = tuple(n for n in names if n not in self.fixed)
         self.spec = [priors["parameters"][n] for n in self.names]
 
     def to_x(self, params: dict) -> NDArray:
@@ -65,10 +76,11 @@ class Space:
         )
 
     def to_params(self, x: NDArray) -> dict:
-        return {
+        fitted = {
             n: (math.exp(v) if s["transform"] == "log" else float(v))
             for n, s, v in zip(self.names, self.spec, x, strict=True)
         }
+        return {**fitted, **self.fixed}
 
     def bounds(self, library=None) -> tuple[NDArray, NDArray]:
         """The priors' bounds in the fitted space; with a library, the growth rate's upper bound
@@ -117,6 +129,23 @@ def start_params(priors: dict) -> dict:
     return out
 
 
+def rate_starts(priors: dict, library, count: int) -> list[dict]:
+    """`count` starting points: the priors' starts with the growth rate log-spaced over its
+    bounds (the upper capped by the library's validated exposure), ends included."""
+    lo, hi = Space(priors).bounds(library)
+    i = Space(priors).names.index("rate_per_year")
+    base = start_params(priors)
+    if count < 2:
+        return [base]
+    return [{**base, "rate_per_year": math.exp(v)} for v in np.linspace(lo[i], hi[i], count)]
+
+
+def degrees_of_freedom(data: list[dict], n_params: int) -> int:
+    """Targets minus parameters, not counting the one-sided envelopes ("spherebound"): an
+    envelope the model stays inside costs nothing and carries no information (M6 Task 6.5)."""
+    return sum(t["kind"] != "spherebound" for t in data) - n_params
+
+
 def residuals(x: NDArray, space: Space, library, cohort, data, priors) -> NDArray:
     params = space.to_params(x)
     model = predict_targets(params, library, cohort, data, priors=priors)
@@ -141,18 +170,25 @@ def fit(
     n_walkers: int = 24,
     n_steps: int = 600,
     burn: int = 200,
+    growth: bool = True,
+    starts: list[dict] | None = None,
+    previous: dict | None = None,
 ) -> Posterior:
     if method not in ("lsq", "mcmc"):
         raise ValueError(f"unknown method {method!r}; expected 'lsq' or 'mcmc'")
     priors = priors or load_priors()
-    space = Space(priors)
+    space = Space(priors, fixed=None if growth else {"rate_per_year": 0.0})
     lo, hi = space.bounds(library)
-    x0 = np.clip(space.to_x(params0 or start_params(priors)), lo + 1e-9, hi - 1e-9)
 
     def r(x):
         return residuals(x, space, library, cohort, data, priors)
 
-    sol = least_squares(r, x0, bounds=(lo, hi), diff_step=JACOBIAN_STEP, x_scale="jac")
+    tried = []
+    for start in starts or [params0 or start_params(priors)]:
+        x0 = np.clip(space.to_x(start), lo + 1e-9, hi - 1e-9)
+        sol_k = least_squares(r, x0, bounds=(lo, hi), diff_step=JACOBIAN_STEP, x_scale="jac")
+        tried.append((start, sol_k))
+    sol = min((s_k for _, s_k in tried), key=lambda s_k: s_k.cost)
     J = sol.jac
     cov = np.linalg.pinv(J.T @ J)
     sd = np.sqrt(np.clip(np.diag(cov), 0, None))
@@ -180,10 +216,20 @@ def fit(
         cov=cov,
         corr=corr,
         cost=float(sol.cost),
-        dof=len(data) - len(space.names),
+        dof=degrees_of_freedom(data, len(space.names)),
         method="lsq",
         lsq_converged=bool(sol.success),
         per_target=per_target,
+        fixed=dict(space.fixed),
+        starts=[
+            {
+                "start": {n: float(start[n]) for n in space.names},
+                "best": space.to_params(s_k.x),
+                "cost": float(s_k.cost),
+                "converged": bool(s_k.success),
+            }
+            for start, s_k in tried
+        ],
     )
     if method == "lsq":
         return post
@@ -193,17 +239,34 @@ def fit(
             return -np.inf
         return -0.5 * float(np.sum(r(x) ** 2))
 
-    rng = np.random.default_rng(seed)
-    spread = np.minimum(np.where(sd > 0, sd, 0.1), 0.5 * (hi - lo)) * WALKER_SPREAD
-    p0 = sol.x + spread * rng.standard_normal((n_walkers, len(x0)))
-    p0 = np.clip(p0, lo + 1e-9, hi - 1e-9)
-    chain, _, acc = ensemble_sample(log_prob, p0, n_steps, seed=seed)
-    flat = chain[burn:].reshape(-1, len(x0))
-    post.samples = np.array([[*space.to_params(x).values()] for x in flat])
+    p = len(space.names)
+    if previous is None:
+        rng = np.random.default_rng(seed)
+        spread = np.minimum(np.where(sd > 0, sd, 0.1), 0.5 * (hi - lo)) * WALKER_SPREAD
+        p0 = sol.x + spread * rng.standard_normal((n_walkers, p))
+        p0 = np.clip(p0, lo + 1e-9, hi - 1e-9)
+        before, before_lp, accepted, segments = np.empty((0, n_walkers, p)), None, 0, 0
+    else:
+        before, before_lp = np.asarray(previous["chain"]), np.asarray(previous["lps"])
+        if before.shape[1:] != (n_walkers, p):
+            raise ValueError(
+                f"the previous chain has {before.shape[1]} walkers and {before.shape[2]} "
+                f"parameters, expected {n_walkers} and {p}"
+            )
+        p0, accepted, segments = before[-1], int(previous["accepted"]), int(previous["segments"])
+    chain, lps, acc = ensemble_sample(log_prob, p0, n_steps, seed=seed + segments)
+    accepted += round(acc * n_steps * n_walkers)
+    chain = np.concatenate([before, chain])
+    lps = lps if before_lp is None else np.concatenate([before_lp, lps])
+    post.chain_state = {"chain": chain, "lps": lps, "accepted": accepted, "segments": segments + 1}
+    if not chain.shape[0] > burn:
+        raise ValueError(f"the chain has {chain.shape[0]} steps, not more than the burn-in {burn}")
+    flat = chain[burn:].reshape(-1, p)
+    post.samples = np.array([[space.to_params(x)[n] for n in space.names] for x in flat])
     post.method = "mcmc"
-    post.acceptance = acc
+    post.acceptance = accepted / (chain.shape[0] * n_walkers)
     post.autocorr_steps = autocorrelation_time(chain[burn:])
-    post.chain_steps = n_steps - burn
+    post.chain_steps = chain.shape[0] - burn
     tcov = np.cov(flat.T)
     tsd = np.sqrt(np.diag(tcov))
     post.cov, post.corr = tcov, tcov / np.outer(tsd, tsd)

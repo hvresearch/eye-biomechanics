@@ -1,0 +1,149 @@
+# Milestone 6 follow-ups
+
+Items deferred while implementing Milestone 6 (2026-10-30). Each line names the
+milestone or kind of session that should absorb it. Resolve an item in the task that
+touches the same file, and delete its line here in that commit.
+
+## Data and provenance (needs a session with document access)
+
+The M6 session (2026-10-30, plan Task 6.0) found the literature hosts unreachable again
+(curl to pmc.ncbi.nlm.nih.gov, doi.org, europepmc.org, www.ebi.ac.uk, digital.csic.es,
+iovs.arvojournals.org, opg.optica.org, jov.arvojournals.org, and zaguan.unizar.es fails to connect) and ran one
+web search per item; the excerpts gave bibliographic records and study designs, but none of
+the numbers below. The M5 list of denied hosts (M5 follow-ups, 2026-10-29) still applies. A
+session that can read the papers should transcribe each, set `verified: true` with
+`verifiedDate` where the primary document was read, and re-run the affected tests and builds.
+
+- `data/schematic-eyes/zapata-diaz-2019.json` is a stub. Transcribe Table 1 of Zapata-Díaz
+  et al. 2019 (open access, doi 10.1016/j.optom.2018.01.003, PMC6318498), set
+  `transcribed: true`, and switch the viewer's default preset (`DEFAULT_PRESET` in
+  `web/apps/viewer/src/store/scene.ts`) to it. Blocks the release gate on `verified: true`
+  for the default preset (M6 plan, Deviation 1). (any session with document access)
+- `data/schematic-eyes/navarro-1985.json`: confirm the Table 4 conic-constant coefficients
+  (−0.34 and −0.125 per ln(1+A)) against the paper (doi 10.1364/JOSAA.2.001273; a PDF at
+  digital.csic.es/handle/10261/29930). (any session with document access)
+- `data/eom/geometry-default.json`: transcribe the rectus origins and the oblique origins and
+  insertions from Volkmann 1869 (Eggers, Duane's Foundations vol. 1 ch. 31, Table 2, or
+  Helmholtz's *Physiological Optics*), replacing the common annulus point and the 51°
+  construction. (any session with document access)
+- `data/eom/geometry-default.json`: rectus pulleys are `null`; transcribe fixed pulley
+  coordinates from Clark, Miller & Demer, IOVS 41:3787-3797, 2000, and tighten the
+  `path.test.ts` tolerance once they land. (any session with document access)
+- `data/eom/geometry-default.json`: superior and inferior rectus tendon lengths and the
+  inferior oblique insertion width are assumptions, and the SR/IR widths come from an excerpt
+  that does not name its authors; transcribe the BCSC Section 7 table (the M6 search found
+  only the medial rectus 4.5 mm and inferior oblique 0–1 mm tendon lengths in a BCSC mirror).
+  (any session with document access)
+- `data/visual-axis/defaults.json`: transcribe Polans et al. 2015's angle alpha, lens tilt,
+  and decentration (Optica 2(2):124-134, doi 10.1364/OPTICA.2.000124). (any session with
+  document access)
+- `data/eyelid/shaw-2010.json`: the lower-lid pressure and contact band are assumed equal to
+  the upper lid's; no excerpt reports a lower-lid pressure (Shaw's QUT thesis says the lower
+  lid's topographic effect exceeds the upper's in large downgaze). (any session with document
+  access)
+- `data/eom/forces.json`: the oblique capacities are assumptions (the M6 search found the
+  Simonsz 1988 length-tension study of detached obliques, with no gram values in the excerpt),
+  the vertical recti are derived from Shin et al. 2023's ratios, and tendon stiffness is a
+  lower bound from a transverse modulus. (any session with document access)
+- `data/synteyes/rozema-2016-params.json` is a stand-in: transcribe the SyntEyes two-component
+  mixture (Rozema et al. 2016, IOVS 57:683-691, doi 10.1167/iovs.15-18067, and its
+  supplement; an open PDF is listed at zaguan.unizar.es/record/48368) and re-run the
+  calibration. (any session with document access)
+- `data/acuity/watson-ahumada-2008.json` names an MTF-threshold stand-in: transcribe the Watson
+  & Ahumada 2008 model or its simple metric (J Vis 8(4):17, doi 10.1167/8.4.17; also described
+  in US patent 8408707), replace the stand-in and its lookup table, and regenerate the
+  prediction grid. (any session with document access)
+
+### Release gate: further unverified default-preset files
+
+`web/packages/eye-model/test/release-gate.test.ts` (M6 plan, Task 6.9 and Deviation 1)
+allowlists every data file the app imports for its default state that still has a
+`verified: false` flag or a non-empty `unverified` list of named constants. The files above
+(Zapata-Díaz, the Navarro Table 4 conic coefficients, geometry, forces, visual axis) and the two
+pupil files in `2026-10-28-m3-followups.md` are on that list; the lines below own the rest.
+Remove a file from the allowlist in the commit that verifies it.
+
+- `data/accommodation/anderson-2008-amplitude.json`: compare the sigmoid fit with the paper's
+  group means (Anderson et al. 2008, IOVS 49:2919-2926) and set `verified: true` with
+  `verifiedDate`. (any session with document access)
+- `data/accommodation/lag-default.json`: the lag slope and onset are an assumption; transcribe
+  adult stimulus-response data (spec §4.2) and verify. (any session with document access)
+- `data/acuity/optotypes.json`: check the 5 × 5 stroke grid and 1 arcmin stroke against the text
+  of ISO 8596:2017. (any session with document access)
+- `data/dispersion/escudero-sanz-1999.json`: compare Table 2 (refractive indices at four
+  wavelengths), transcribed from two agreeing excerpts, with the paper (JOSA A 16:1881-1891).
+  (any session with document access)
+- `data/eom/dynamics.json`: the saccade, vergence, and accommodation blocks are partly confirmed
+  from excerpts only (M2 plan, Deviation 2); verify each block against its cited paper. (any
+  session with document access)
+- `data/eom/activation.json`: activation v1 is the length-proxy approximation (spec §4.4), not a
+  measurement. The owner decides whether a labeled model approximation counts as verified for
+  the release gate, or whether it waits for a force-based activation model. (owner)
+- `data/anatomy/globe-cutaway.json` and `data/anatomy/orbit-drawing.json`: drawing values
+  (scleral and choroidal thickness, orbit proportions) pending transcription; they shape the
+  picture, not any computed readout. Transcribe the cited typical values, or the owner exempts
+  drawing-only files from the gate. (owner, or any session with document access)
+- `data/scene/defaults.json` and `data/spectacles/defaults.json`: design defaults (starting
+  scene, lens design), not physiological constants, except `ipdMm` (63 mm, the spec's typical
+  adult value, not transcribed). Transcribe `ipdMm` from a population source; the owner decides whether design defaults are in the gate's scope. (owner)
+
+## Model
+
+- Loads other than IOP still act as a linear perturbation of the pressurized eye (M5 plan,
+  Deviation 11). The M6 elastic orbit (`orbit_foundation`, `data/eom/orbital-foundation.json`;
+  M6 plan, Outcome notes, Task 6.6 step 1) at any stiffness from 0.3× to 100× the
+  tabled orbital-fat value leaves the direct nonlinear J0 under the full near-gaze load 55–62% from
+  the linear one on the coarse mesh; the remaining nonlinearity is local scleral pull-out
+  under the inferior rectus footprint (the assumed 1 mm length in `data/eom/forces.json`).
+  Next: transcribe a tendon-insertion footprint (the tendon fibers blend into the sclera over
+  more than 1 mm), or refine the mesh at the insertions, and repeat the comparison with the
+  foundation (a 3 mm footprint and `n_face 10` run did not finish within the session's
+  30-minute background limit). (a later session; no milestone of the master plan owns it)
+- Growth beyond r·t = 0.01 (M6 plan, Outcome notes, Task 6.6 step 3): the stress-driven
+  thickness law (`thickness="stress"`, κ = 2 in `data/remodeling/growth.json`) makes every
+  mode of the reduced model restoring at all tabled stiffness scales, but explicit FEM growth
+  still inverts an element at r·t = 0.011 with either law. Model the lamina cribrosa and nerve
+  head (the clamped cap cannot grow: its IOP stress is not tensile in-plane), write an
+  implicit growth integrator (the explicit step limit needs about 500 Newton solves per 0.1 of
+  exposure), validate the reduced model on the production mesh to r·t = 0.1, then switch the
+  default law, set `VALID_RATE_TIME` from that comparison, widen the growth-rate prior, and
+  recalibrate. Until then the remodeling form of the hypothesis stays untested beyond
+  negligible growth. (a later session; no milestone of the master plan owns it)
+- The calibration chain (`posterior-v1.json`, M6 plan, Outcome notes, Task 6.6 steps 4–5) has
+  2 500 kept steps at autocorrelation 86–129 steps (19–29 τ), and the estimate was still
+  growing. Continue it to 50 τ (about 6 500 kept steps, two to three hours) with
+  `eyebiomech calibrate --method mcmc --starts 3 --steps 1500 --burn 500 --chain FILE.npz` in
+  resumed segments (the chain file is not committed, so a new session starts the chain again),
+  then regenerate the grid. (a later session; no milestone of the master plan owns it)
+
+## Verification
+
+- Spec §7 / master plan Task 4.2: reproduce a published corneal inflation curve (apex rise
+  against IOP) within 15% with the calibrated stiffness. Deferred from M4 by the owner (#14);
+  the M6 search (2026-10-30) again found only the designs of Elsheikh et al. 2007 (Curr Eye Res
+  32:11-19; donors 50–95, laser apex monitoring to 60 mmHg, stiffening transition at 12–20
+  mmHg) and 2010 (57 donors aged 30–99), with no apex-rise points. Needs the owner's decision
+  to accept again, or a session with document access. (owner)
+
+## Review round 1 of PR #21: Minor findings not fixed
+
+- `data/results/calibration/posterior-v1-no-growth.json` and `posterior-v1-rate-floor.json`
+  carry `gitHash` `8c68a1b…-dirty`, while `data/results/README.md` says the calibration was
+  redone from clean trees. Regenerate the two sensitivity fits from a clean tree, or correct the
+  wording. (any session)
+- `web/apps/viewer/src/store/scene.ts` `loadScenario`: apply `clampDistance` and
+  `clampDirectionDeg` to the scenario's starting scene, as playback and the UI setters do; an
+  imported `targetDistanceM: 0.05` currently loads unclamped. (any session)
+- `loadScenario` applies the scene, eyes, and prescription before `loadResult` can fail, so a
+  bad result id leaves a half-loaded state reported only in the Biomechanics panel; and it does
+  not set `refractivePreset`, so the preset select (and any later preset job) keeps the old
+  name after loading the astigmat scenario. Validate the result before applying, and record
+  the preset. (any session)
+- `playScenario` sets `ageYears` directly, so an applied prediction is not re-derived while the
+  age sweeps; detach the prediction during playback or route age changes through `setAge`.
+  (any session)
+- `web/apps/viewer/src/main.tsx`: `window.__eyeScene` is exposed in production builds for any
+  `?perf=` value; gate it to the e2e build or document it as a debug hook. (any session)
+- `data/results/calibration/posterior-v1.json`: `generatedBy` records only the second chain
+  segment's command; record both segments' commands and seeds so the 3 000-step chain is
+  reproducible from the repository. (any session)

@@ -2,7 +2,7 @@
   "name": "growth-default",
   "label": "Stress-driven growth law of the remodeling layer (M5 plan, Task 5.7, Deviation 3)",
   "form": "rodriguez1994-inplane",
-  "equation": "F = Fe Fg, Fg = I + eps_g (Rodriguez, Hoger & McCulloch 1994); d eps_g / dt = r * Pt (sigma - h sigma_IOP) Pt / s_IOP, with sigma the Cauchy stress, Pt = I - n n^T the projection on the tangent plane of the outer surface, sigma_IOP the stress of the IOP-only eye at the reference age, s_IOP = tr(Pt sigma_IOP Pt) / 2 the local membrane stress under IOP, r the rate (per year), and h the homeostatic ratio. Energy per reference volume Jg W(F Fg^-1).",
+  "equation": "F = Fe Fg, Fg = I + eps_g (Rodriguez, Hoger & McCulloch 1994); d eps_g / dt = r * D, D = Pt (sigma - h sigma_IOP) Pt / s_IOP, with sigma the Cauchy stress, Pt = I - n n^T the projection on the tangent plane of the outer surface, sigma_IOP the stress of the IOP-only eye at the reference age, s_IOP = tr(Pt sigma_IOP Pt) / 2 the local membrane stress under IOP, r the rate (per year), and h the homeostatic ratio. Energy per reference volume Jg W(F Fg^-1). Option (M6 plan, Task 6.6; off by default, see thickness): d eps_g / dt = r * (D + kappa tr(D)/2 n n^T), n the outer surface's normal.",
   "ratePerYear": {
     "default": 0.001,
     "bounds": [
@@ -18,6 +18,11 @@
       1.2
     ],
     "citation": "assumption: h = 1 makes the pressurized eye of the reference age homeostatic by construction, so only the muscle, lid, and ciliary loads drive growth; h != 1 adds a uniform drive (globe growth or shrinkage). A calibration parameter."
+  },
+  "thickness": {
+    "form": "none",
+    "kappa": 2.0,
+    "citation": "form: none, the in-plane law the response library and the calibration are validated with. The option form = stress adds growth through the thickness driven by the mean in-plane stress deviation (the shell thickens where its membrane stress exceeds the target, the form in which wall thickness restores wall stress in stress-modulated growth models of arteries; general modeling form, no source transcribed), with kappa the ratio of thickness to in-plane growth rate, an assumption chosen for stability, not measured. Measured on the coarse library (n_face 6, M6 plan, Outcome notes, Task 6.6): with in-plane growth the spherical mode grows at all four tabled stiffness scales (+0.67 to +1.03 per unit r·t); an isochoric constraint makes it worse (+3.13, three growing modes); kappa = 1 (isotropic growth) leaves it marginal (-0.06 to -0.55); kappa = 2 makes it restoring at every scale (-1.15 to -1.79). It is not the default because explicit FEM growth still inverts an element at the edge of the clamped optic-nerve cap at r·t = 0.011 with either law, so it does not extend the validated exposure, and at r·t = 0.01 the reduced model follows the FEM's M within 10.8% with kappa = 2 against 8.4% without."
   },
   "maxStepFraction": {
     "value": 0.5,

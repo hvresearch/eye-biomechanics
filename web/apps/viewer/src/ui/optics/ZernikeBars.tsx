@@ -1,6 +1,5 @@
 import { zernikeIndex } from "@eye/optics";
 import { useState } from "react";
-import { CHART } from "./colormap";
 
 /** First index shown: defocus and astigmatism and above (piston and tilt carry no image quality). */
 const FIRST_J = 3;
@@ -38,15 +37,15 @@ export function ZernikeBars({ series, width, height, testId }: { series: Series[
   });
   return (
     <div className="chart" data-testid={testId}>
-      <svg width={width} height={height} role="img" aria-label="Zernike coefficients by OSA index">
-        <line x1={left} x2={width - 4} y1={y0} y2={y0} stroke={CHART.axis} strokeWidth={1} />
-        <text x={left - 4} y={top + 4} fill={CHART.muted} fontSize={9} textAnchor="end">
+      <svg className="chart-svg" width={width} height={height} role="img" aria-label="Zernike coefficients by OSA index">
+        <line className="axis" x1={left} x2={width - 4} y1={y0} y2={y0} />
+        <text x={left - 4} y={top + 4} className="tick" textAnchor="end">
           {limit.toFixed(2)}
         </text>
-        <text x={left - 4} y={height - bottom} fill={CHART.muted} fontSize={9} textAnchor="end">
+        <text x={left - 4} y={height - bottom} className="tick" textAnchor="end">
           −{limit.toFixed(2)}
         </text>
-        <text x={left - 4} y={y0 + 3} fill={CHART.muted} fontSize={9} textAnchor="end">
+        <text x={left - 4} y={y0 + 3} className="tick" textAnchor="end">
           µm
         </text>
         {js.map((j, k) => {
@@ -57,13 +56,13 @@ export function ZernikeBars({ series, width, height, testId }: { series: Series[
               {series.map((s, i) => {
                 const v = s.coeffs[j] ?? 0;
                 const h = Math.abs(v) * scale;
-                return <rect key={s.label} x={x + 0.5 + i * (bar + 0.5)} y={v >= 0 ? y0 - h : y0} width={bar} height={Math.max(h, 0.5)} rx={1} fill={s.color} opacity={hover === null || hover === j ? 1 : 0.55} />;
+                return <rect key={s.label} x={x + 0.5 + i * (bar + 0.5)} y={v >= 0 ? y0 - h : y0} width={bar} height={Math.max(h, 0.5)} rx={1} style={{ fill: s.color }} opacity={hover === null || hover === j ? 1 : 0.55} />;
               })}
             </g>
           );
         })}
         {[...orders.entries()].map(([n, o]) => (
-          <text key={n} x={left + ((o.from + o.to + 1) / 2) * group} y={height - 3} fill={CHART.muted} fontSize={9} textAnchor="middle">
+          <text key={n} x={left + ((o.from + o.to + 1) / 2) * group} y={height - 3} className="tick" textAnchor="middle">
             n={n}
           </text>
         ))}

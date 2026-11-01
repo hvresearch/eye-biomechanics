@@ -5,6 +5,7 @@ import { formatDelta } from "./format";
 import { muscleLabel, muscleTooltip } from "./tooltips";
 
 function EyeBlock({ side }: { side: Side }) {
+  const theme = useScene((s) => s.theme);
   const eye = useScene((s) => s.binocular[side]);
   const hovered = useScene((s) => s.hovered);
   const setHovered = useScene((s) => s.setHovered);
@@ -33,7 +34,7 @@ function EyeBlock({ side }: { side: Side }) {
             <td data-testid={`${id}-delta`}>{formatDelta(len - rest)}</td>
             <td className="activation">
               <span className="bar" aria-hidden="true">
-                <span style={{ width: `${(a * 100).toFixed(1)}%`, background: activationColor(a) }} />
+                <span style={{ width: `${(a * 100).toFixed(1)}%`, background: activationColor(a, theme) }} />
               </span>
               <span data-testid={`${id}-activation`}>{a.toFixed(2)}</span>
             </td>

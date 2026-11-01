@@ -1,0 +1,239 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hvresearch.github.io/eye-biomechanics/schemas/scenario.schema.json",
+  "title": "Scenario",
+  "description": "A saved viewer state with a timeline (spec §6.5): the scene, both eyes' EyeParameters, the spectacle prescription, and keyframes over the transport's time axis. Units: meters, degrees, cd/m², years, millimeters, diopters, seconds.",
+  "type": "object",
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string"
+    },
+    "scene": {
+      "$ref": "#/$defs/scene"
+    },
+    "eyes": {
+      "type": "object",
+      "properties": {
+        "left": {
+          "$ref": "eye-parameters.schema.json"
+        },
+        "right": {
+          "$ref": "eye-parameters.schema.json"
+        }
+      },
+      "required": [
+        "left",
+        "right"
+      ],
+      "additionalProperties": false
+    },
+    "prescription": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "left": {
+              "$ref": "#/$defs/lens"
+            },
+            "right": {
+              "$ref": "#/$defs/lens"
+            }
+          },
+          "required": [
+            "left",
+            "right"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "corrected": {
+      "type": "boolean"
+    },
+    "result": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "id"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "timeline": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/keyframe"
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "name",
+    "description",
+    "scene",
+    "eyes",
+    "prescription",
+    "corrected",
+    "result",
+    "timeline"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "distance": {
+      "description": "Target distance from the midpoint between the eyes, meters; null for a target at infinity.",
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      ]
+    },
+    "direction": {
+      "type": "object",
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "x",
+        "y"
+      ],
+      "additionalProperties": false
+    },
+    "scene": {
+      "type": "object",
+      "properties": {
+        "targetDistanceM": {
+          "$ref": "#/$defs/distance"
+        },
+        "targetDirectionDeg": {
+          "$ref": "#/$defs/direction"
+        },
+        "luminanceCdM2": {
+          "type": "number",
+          "minimum": 0
+        },
+        "ageYears": {
+          "type": "number"
+        },
+        "ipdMm": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "preset": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "targetDistanceM",
+        "targetDirectionDeg",
+        "luminanceCdM2",
+        "ageYears",
+        "ipdMm",
+        "preset"
+      ],
+      "additionalProperties": false
+    },
+    "lens": {
+      "type": "object",
+      "properties": {
+        "sphereD": {
+          "type": "number"
+        },
+        "cylinderD": {
+          "type": "number"
+        },
+        "axisDeg": {
+          "type": "number"
+        },
+        "vertexMm": {
+          "type": "number"
+        },
+        "baseCurveD": {
+          "type": "number"
+        },
+        "index": {
+          "type": "number"
+        },
+        "centerThicknessMm": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "sphereD",
+        "cylinderD",
+        "axisDeg",
+        "vertexMm",
+        "baseCurveD",
+        "index",
+        "centerThicknessMm"
+      ],
+      "additionalProperties": false
+    },
+    "keyframe": {
+      "type": "object",
+      "properties": {
+        "timeS": {
+          "type": "number",
+          "minimum": 0
+        },
+        "scene": {
+          "type": "object",
+          "properties": {
+            "targetDistanceM": {
+              "$ref": "#/$defs/distance"
+            },
+            "targetDirectionDeg": {
+              "$ref": "#/$defs/direction"
+            },
+            "luminanceCdM2": {
+              "type": "number",
+              "minimum": 0
+            },
+            "ageYears": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "corrected": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "timeS"
+      ],
+      "additionalProperties": false
+    }
+  }
+}

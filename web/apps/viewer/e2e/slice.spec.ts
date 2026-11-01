@@ -1,5 +1,11 @@
 import { expect, test, type Page } from "@playwright/test";
 
+/**
+ * Demand at a 0.33 m target: 3 D less the relaxed far point, which is the minimum-RMS spherical
+ * equivalent at the pupil (the emmetropic schematic eye reads a few tenths of a diopter myopic).
+ */
+const NEAR_DEMAND = /^(2\.[6-9]\d|3\.0\d)$/;
+
 const num = async (page: Page, id: string) => {
   const t = (await page.getByTestId(id).textContent()) ?? "";
   return Number(t.replace("−", "-"));
@@ -12,11 +18,11 @@ test("vertical slice: target distance drives accommodation and defocus", async (
   // The defocus readout shows a number once the worker has answered.
   await expect(page.getByTestId("defocus")).not.toHaveText("…");
   expect(Number.isFinite(await num(page, "defocus"))).toBe(true);
-  expect(await num(page, "accommodation")).toBeLessThan(0.3); // 6 m is 0.17 D of demand
+  expect(await num(page, "accommodation")).toBeLessThan(0.3); // 6 m is at most 0.17 D of demand
 
   // Bring the target from 6 m to 0.33 m: a 30-year-old accommodates and stays in focus.
   await page.getByTestId("target-distance").fill("0.33");
-  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+  await expect(page.getByTestId("demand")).toHaveText(NEAR_DEMAND);
   const acc = await num(page, "accommodation");
   expect(acc).toBeGreaterThan(2);
   await expect
@@ -49,7 +55,7 @@ test("typing into the number boxes key by key commits the typed value", async ({
   await distance.pressSequentially("0.33", { delay: 50 });
   await distance.blur();
   await expect(distance).toHaveValue("0.33");
-  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+  await expect(page.getByTestId("demand")).toHaveText(NEAR_DEMAND);
 
   // An out-of-range entry is clamped once, when editing ends.
   await age.selectText();
@@ -62,7 +68,7 @@ test("typing into the number boxes key by key commits the typed value", async ({
   await distance.press("Backspace");
   await distance.blur();
   await expect(distance).toHaveValue("0.33");
-  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+  await expect(page.getByTestId("demand")).toHaveText(NEAR_DEMAND);
 });
 
 test("the distance slider maps logarithmically onto the target distance", async ({ page }) => {
@@ -76,7 +82,7 @@ test("the distance slider maps logarithmically onto the target distance", async 
   await expect.poll(async () => num(page, "demand")).toBeGreaterThan(9);
   await slider.fill(Math.log10(0.33).toFixed(3)); // on the slider's 0.001 step grid
   await expect(page.getByTestId("target-distance")).toHaveValue("0.33");
-  await expect(page.getByTestId("demand")).toHaveText(/^3\.0\d$/);
+  await expect(page.getByTestId("demand")).toHaveText(NEAR_DEMAND);
 });
 
 test("selecting the untranscribed preset shows an error and keeps the eye", async ({ page }) => {

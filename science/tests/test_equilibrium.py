@@ -6,6 +6,7 @@ import pytest
 from eyebiomech.fem.data import DATA_DIR, load_eom_table
 from eyebiomech.fem.loads import Loads, _torque_balanced
 from eyebiomech.forces.equilibrium import (
+    InfeasibleEquilibrium,
     capacities_n,
     equilibrium_forces,
     load_passive_orbit,
@@ -97,8 +98,25 @@ def test_the_near_gaze_keeps_its_agonists():
 def test_an_impossible_moment_is_refused():
     g = TABLE.at(0, 0)
     c, d = _arms(TABLE, g)
-    with pytest.raises(ValueError, match="within capacity"):
+    with pytest.raises(InfeasibleEquilibrium, match="within capacity"):
         equilibrium_forces(TABLE.force_n[g], c, d, np.array([0.0, 1e2, 0.0]), capacities_n())
+
+
+def _stiff_orbit(factor: float) -> dict:
+    k = PASSIVE["stiffnessGfPerDeg"]
+    return {**PASSIVE, "stiffnessGfPerDeg": {axis: v * factor for axis, v in k.items()}}
+
+
+def test_an_infeasible_gaze_is_named():
+    """M5 review round 2 (M6 plan, Task 6.5): the error names the gaze of the force table."""
+    stiff = _stiff_orbit(1e4)
+    with pytest.raises(InfeasibleEquilibrium, match="gaze 15,0") as exc:
+        Loads().from_force_table(TABLE, TABLE.at(15, 0), EOM, passive=stiff)
+    assert exc.value.gaze_label == "15,0"
+    with pytest.raises(InfeasibleEquilibrium, match="gaze near") as exc:
+        Loads().from_force_table(DUTY, DUTY.find("near"), EOM, passive=stiff)
+    assert exc.value.gaze_label == "near"
+    assert isinstance(exc.value, ValueError)
 
 
 def test_loads_record_the_passive_moment_and_balance_it():

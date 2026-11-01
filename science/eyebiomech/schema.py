@@ -1,4 +1,5 @@
-"""Validation of EyeParameters and deformation documents against the shared schemas.
+"""Validation of EyeParameters, deformation, prediction, and scenario documents against the
+shared schemas.
 
 The schemas ship as package data (`eyebiomech/schemas/`, byte-identical copies of the
 repository's `schemas/`, checked by tests/test_packaging.py), so the package validates
@@ -13,6 +14,7 @@ from jsonschema import Draft202012Validator
 from referencing import Registry, Resource
 
 _SUPPORTED_MAJOR = 1
+BANDS = ("p05", "p50", "p95")
 
 
 def _load(name: str) -> dict:
@@ -22,12 +24,15 @@ def _load(name: str) -> dict:
 _EYE_SCHEMA = _load("eye-parameters.schema.json")
 _DEFORMATION_SCHEMA = _load("deformation.schema.json")
 _PREDICTIONS_SCHEMA = _load("predictions.schema.json")
+_SCENARIO_SCHEMA = _load("scenario.schema.json")
 _REGISTRY = Registry().with_resources(
-    (s["$id"], Resource.from_contents(s)) for s in (_EYE_SCHEMA, _DEFORMATION_SCHEMA)
+    (s["$id"], Resource.from_contents(s))
+    for s in (_EYE_SCHEMA, _DEFORMATION_SCHEMA, _SCENARIO_SCHEMA)
 )
 _VALIDATOR = Draft202012Validator(_EYE_SCHEMA, registry=_REGISTRY)
 _DEFORMATION_VALIDATOR = Draft202012Validator(_DEFORMATION_SCHEMA, registry=_REGISTRY)
 _PREDICTIONS_VALIDATOR = Draft202012Validator(_PREDICTIONS_SCHEMA)
+_SCENARIO_VALIDATOR = Draft202012Validator(_SCENARIO_SCHEMA, registry=_REGISTRY)
 
 
 class SchemaError(ValueError):
@@ -85,28 +90,58 @@ def validate_deformation(doc: dict) -> None:
         raise SchemaError(errors)
 
 
+def validate_scenario(doc: dict) -> None:
+    """Validate a Scenario (schemas/scenario.schema.json, which references the EyeParameters
+    schema through the registry), each embedded eye's major version, and what the schema
+    cannot state: keyframe times in non-decreasing order (as the viewer's reader does)."""
+    _validate(_SCENARIO_VALIDATOR, doc)
+    errors = []
+    for side in ("left", "right"):
+        try:
+            validate_eye_parameters(doc["eyes"][side])
+        except SchemaError as e:
+            errors += [f"/eyes/{side}{m if m.startswith('/') else ' ' + m}" for m in e.errors]
+    times = [k["timeS"] for k in doc["timeline"]]
+    errors += [
+        f"/timeline/{i} timeS {t} is earlier than the previous keyframe's {times[i - 1]}"
+        for i, t in enumerate(times)
+        if i > 0 and t < times[i - 1]
+    ]
+    if errors:
+        raise SchemaError(errors)
+
+
+def _shape_error(x, shape: tuple[int, ...], path: str) -> str | None:
+    """The first place where nested lists `x` differ from `shape` (every row is checked, so
+    ragged and empty inner arrays are found), or None."""
+    if not shape:
+        return None
+    if not isinstance(x, list):
+        return f"{path} is not an array"
+    if len(x) != shape[0]:
+        return f"{path} has length {len(x)}, expected {shape[0]}"
+    for i, row in enumerate(x):
+        err = _shape_error(row, shape[1:], f"{path}/{i}")
+        if err:
+            return err
+    return None
+
+
 def validate_predictions(doc: dict) -> None:
     """Validate a prediction grid (schemas/predictions.schema.json) and the array shapes the
-    schema cannot state: (nearHours, baselineSphereD, baselineCylinderD, ages)."""
+    schema cannot state: (nearHours, baselineSphereD, baselineCylinderD, ages), every row."""
     _validate(_PREDICTIONS_VALIDATOR, doc)
     ax = doc["axes"]
     shape = tuple(len(ax[k]) for k in ("nearHours", "baselineSphereD", "baselineCylinderD"))
-
-    def dims(x, depth):
-        out = []
-        for _ in range(depth):
-            out.append(len(x))
-            x = x[0]
-        return tuple(out)
-
-    errors = []
-    for name in ("sphere", "cylinder"):
-        for q in ("p05", "p50", "p95"):
-            if dims(doc[name][q], 4) != (*shape, len(ax["ages"])):
-                errors.append(f"/{name}/{q} has shape {dims(doc[name][q], 4)}")
-    for name in ("refraction", "acuity"):
-        for q in ("p05", "p50", "p95"):
-            if dims(doc["onset"][name][q], 3) != shape:
-                errors.append(f"/onset/{name}/{q} has shape {dims(doc['onset'][name][q], 3)}")
+    full = (*shape, len(ax["ages"]))
+    checks = [(f"/{n}/{q}", doc[n][q], full) for n in ("sphere", "cylinder") for q in BANDS]
+    checks.append(("/axisDeg/p50", doc["axisDeg"]["p50"], full))
+    if "logMAR" in doc:
+        checks.append(("/logMAR/p50", doc["logMAR"]["p50"], full))
+    onset = doc["onset"]
+    checks += [
+        (f"/onset/{n}/{q}", onset[n][q], shape) for n in ("refraction", "acuity") for q in BANDS
+    ]
+    errors = [e for path, x, sh in checks if (e := _shape_error(x, sh, path))]
     if errors:
         raise SchemaError(errors)

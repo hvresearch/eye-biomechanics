@@ -1,7 +1,6 @@
 import { eyeOptics, useScene } from "../../store/scene";
 import type { WaveResult } from "../../worker/messages";
 import { opticsTooltips } from "../tooltips";
-import { CHART } from "./colormap";
 import { MtfChart } from "./MtfChart";
 import { IMAGE_WINDOW_ARCMIN, PsfView, RetinalImage } from "./PsfView";
 import { DivergingScale, WavefrontMap, wavefrontLimit } from "./WavefrontMap";
@@ -14,6 +13,7 @@ const CHART_H = 112;
 export interface Config {
   key: "uncorrected" | "corrected";
   label: string;
+  /** CSS color of the series (a chart token). */
   color: string;
   wave: WaveResult;
 }
@@ -49,8 +49,8 @@ function Pair({ configs, render }: { configs: Config[]; render: (c: Config) => R
 
 /** The configurations a wave response holds: the eye alone, and with spectacles when present. */
 export function waveConfigs(wave: { uncorrected: WaveResult; corrected: WaveResult | null }): Config[] {
-  const configs: Config[] = [{ key: "uncorrected", label: "Uncorrected", color: CHART.uncorrected, wave: wave.uncorrected }];
-  if (wave.corrected) configs.push({ key: "corrected", label: "Spectacles", color: CHART.corrected, wave: wave.corrected });
+  const configs: Config[] = [{ key: "uncorrected", label: "Uncorrected", color: "var(--chart-1)", wave: wave.uncorrected }];
+  if (wave.corrected) configs.push({ key: "corrected", label: "Spectacles", color: "var(--chart-2)", wave: wave.corrected });
   return configs;
 }
 
@@ -60,6 +60,7 @@ export function waveConfigs(wave: { uncorrected: WaveResult; corrected: WaveResu
  */
 export function OpticsStrip() {
   const wave = useScene((s) => eyeOptics(s.optics, "right")?.wave ?? null);
+  const waveError = useScene((s) => eyeOptics(s.optics, "right")?.waveError ?? null);
   const psfScale = useScene((s) => s.psfScale);
   const setPsfScale = useScene((s) => s.setPsfScale);
   const polychromatic = useScene((s) => s.polychromatic);
@@ -70,7 +71,13 @@ export function OpticsStrip() {
   if (!wave) {
     return (
       <section className="optics-strip" aria-label="Optics" data-testid="optics-strip">
-        <p className="note">Computing wave optics…</p>
+        {waveError ? (
+          <p className="note warn" role="alert" data-testid="wave-error">
+            Wave optics unavailable for the right eye: {waveError}
+          </p>
+        ) : (
+          <p className="note">Computing wave optics…</p>
+        )}
       </section>
     );
   }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, type KeyboardEvent, type PointerEvent } from "react";
-import { at, onsetCriteria, type Trajectory } from "../data/predictions";
+import { at, onsetCriteria, thresholdLabel, type Trajectory } from "../data/predictions";
 import { useScene } from "../store/scene";
 import { formatSigned } from "./format";
 import { NumberField } from "./NumberField";
@@ -12,6 +12,28 @@ const PAD = { left: 30, right: 8, top: 16, bottom: 20 };
 const AGE_TICKS = [10, 20, 30, 40, 50, 60, 70, 80, 90];
 const formatD = (x: number) => String(Number(x.toFixed(2)));
 const formatH = (x: number) => String(Number(x.toFixed(1)));
+const formatAge = (a: number) => `${a.toFixed(1)} y`;
+/** Stance shown for a grid without a summary (schema 1.0.0). */
+const NO_SUMMARY = "Remodeled model: a hypothesis test, not a clinical prediction.";
+
+interface OnsetMark {
+  key: "refraction" | "acuity";
+  label: string;
+  age: number | null;
+  /** 5–95% over the draws; a null upper end means later than the chart's last age. */
+  range: [number | null, number | null] | null;
+  /** False when the trajectory cannot say (acuity after re-anchoring). */
+  known: boolean;
+}
+
+/** "at 71.3 y (5–95%: 66.2–81.2 y)", "none by 90", or "not available". */
+function onsetPhrase(m: OnsetMark, lastAge: number): string {
+  if (!m.known) return "not available";
+  if (m.age === null) return `none by ${lastAge}`;
+  const [lo, hi] = m.range ?? [null, null];
+  const range = lo === null ? "" : ` (5–95%: ${lo.toFixed(1)}–${hi === null ? `after ${lastAge}` : formatAge(hi)})`;
+  return `at ${formatAge(m.age)}${range}`;
+}
 
 /** Refraction range of the chart: the bands, padded, at least ±1 D, in whole diopters. */
 function yRange(t: Trajectory): [number, number] {
@@ -57,6 +79,7 @@ export function Timeline() {
   const cursorAge = Math.min(a1, Math.max(a0, ageYears));
   const now = t ? at(t, ageYears) : null;
   const criteria = onsetCriteria(grid?.thresholds);
+  const summary = grid?.summary;
   const onsetText = criteria.length > 0 ? ` Onsets: ${[criteria.slice(0, -1).join(", "), criteria[criteria.length - 1]].filter(Boolean).join(", or ")}.` : "";
 
   const ageAt = (clientX: number) => {
@@ -85,17 +108,17 @@ export function Timeline() {
   const yTicks: number[] = [];
   const stepD = d1 - d0 > 6 ? 2 : 1;
   for (let d = Math.ceil(d0 / stepD) * stepD; d <= d1; d += stepD) yTicks.push(d);
-  const onsets = t
-    ? ([
-        ["refraction", t.onset.refraction],
-        ["acuity 20/40", t.onset.acuity],
-      ] as const)
+  const onsets: OnsetMark[] = t
+    ? [
+        { key: "refraction", label: "refraction", age: t.onset.refraction, range: t.onsetRange?.refraction ?? null, known: true },
+        { key: "acuity", label: thresholdLabel(grid?.thresholds), age: t.onset.acuity, range: t.onsetRange?.acuity ?? null, known: t.logMAR !== null },
+      ]
     : [];
 
   return (
     <section className="panel timeline" data-testid="timeline">
       <h2>
-        <abbr title={timelineTooltip()}>Prediction timeline (remodeled)</abbr>
+        <abbr title={timelineTooltip(summary)}>Prediction timeline (remodeled)</abbr>
       </h2>
       {error && (
         <p className="note warn" data-testid="timeline-error">
@@ -143,9 +166,23 @@ export function Timeline() {
       </div>
       {t ? (
         <>
+          <div className="chart-legend" aria-hidden="true">
+            <span>
+              <i className="swatch" style={{ background: "var(--chart-1)" }} />
+              sphere
+            </span>
+            <span>
+              <i className="swatch" style={{ background: "var(--chart-2)" }} />
+              cylinder
+            </span>
+            <span>
+              <i className="swatch band" />
+              5–95%
+            </span>
+          </div>
           <svg
             ref={svgRef}
-            className="timeline-chart"
+            className="timeline-chart chart-svg"
             data-testid="timeline-chart"
             viewBox={`0 0 ${W} ${H}`}
             role="slider"
@@ -175,11 +212,17 @@ export function Timeline() {
             ))}
             <path className="band sphere" d={bandPath(t.ages, t.sphere.p05, t.sphere.p95, x, y)} />
             <path className="band cylinder" d={bandPath(t.ages, t.cylinder.p95, t.cylinder.p05, x, y)} />
+            {onsets.map(({ key, range }) => {
+              const lo = range?.[0] ?? null;
+              if (lo === null) return null;
+              const hi = Math.min(a1, range?.[1] ?? a1);
+              return <rect key={`range-${key}`} className="onset-range" data-testid={`range-${key}`} x={x(lo)} width={Math.max(0, x(hi) - x(lo))} y={PAD.top} height={H - PAD.top - PAD.bottom} />;
+            })}
             <path className="median sphere" data-testid="sphere-median" d={linePath(t.ages, t.sphere.p50, x, y)} />
             <path className="median cylinder" data-testid="cylinder-median" d={linePath(t.ages, t.cylinder.p50, x, y)} />
-            {onsets.map(([label, age], i) =>
+            {onsets.map(({ key, label, age }, i) =>
               age === null ? null : (
-                <g key={label} className="onset" data-testid={`onset-${label.split(" ")[0]}`}>
+                <g key={key} className="onset" data-testid={`onset-${key}`}>
                   <line x1={x(age)} x2={x(age)} y1={PAD.top} y2={H - PAD.bottom} />
                   <text
                     x={x(age) + (x(age) > W / 2 ? -3 : 3)}
@@ -192,25 +235,19 @@ export function Timeline() {
               ),
             )}
             <line className="cursor" data-testid="age-cursor" x1={x(cursorAge)} x2={x(cursorAge)} y1={PAD.top - 6} y2={H - PAD.bottom} />
-            <text className="legend sphere" x={W - PAD.right - 44} y={PAD.top - 5} textAnchor="end">
-              sphere
-            </text>
-            <text className="legend cylinder" x={W - PAD.right} y={PAD.top - 5} textAnchor="end">
-              cylinder
-            </text>
           </svg>
           <div className="readout-grid">
             <div className="stat wide" data-testid="timeline-rx">
               <span className="k">
-                <abbr title={timelineTooltip()}>Predicted at {Math.round(ageYears)} y (median)</abbr>
+                <abbr title={timelineTooltip(summary)}>Predicted at {Math.round(ageYears)} y (median)</abbr>
               </span>
               <span className="v">{now ? `${formatSigned(now.sphereD, 2)} ${formatSigned(now.cylinderD, 2)} × ${Math.round(now.axisDeg)}` : "…"}</span>
             </div>
           </div>
           <p className="note" data-testid="timeline-onset">
-            {onsets.every(([, age]) => age === null)
-              ? "no onset by 90"
-              : `Onset (median): ${onsets.map(([label, age]) => `${label} ${age === null ? "none by 90" : `at ${age.toFixed(1)} y`}`).join("; ")}`}
+            {onsets.every((m) => m.age === null && m.known)
+              ? `no onset by ${a1}`
+              : `Onset (median): ${onsets.map((m) => `${m.label} ${onsetPhrase(m, a1)}`).join("; ")}`}
           </p>
           {t.clamped.length > 0 && (
             <p className="note warn" data-testid="timeline-clamped">
@@ -228,7 +265,7 @@ export function Timeline() {
         !error && <p className="note">Loading the prediction grid…</p>
       )}
       <p className="note" data-testid="timeline-stance">
-        Remodeled model, calibrated to the population's astigmatism axis shift only: a hypothesis test, not a clinical prediction. Growth is held to the range its reduced model is validated for, where the fit pushes it to its prior's floor. The shift comes only in part, with a poor fit to children, from the elastic lid load on tissue that stiffens with age: not a confirmation (see data/results/README.md).
+        {summary ? `${summary.stance} ${summary.finding}` : NO_SUMMARY}
         {onsetText} Drag the chart or use the arrow keys to set the age.
       </p>
     </section>

@@ -15,10 +15,10 @@ export interface OpdMap {
   xs: Float64Array;
   ys: Float64Array;
   opdMicrons: Float64Array;
-  /** 1 where the ray reached the reference sphere, 0 where it was vignetted (its OPD is 0). */
+  /** 1 where the ray reached the reference sphere, 0 where it was vignetted or could not be aimed (its OPD is 0). */
   valid: Uint8Array;
   gridIndex: Uint32Array;
-  /** Center of the reference sphere: the chief ray's intersection with the image surface, mm. */
+  /** Center of the reference sphere: the chief ray's intersection with the image surface (or the given reference point), mm. */
   imagePoint: Vec3;
   validFraction: number;
   wavelengthNm: number;
@@ -35,16 +35,22 @@ export class ChiefRayError extends Error {
  * OPD map of a bundle through `surfaces` (image surface last). The reference sphere is
  * centered on the chief ray's intersection with the image surface and passes through the
  * chief ray's last refracting hit; each ray's path is extended (or shortened) in image space
- * to that sphere.
+ * to that sphere. Rays the bundle could not aim are invalid samples; a chief ray that could not
+ * be aimed is a `ChiefRayError`.
+ *
+ * With `referencePoint` the sphere is centered there instead (still through the chief ray's last
+ * refracting hit): another wavelength's chief-ray image point keeps this wavelength's transverse
+ * chromatic shift in the OPD as tilt.
  */
-export function opdMap(surfaces: readonly Surface[], bundle: PupilBundle): OpdMap {
+export function opdMap(surfaces: readonly Surface[], bundle: PupilBundle, referencePoint?: Vec3): OpdMap {
+  if (!bundle.chiefConverged) throw new ChiefRayError("aiming", "not aimed through the pupil center");
   const { refracting } = splitImageSurface(surfaces);
   const chiefFull = traceRay(bundle.chief, surfaces, 1);
   if (chiefFull.vignetted) throw new ChiefRayError(chiefFull.vignettedAt, chiefFull.reason);
   const imageHit = chiefFull.hits[chiefFull.hits.length - 1];
   const chiefLast = chiefFull.hits[chiefFull.hits.length - 2];
   if (!imageHit || !chiefLast) throw new ChiefRayError(undefined, "no hits");
-  const P = imageHit.point;
+  const P = referencePoint ?? imageHit.point;
   const R = distance(chiefLast.point, P);
   const chiefOpl = chiefFull.opticalPathMm - chiefLast.indexAfter * R; // OPL up to the last refracting hit
 
@@ -57,6 +63,8 @@ export function opdMap(surfaces: readonly Surface[], bundle: PupilBundle): OpdMa
   bundle.rays.forEach((ray, i) => {
     xs[i] = bundle.pupilXYMm[2 * i] ?? 0;
     ys[i] = bundle.pupilXYMm[2 * i + 1] ?? 0;
+    // An unaimed ray crosses the pupil away from its sample: its OPD belongs to another point.
+    if (bundle.converged[i] === 0) return;
     const last = traceToEnd(ray, refracting, 1);
     if (last === null || !(last.dir[2] > 0)) return;
     // |p + t d − P| = R; take the root nearest the last hit.

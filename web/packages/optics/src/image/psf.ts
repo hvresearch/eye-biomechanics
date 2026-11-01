@@ -1,6 +1,6 @@
 import { cartesianRow, zernikeToCartesian } from "../math/zernike";
 import { refractionFromZernike } from "../wavefront/refraction";
-import { fft2, fftShift } from "./fft";
+import { fft2, fftShift, scratchComplex } from "./fft";
 
 const RAD_TO_ARCMIN = (180 / Math.PI) * 60;
 
@@ -62,11 +62,11 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   // The wavefront as one Cartesian polynomial: per row, a Horner polynomial in x.
   const { poly, order } = zernikeToCartesian(input.coeffsMicrons);
   const row = new Float64Array(order + 1);
-  const reA = new Float64Array(n * n);
-  const imA = new Float64Array(n * n);
+  const [reA, imA] = scratchComplex(n, 0);
   const idealKey = `${n}|${R}|${input.wavelengthNm}|${pixelRad}`;
   const cachedIdeal = idealCache.get(idealKey);
-  const reI = cachedIdeal ? null : new Float64Array(n * n);
+  const scratchI = cachedIdeal ? null : scratchComplex(n, 1);
+  const reI = scratchI?.[0] ?? null;
   const k = (2 * Math.PI) / (input.wavelengthNm * 1e-3); // per µm of OPD
   let count = 0;
   const h = n / 2;
@@ -97,8 +97,8 @@ function rawPsf(input: WavefrontInput, n: number, pixelRad: number): RawPsf {
   for (let i = 0; i < n * n; i++) aberrated[i] = (reA[i]! * reA[i]! + imA[i]! * imA[i]!) * norm;
   fftShift(aberrated, n);
   let ideal = cachedIdeal;
-  if (ideal === undefined && reI) {
-    const imI = new Float64Array(n * n);
+  if (ideal === undefined && scratchI) {
+    const [reI, imI] = scratchI;
     fft2(reI, imI, n, false, rows);
     ideal = new Float64Array(n * n);
     for (let i = 0; i < n * n; i++) ideal[i] = (reI[i]! * reI[i]! + imI[i]! * imI[i]!) * norm;

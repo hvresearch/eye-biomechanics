@@ -10,6 +10,7 @@ export interface GlobeProfiles {
   iris: ProfilePoint[];
   lens: ProfilePoint[];
   ciliaryBody: ProfilePoint[];
+  zonules: ProfilePoint[];
   vitreous: ProfilePoint[];
   retina: ProfilePoint[];
   sclera: ProfilePoint[];
@@ -74,8 +75,7 @@ export function globeProfiles(
   const zPostEdge = corneaPost[corneaPost.length - 1]?.[1] ?? 0;
 
   // Ciliary body: a wedge on the inner sclera from the scleral spur to the ora region,
-  // projecting inward toward (but not reaching) the lens equator. The zonules are not
-  // drawn in this milestone.
+  // projecting inward toward (but not reaching) the lens equator; the zonules bridge the gap.
   const zSpur = ANATOMY.scleralSpurZMm;
   const zCiliaryEnd = zSpur + ANATOMY.ciliaryBodyLengthMm;
   const apexZ = (zSpur + zCiliaryEnd) / 2;
@@ -84,6 +84,16 @@ export function globeProfiles(
     [innerR(zSpur), zSpur],
     [apexR, apexZ],
     [innerR(zCiliaryEnd), zCiliaryEnd],
+  ];
+
+  // Zonules: a thin band from the lens equator to the apex of the ciliary body.
+  const zEquator = (zLaEdge + zLpEdge) / 2;
+  const hz = ANATOMY.zonuleBandMm / 2;
+  const zonules: ProfilePoint[] = [
+    [lensEdgeR, zEquator - hz],
+    [apexR, apexZ - hz],
+    [apexR, apexZ + hz],
+    [lensEdgeR, zEquator + hz],
   ];
 
   const irisZ = zLaEdge - ANATOMY.irisThicknessMm - 0.1;
@@ -124,6 +134,7 @@ export function globeProfiles(
     iris,
     lens: [...lensAnt, ...reversed(lensPost)],
     ciliaryBody,
+    zonules,
     vitreous,
     retina,
     sclera,

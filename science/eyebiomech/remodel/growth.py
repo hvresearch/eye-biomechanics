@@ -11,6 +11,15 @@ deviation from the homeostatic target (h times the IOP-only stress of the refere
 normalized by the local IOP membrane stress s_IOP = tr(Pt σIOP Pt)/2; r per year. In-plane
 tensorial growth with the tissue's in-plane fiber dispersion stands in for fiber-aligned growth
 (Grytz & Meschke 2010; approximation); fiber directions do not reorient (small strains).
+Thickness (M6 plan, Task 6.6): with in-plane growth alone the pressurized shell's spherical
+mode self-amplifies (growth enlarges the shell, which raises its membrane stress). The option
+`thickness="stress"` adds growth through the thickness, κ · tr(drive)/2 · n nᵀ, so the shell
+thickens where its mean in-plane stress exceeds the target (wall-thickening growth as in the
+stress-modulated growth of arteries; κ the ratio of thickness to in-plane growth rate, from
+data/remodeling/growth.json); `thickness="isochoric"` instead keeps Jg = 1 to first order,
+−tr(drive) n nᵀ (the shell thins as it grows in area). The table's default is "none": the
+thickness law makes the reduced model's modes restoring but not the explicit FEM growth, which
+still runs away at the clamped optic-nerve cap (M6 plan, Outcome notes, Task 6.6).
 Integration is explicit Euler; a step whose r·dt·λ (λ the largest local feedback, in-plane
 tangent modulus over s_IOP) exceeds the table's `maxStepFraction` is refused.
 """
@@ -18,6 +27,7 @@ tangent modulus over s_IOP) exceeds the table's `maxStepFraction` is refused.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -148,6 +158,37 @@ def membrane_stress(sigma_iop: NDArray, Pt: NDArray, mask: NDArray | None = None
     return s
 
 
+Thickness = Literal["none", "isochoric", "stress"]
+
+
+def growth_law(thickness: Thickness | None = None, kappa: float | None = None):
+    """(thickness, kappa): the given law, or the growth table's when `thickness` is None."""
+    if thickness is not None:
+        return thickness, kappa
+    law = load_growth_table()["thickness"]
+    return law["form"], law.get("kappa")
+
+
+def growth_strain(
+    drive: NDArray, ctx: Context, thickness: Thickness = "none", kappa: float | None = None
+) -> NDArray:
+    """The growth strain (3, 3, nel, nq) per unit of an in-plane drive (Pt δσ Pt / s_IOP):
+    the drive itself, plus −tr(drive) n nᵀ ("isochoric") or κ tr(drive)/2 n nᵀ ("stress"),
+    n the outer surface's normal at each point (module notes)."""
+    if thickness == "none":
+        return drive
+    n = ctx.shell.geometry.outer_normal(ctx.x_quad)
+    nn = np.einsum("i...,j...->ij...", n, n)
+    trace = np.einsum("ii...->...", drive)
+    if thickness == "isochoric":
+        return drive - trace * nn
+    if thickness == "stress":
+        if kappa is None or not kappa >= 0:
+            raise ValueError(f"stress-driven thickness growth needs kappa >= 0, got {kappa}")
+        return drive + 0.5 * kappa * trace * nn
+    raise ValueError(f"unknown thickness {thickness!r}; expected 'none', 'isochoric', or 'stress'")
+
+
 def growth_rate(
     sigma: NDArray,
     sigma_iop: NDArray,
@@ -156,13 +197,17 @@ def growth_rate(
     rate_per_year: float,
     ratio: float,
     mask: NDArray | None = None,
+    thickness: Thickness | None = None,
+    kappa: float | None = None,
 ) -> NDArray:
-    """dεg/dt (3, 3, nel, nq), per year; zero where `mask` is False."""
+    """dεg/dt (3, 3, nel, nq), per year; zero where `mask` is False. The thickness law is the
+    growth table's unless given (`growth_law`)."""
     if not rate_per_year >= 0:
         raise ValueError(f"the growth rate must be non-negative, got {rate_per_year}")
     Pt = tangent_projector(ctx)
     deviation = _in_plane(sigma, Pt) - ratio * _in_plane(sigma_iop, Pt)
-    rate = rate_per_year * deviation / membrane_stress(sigma_iop, Pt, mask)
+    drive = deviation / membrane_stress(sigma_iop, Pt, mask)
+    rate = rate_per_year * growth_strain(drive, ctx, *growth_law(thickness, kappa))
     return rate if mask is None else np.where(mask, rate, 0.0)
 
 
@@ -219,6 +264,8 @@ def grow(
     initial_u: NDArray | None = None,
     max_step_fraction: float | None = None,
     steps: int = 2,
+    thickness: Thickness | None = None,
+    kappa: float | None = None,
 ) -> tuple[GrowthState, Solution]:
     """One explicit growth step: the equilibrium under `loads` at the current growth (from
     `initial_u` when given, else ramped from zero), the growth rate there, the updated growth
@@ -240,7 +287,16 @@ def grow(
         )
     sigma = cauchy_stress(ctx, materials, now.u, state)
     mask = growth_mask(ctx, support, optic_nerve_radius_mm)
-    rate = growth_rate(sigma, sigma_iop, ctx, rate_per_year=rate_per_year, ratio=ratio, mask=mask)
+    rate = growth_rate(
+        sigma,
+        sigma_iop,
+        ctx,
+        rate_per_year=rate_per_year,
+        ratio=ratio,
+        mask=mask,
+        thickness=thickness,
+        kappa=kappa,
+    )
     if np.isfinite(limit):
         lam = feedback_estimate(ctx, materials, now.u, sigma_iop, state, mask)
         if rate_per_year * dt_years * lam > limit:

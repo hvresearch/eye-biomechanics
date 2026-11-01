@@ -162,6 +162,9 @@ def eyelid_arguments(doc: dict) -> dict:
 
 def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
     started = time.time()
+    # The tree as the run starts: the code that runs (M6 plan, Task 6.6: a hash read at the end
+    # saw other runs' new outputs as a dirty tree).
+    git_hash = _git_hash()
     doc = read_json(args.eye, "EyeParameters file")
     validate_eye_parameters(doc)
     check_document_muscles(doc)
@@ -238,7 +241,7 @@ def run_fem(args: argparse.Namespace, argv: list[str]) -> int:
         "source": "eyebiomech fem",
         "citation": CITATION,
         "generatedBy": "eyebiomech " + " ".join(argv),
-        "gitHash": _git_hash(),
+        "gitHash": git_hash,
         "date": date.today().isoformat(),
         "verified": False,
     }

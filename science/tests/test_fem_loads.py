@@ -105,6 +105,31 @@ def test_eyelid_bands_integrate_to_the_expected_force(sphere_ctx):
     assert got_up[1] < 0 < got_lo[1]  # each lid pushes toward the center line
 
 
+def test_eyelid_band_resultants_are_independent_of_the_mesh(sphere_ctx):
+    """Each band's resultant is normalized to the surface integral (M6 plan, Task 6.6, mesh
+    convergence): on the sphere it matches the analytic bands within 0.1%, and on the eye the
+    coarse and fine meshes agree within 0.1%, also with the globe turned under the lids
+    (before, the band's integrated force moved by about 4% between meshes)."""
+    R, a, h, p_kpa = 12.0, 10.1, 0.6, 1.0
+    loads = Loads().eyelid(p_kpa, p_kpa, a, h, h)
+    p = p_kpa * 1e-3
+    expected = _band_resultant(p, a / 2, a / 2 + h, R) + _band_resultant(p, -a / 2 - h, -a / 2, R)
+    got = resultant(sphere_ctx, loads)
+    assert np.linalg.norm(got - expected) < 1e-3 * np.linalg.norm(expected)
+
+    def both(ctx):
+        lids = Loads().eyelid(1.0, 0.5, 10.1, 1.5, 1.0)
+        turned = Loads().gaze(_elevation(-15)).eyelid(1.0, 0.5, 10.1, 1.5, 1.0)
+        return resultant(ctx, lids), resultant(ctx, turned)
+
+    for g6, g10 in zip(
+        both(make_context(make_shell_mesh(FIXTURE, layers=1, n_face=6))),
+        both(make_context(make_shell_mesh(FIXTURE, layers=1, n_face=10))),
+        strict=True,
+    ):
+        assert np.linalg.norm(g6 - g10) < 1e-3 * np.linalg.norm(g10)
+
+
 def test_ciliary_ring_pulls_the_spur_posteriorly(eye_ctx):
     tension, acc = 1e-3, 3.0
     loads = Loads().ciliary(tension, acc)

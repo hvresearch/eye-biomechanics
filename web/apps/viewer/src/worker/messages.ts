@@ -1,5 +1,6 @@
 import type { ClinicalPrescription, EyeParameters } from "@eye/eye-model";
 import type { Refraction, Surface, Vec3 } from "@eye/optics";
+import type { EyesJob, EyesJobResult } from "./jobs";
 
 /** A spectacle lens in clinical terms: minus-cylinder back-vertex powers, axis TABO, and its design. */
 export interface ClinicalLens extends ClinicalPrescription {
@@ -106,7 +107,7 @@ export interface EyeOptics {
   lensParameterA: number;
   /** Paraxial power of the accommodated eye alone. */
   paraxialPowerD: number;
-  /** Far point of the relaxed eye (with its spectacles when worn), clinical sign. */
+  /** Far point of the relaxed eye (with its spectacles when worn), clinical sign: the minimum-RMS spherical equivalent at this pupil. */
   farPointD: number;
   defocusD: number;
   bestFocusZMm: number;
@@ -116,6 +117,8 @@ export interface EyeOptics {
   fan: Vec3[][];
   vignettedRays: number;
   wave: EyeWave | null;
+  /** Why the wave optics of this eye failed (no chief ray, too few rays), or null; `wave` is then null. */
+  waveError: string | null;
   induced: InducedRefraction | null;
 }
 
@@ -130,9 +133,29 @@ export interface OpticsFailure {
   error: string;
 }
 
-export type OpticsWorkerMessage = OpticsResponse | OpticsFailure;
+/** Preset solving and the decomposition, run in the worker beside the optics requests. */
+export interface JobRequest {
+  kind: "job";
+  id: number;
+  job: EyesJob;
+}
 
-export function isFailure(m: OpticsWorkerMessage): m is OpticsFailure {
+export type JobMessage = { kind: "job"; id: number; result: EyesJobResult } | { kind: "job"; id: number; error: string };
+
+/** What the main thread posts to the worker. */
+export type WorkerRequest = OpticsRequest | JobRequest;
+
+export type OpticsWorkerMessage = OpticsResponse | OpticsFailure | JobMessage;
+
+export function isJobRequest(r: WorkerRequest): r is JobRequest {
+  return "kind" in r && r.kind === "job";
+}
+
+export function isJobMessage(m: OpticsWorkerMessage): m is JobMessage {
+  return "kind" in m && m.kind === "job";
+}
+
+export function isFailure(m: OpticsResponse | OpticsFailure): m is OpticsFailure {
   return "error" in m;
 }
 

@@ -127,6 +127,12 @@ Collins CC, et al., 1981 (passive force–length of the human orbit, by forced d
 DOI: to be added (not in the excerpts)
 Used for: `data/eom/passive-orbit.json` (M5 Task 5.2): the linear passive orbital moment, about 0.118 N·mm per degree horizontally, against which the muscle forces are brought into static equilibrium. `verified: false`.
 
+## Orbital fat elasticity
+
+Schoemaker I, et al. Elasticity, viscosity, and deformation of orbital fat. *Invest Ophthalmol Vis Sci* 47(11):4819-4826, 2006 (PubMed 17065493), by search excerpt (2026-10-31): elastic shear modulus G′ 250–500 Pa (calf) and 500–900 Pa (monkey); the globe slides partly within Tenon's capsule.
+DOI: to be added (not in the excerpt)
+Used for: `data/eom/orbital-foundation.json` (M6 Task 6.6): the stiffness of the FEM's elastic-orbit option. `verified: false`.
+
 ## Ensemble sampler
 
 Goodman J, Weare J. Ensemble samplers with affine invariance, 2010 (the algorithm `emcee` implements; bibliographic details not looked up in this session).

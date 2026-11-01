@@ -33,12 +33,13 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from functools import lru_cache
 
 import numpy as np
 from numpy.typing import NDArray
 
 from eyebiomech.calib.data import CLASSES, load_axis_shift, load_j0_slopes, load_sphere_bounds
-from eyebiomech.fem.data import _load, load_materials
+from eyebiomech.fem.data import _load, data_root, load_materials
 from eyebiomech.remodel.growth import load_growth_table
 from eyebiomech.remodel.history import (
     SubjectProfile,
@@ -119,11 +120,20 @@ def max_rate_per_year(library, ages: NDArray = AGES) -> float:
     return library.valid_rate_time / (float(ages[-1]) - start)
 
 
-def state_trajectories(params: dict, library, ages: NDArray = AGES, ratio: float = 1.0):
+# The calibration clamps stiffness scales outside the response library's table to its edges
+# (approximation, stated in data/results/README.md: the prior's slope reaches below 0.5x and
+# above 4x at the oldest and youngest ages); the library itself refuses by default.
+CALIBRATION_ON_EDGE = "clamp"
+
+
+def state_trajectories(
+    params: dict, library, ages: NDArray = AGES, ratio: float = 1.0, on_edge: str = "raise"
+):
     """Remodeled (M, J0, J45) changes at the distance-only and near-only duty cycles, each
     (ages, 3): the elastic response plus the growth since the growth start age of
     data/remodeling/growth.json (approximation: intensities before the first age held at the
-    first age's values)."""
+    first age's values). A stiffness outside the library's table raises unless `on_edge` is
+    "clamp" (`Library.simulate`)."""
     duty = load_duty_cycle()
     waking = duty["wakingHours"]["value"]
     scales = {
@@ -146,6 +156,7 @@ def state_trajectories(params: dict, library, ages: NDArray = AGES, ratio: float
             ratio=ratio,
             stiffness=stiffness,
             history_years=history,
+            on_edge=on_edge,
         )
         out.append(traj[:, 1])
     return out[0], out[1]
@@ -158,11 +169,13 @@ def subject_vectors(
     ages: NDArray = AGES,
     near: NDArray | None = None,
     trajectories=None,
+    on_edge: str = "raise",
 ) -> NDArray:
-    """(n, ages, 3) power vectors; `near` overrides the cohort's near-work fractions."""
+    """(n, ages, 3) power vectors; `near` overrides the cohort's near-work fractions; `on_edge`
+    as in `state_trajectories`."""
     if ages[0] != cohort.baseline_age:
         raise ValueError(f"trajectories must start at the baseline age {cohort.baseline_age}")
-    dist, nr = trajectories or state_trajectories(params, library, ages)
+    dist, nr = trajectories or state_trajectories(params, library, ages, on_edge=on_edge)
     f = cohort.near_fraction if near is None else near
     delta = dist[None] + f[:, None, None] * (nr - dist)[None]
     base = np.stack(
@@ -180,13 +193,31 @@ def _sigmoid(x: NDArray) -> NDArray:
     return 0.5 * (1.0 + np.tanh(0.5 * x))
 
 
+def axis_class_boundary_cos(path=None) -> float:
+    """cos 2w of the axis classes' half-width w (data/population/axis-shift-by-age.json
+    `definition.axisClassHalfWidthDeg`): WTR when cos 2α exceeds it, ATR when below its negative."""
+    return _boundary_cos(str(path or data_root()), path is not None)
+
+
+@lru_cache(maxsize=4)
+def _boundary_cos(where: str, is_file: bool) -> float:
+    t = _load(where if is_file else None, "population", "axis-shift-by-age.json")
+    return math.cos(2 * math.radians(float(t["definition"]["axisClassHalfWidthDeg"])))
+
+
 def class_weights(
-    vectors: NDArray, threshold_d: float, width_d: float = 0.0, width_cos: float = 0.0
+    vectors: NDArray,
+    threshold_d: float,
+    width_d: float = 0.0,
+    width_cos: float = 0.0,
+    boundary_cos: float | None = None,
 ) -> tuple[NDArray, NDArray]:
     """Astigmatism weight (…,) and class membership (…, 3: WTR, ATR, oblique) of clinical power
     vectors. Minus cylinder C = −2|J|; the axis α satisfies cos 2α = J0/|J|: WTR when
-    cos 2α > 0.5 (axis within 30° of 180), ATR when < −0.5 (within 30° of 90). Zero widths give
+    cos 2α > b (axis within the half-width of 180), ATR when < −b (within it of 90), with b the
+    data's boundary (`axis_class_boundary_cos`, 0.5 for 30°) unless given. Zero widths give
     hard classes; positive widths logistic boundaries."""
+    b = axis_class_boundary_cos() if boundary_cos is None else boundary_cos
     J0, J45 = vectors[..., 1], vectors[..., 2]
     mag = np.hypot(J0, J45)
     cyl = 2 * mag
@@ -196,11 +227,11 @@ def class_weights(
     else:
         astig = (cyl >= threshold_d).astype(float)
     if width_cos > 0:
-        wtr = _sigmoid((c2 - 0.5) / width_cos)
-        atr = _sigmoid((-0.5 - c2) / width_cos)
+        wtr = _sigmoid((c2 - b) / width_cos)
+        atr = _sigmoid((-b - c2) / width_cos)
     else:
-        wtr = (c2 > 0.5).astype(float)
-        atr = (c2 < -0.5).astype(float)
+        wtr = (c2 > b).astype(float)
+        atr = (c2 < -b).astype(float)
     return astig, np.stack([wtr, atr, 1.0 - wtr - atr], axis=-1)
 
 
@@ -292,7 +323,7 @@ def predict_targets(
     priors = priors or load_priors()
     cls = priors["classification"]
     kw_soft = {"width_d": cls["softWidthD"], "width_cos": cls["softWidthCos"]} if soft else {}
-    trajectories = state_trajectories(params, library)
+    trajectories = state_trajectories(params, library, on_edge=CALIBRATION_ON_EDGE)
     duty = load_duty_cycle()
     cache: dict = {}
     out = []

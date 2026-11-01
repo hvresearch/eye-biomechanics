@@ -1,4 +1,4 @@
-import type { PsfScale } from "../../store/scene";
+import { useScene, type PsfScale } from "../../store/scene";
 import type { WaveResult } from "../../worker/messages";
 import { sequentialColor } from "./colormap";
 import { ImageCanvas } from "./ImageCanvas";
@@ -10,11 +10,12 @@ const LOG_DECADES = 4;
 
 /** The PSF in the central window, normalized to its own peak, on a linear or log scale. */
 export function PsfView({ wave, scale, size, testId }: { wave: WaveResult; scale: PsfScale; size: number; testId?: string }) {
+  const theme = useScene((s) => s.theme);
   const peak = wave.strehl > 0 ? wave.strehl : 1;
   const pixel = (i: number) => {
     const v = wave.psf[i]! / peak;
     const t = scale === "log" ? 1 + Math.log10(Math.max(v, 10 ** -LOG_DECADES)) / LOG_DECADES : v;
-    return sequentialColor(t);
+    return sequentialColor(t, theme);
   };
   return (
     <ImageCanvas
@@ -24,7 +25,7 @@ export function PsfView({ wave, scale, size, testId }: { wave: WaveResult; scale
       size={size}
       label={`Point spread function, ${IMAGE_WINDOW_ARCMIN} arcmin window, ${scale} scale`}
       testId={testId}
-      version={[wave.psf, scale]}
+      version={[wave.psf, scale, theme]}
     />
   );
 }
@@ -43,7 +44,7 @@ export function RetinalImage({ wave, size, testId }: { wave: WaveResult; size: n
       size={size}
       label={`Retinal image of a Snellen E, ${IMAGE_WINDOW_ARCMIN} arcmin window`}
       testId={testId}
-      version={wave.retinal}
+      version={[wave.retinal]}
     />
   );
 }

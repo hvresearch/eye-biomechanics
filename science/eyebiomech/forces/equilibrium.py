@@ -33,6 +33,15 @@ from eyebiomech.fem.data import _load
 from eyebiomech.forces.from_viewer import rotation_matrix
 
 
+class InfeasibleEquilibrium(ValueError):
+    """No non-negative muscle forces within capacity balance the moment; `gaze_label` names the
+    force table's gaze when the caller knows it ("" otherwise)."""
+
+    def __init__(self, message: str, gaze_label: str = ""):
+        super().__init__(message)
+        self.gaze_label = gaze_label
+
+
 def load_passive_orbit(path=None) -> dict:
     return _load(path, "eom", "passive-orbit.json")
 
@@ -87,8 +96,8 @@ def equilibrium_forces(
     A small convex quadratic program, solved exactly by enumerating which muscles sit at a
     bound: each choice is an equality-constrained least-squares problem with a closed-form
     (least-norm) solution, and the optimum is the cheapest one inside the bounds. Unlike an
-    iterative solver this gives the same answer, to round-off, on every CPU. Raises `ValueError`
-    when no force set within the bounds balances the moment."""
+    iterative solver this gives the same answer, to round-off, on every CPU. Raises
+    `InfeasibleEquilibrium` when no force set within the bounds balances the moment."""
     f0 = np.asarray(proxy_forces, dtype=float)
     c = np.asarray(centers, dtype=float)
     d = np.asarray(directions, dtype=float)
@@ -128,7 +137,7 @@ def equilibrium_forces(
         if cost < best_cost:
             best, best_cost = f, cost
     if best is None:
-        raise ValueError(
+        raise InfeasibleEquilibrium(
             f"no non-negative muscle forces within capacity balance the moment "
             f"{np.round(M, 4).tolist()} N·mm"
         )

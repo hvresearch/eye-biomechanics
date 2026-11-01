@@ -1,0 +1,5 @@
+{
+  "about": "The stance and finding of the calibration in posterior-v1.json, in words, copied into the prediction grid's `summary` by `eyebiomech grid` and shown by the viewer's timeline and its tooltip. Update it with every recalibration (data/results/README.md explains the numbers behind it).",
+  "stance": "Remodeled model, calibrated to the population's astigmatism axis shift (with-the-rule, against-the-rule, and oblique shares by age band) and J0 slope only: a hypothesis test, not a clinical prediction.",
+  "finding": "Growth is held to the range its reduced model is validated for, where the fit pushes it to its prior's floor. The shift comes only in part, with a poor fit to children, from the elastic lid load on tissue that stiffens with age: not a confirmation (see data/results/README.md)."
+}

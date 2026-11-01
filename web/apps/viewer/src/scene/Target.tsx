@@ -1,11 +1,11 @@
-import { Line } from "@react-three/drei";
+import { Polyline } from "./Polyline";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { gazeDirection, quatRotate, PRIMARY_DIRECTION } from "@eye/eye-model";
 import { useState } from "react";
 import drawing from "../../../../../data/anatomy/orbit-drawing.json";
 import { useScene } from "../store/scene";
 import { dragToTarget } from "./dragTarget";
-import { PALETTE } from "./palette";
+import { usePalette } from "./usePalette";
 
 const MAX_DRAW_MM = drawing.targetDrawing.maxDrawDistanceMm;
 type P3 = [number, number, number];
@@ -21,6 +21,7 @@ interface Controls {
  * run from each eye's center of rotation along its current gaze.
  */
 export function Target() {
+  const palette = usePalette();
   const scene = useScene((s) => s.scene);
   const binocular = useScene((s) => s.binocular);
   const setTarget = useScene((s) => s.setTarget);
@@ -60,8 +61,8 @@ export function Target() {
 
   return (
     <group>
-      <Line points={sight("right")} color={PALETTE.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
-      <Line points={sight("left")} color={PALETTE.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
+      <Polyline points={sight("right")} color={palette.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
+      <Polyline points={sight("left")} color={palette.accent} lineWidth={1} dashed dashSize={4} gapSize={3} transparent opacity={0.6} />
       <mesh
         position={p}
         name="Target"
@@ -73,7 +74,7 @@ export function Target() {
         onPointerUp={end}
       >
         <sphereGeometry args={[drawing.targetDrawing.radiusMm, 24, 24]} />
-        <meshStandardMaterial color={PALETTE.warn} emissive={PALETTE.warn} emissiveIntensity={dragging ? 0.6 : 0.25} />
+        <meshStandardMaterial color={palette.warn} emissive={palette.warn} emissiveIntensity={dragging ? 0.6 : 0.25} />
       </mesh>
       {dragging && (
         // An invisible frontal plane through the target catches the pointer while dragging.

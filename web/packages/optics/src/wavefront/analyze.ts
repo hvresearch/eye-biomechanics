@@ -1,3 +1,4 @@
+import type { Vec3 } from "../math/vec3";
 import type { Surface } from "../surfaces/types";
 import { pupilBundle, type ViewSpec } from "../trace/aim";
 import { fitZernike, type ZernikeFit } from "./fit";
@@ -10,6 +11,8 @@ export interface WavefrontOptions {
   wavelengthNm?: number;
   maxRadialOrder?: number;
   refractionMethod?: "minimumRms" | "paraxial";
+  /** Center of the reference sphere (another wavelength's chief-ray image point); this wavelength's own by default. */
+  referenceImagePoint?: Vec3;
 }
 
 export interface WavefrontAnalysis {
@@ -26,7 +29,7 @@ export interface WavefrontAnalysis {
 export function analyzeWavefront(surfaces: readonly Surface[], view: ViewSpec, opts: WavefrontOptions = {}): WavefrontAnalysis {
   const front = surfaces.filter((s) => s.vertexZMm < view.pupilPlaneZMm);
   const bundle = pupilBundle(view, opts.gridN ?? 64, opts.wavelengthNm ?? 555, front);
-  const map = opdMap(surfaces, bundle);
+  const map = opdMap(surfaces, bundle, opts.referenceImagePoint);
   const fit = fitZernike(map, opts.maxRadialOrder ?? 8);
   return { map, fit, refraction: refractionFromZernike(fit.coeffsMicrons, view.pupilRadiusMm, opts.refractionMethod) };
 }

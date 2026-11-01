@@ -1,6 +1,6 @@
 import { buildSurfaces, deriveEyeState, loadPreset, type EyeParameters, type SceneState } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
-import { globeProfiles } from "../src/scene/profiles";
+import { ANATOMY, globeProfiles } from "../src/scene/profiles";
 import { handle } from "../src/worker/handle";
 
 /** The right eye's optics as the store would request them. */
@@ -40,6 +40,18 @@ describe("globeProfiles", () => {
     expect(p.lens[0]?.[0]).toBe(0);
     expect(p.sclera[0]?.[1]).toBeCloseTo(eye.axialLengthMm + 0.8, 6);
     expect(p.retina[0]?.[1]).toBeCloseTo(eye.axialLengthMm - 0.25, 6);
+  });
+
+  it("bridges the lens equator and the ciliary body with the zonules", () => {
+    const eye = loadPreset("navarro-1985");
+    const s = buildSurfaces(eye, deriveEyeState(scene, eye, "right"));
+    const p = globeProfiles(s, eye.axialLengthMm, eye.retina.radiusMm, 4);
+    const la = s.find((x) => x.name === "lens.anterior")!;
+    const rs = p.zonules.map(([r]) => r);
+    expect(Math.min(...rs)).toBeCloseTo(la.apertureSemiDiamMm, 9);
+    const [apexR, apexZ] = p.ciliaryBody[1]!;
+    expect(Math.max(...rs)).toBeCloseTo(apexR, 9);
+    expect(p.zonules[1]).toEqual([apexR, apexZ - ANATOMY.zonuleBandMm / 2]);
   });
 
   it("thickens the lens profile with accommodation", () => {

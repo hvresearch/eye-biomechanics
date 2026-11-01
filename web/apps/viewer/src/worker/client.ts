@@ -1,4 +1,5 @@
-import { isFailure, type OpticsRequest, type OpticsResponse, type OpticsWorkerMessage } from "./messages";
+import type { EyesJob, EyesJobResult } from "./jobs";
+import { isFailure, isJobMessage, type JobRequest, type OpticsRequest, type OpticsResponse, type OpticsWorkerMessage } from "./messages";
 
 /**
  * A request that was replaced by a newer one before it reached the worker. Its caller should
@@ -28,13 +29,15 @@ interface Queued {
  * A request made while one is in flight waits; a newer one replaces it (the replaced caller gets
  * `StaleRequestError`), so the worker only ever computes the latest state once it is free. The
  * in-flight response still resolves: it is the newest result available, which keeps readouts
- * updating while inputs change faster than the worker can answer.
+ * updating while inputs change faster than the worker can answer. Eye jobs (preset solving, the
+ * decomposition) are never replaced: each resolves with its own result.
  */
 export class OpticsClient {
   private readonly worker: Worker;
   private nextId = 1;
   private inFlight: Pending | null = null;
   private queued: Queued | null = null;
+  private readonly jobs = new Map<number, { resolve: (r: EyesJobResult) => void; reject: (e: Error) => void }>();
 
   constructor(worker?: Worker) {
     this.worker =
@@ -46,7 +49,19 @@ export class OpticsClient {
       this.inFlight = null;
       this.queued?.reject(err);
       this.queued = null;
+      for (const j of this.jobs.values()) j.reject(err);
+      this.jobs.clear();
     };
+  }
+
+  /** Run an eye job in the worker. */
+  job(job: EyesJob): Promise<EyesJobResult> {
+    return new Promise<EyesJobResult>((resolve, reject) => {
+      const id = this.nextId++;
+      this.jobs.set(id, { resolve, reject });
+      const msg: JobRequest = { kind: "job", id, job };
+      this.worker.postMessage(msg);
+    });
   }
 
   request(body: Omit<OpticsRequest, "id">): Promise<OpticsResponse> {
@@ -68,6 +83,14 @@ export class OpticsClient {
 
   /** Handle one message from the worker (exposed for tests). */
   receive(msg: OpticsWorkerMessage): void {
+    if (isJobMessage(msg)) {
+      const j = this.jobs.get(msg.id);
+      if (!j) return;
+      this.jobs.delete(msg.id);
+      if ("error" in msg) j.reject(new Error(msg.error));
+      else j.resolve(msg.result);
+      return;
+    }
     const p = this.inFlight;
     if (!p || p.id !== msg.id) return;
     this.inFlight = null;

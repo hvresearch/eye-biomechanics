@@ -1,11 +1,25 @@
 import { AMPLITUDE_TABLE, PRESET_NAMES, REFRACTIVE_PRESETS, presetTable, type PresetName } from "@eye/eye-model";
 import { MAX_DIRECTION_DEG, useScene } from "../store/scene";
-import { Biomechanics } from "./Biomechanics";
-import { Decomposition } from "./Decomposition";
-import { MuscleTable } from "./MuscleTable";
+import { memo } from "react";
+import { Biomechanics as BiomechanicsPanel } from "./Biomechanics";
+import { Decomposition as DecompositionPanel } from "./Decomposition";
+import { MuscleTable as MuscleTablePanel } from "./MuscleTable";
 import { NumberField } from "./NumberField";
-import { Spectacles } from "./Spectacles";
-import { Timeline } from "./Timeline";
+import { Scenarios as ScenariosPanel } from "./Scenarios";
+import { Spectacles as SpectaclesPanel } from "./Spectacles";
+import { StagePanel as StagePanelPanel } from "./StagePanel";
+import { Timeline as TimelinePanel } from "./Timeline";
+
+// The panels take no props and subscribe to the store themselves; memoized, they re-render on
+// their own state only, not on every scene change the inspector's fields follow (a target drag
+// changes the scene on every frame; Task 6.8).
+const Biomechanics = memo(BiomechanicsPanel);
+const Decomposition = memo(DecompositionPanel);
+const MuscleTable = memo(MuscleTablePanel);
+const Scenarios = memo(ScenariosPanel);
+const Spectacles = memo(SpectaclesPanel);
+const StagePanel = memo(StagePanelPanel);
+const Timeline = memo(TimelinePanel);
 
 const MIN_M = 0.1;
 const MAX_M = 6;
@@ -49,6 +63,10 @@ export function Inspector() {
           Optics worker: {workerError}
         </div>
       )}
+
+      <Scenarios />
+
+      <StagePanel />
 
       <section className="panel">
         <h2>Scene</h2>

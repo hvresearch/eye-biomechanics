@@ -123,6 +123,28 @@ export function fft2(re: Float64Array, im: Float64Array, n: number, inverse = fa
   }
 }
 
+/** Scratch complex buffers by (n, slot), reused across calls (each worker is single-threaded). */
+const scratch = new Map<string, [Float64Array, Float64Array]>();
+
+/**
+ * A pair of n × n scratch arrays (real, imaginary), zeroed, valid until the next request for the
+ * same slot. Callers use them only within one call and never return them; two slots let one
+ * call hold two pairs. Reusing them keeps a request from allocating (and the collector from
+ * reclaiming) several 0.5 MB arrays per FFT at the 256 grid.
+ */
+export function scratchComplex(n: number, slot: 0 | 1): [Float64Array, Float64Array] {
+  const key = `${n}|${slot}`;
+  let s = scratch.get(key);
+  if (s === undefined) {
+    s = [new Float64Array(n * n), new Float64Array(n * n)];
+    scratch.set(key, s);
+  } else {
+    s[0].fill(0);
+    s[1].fill(0);
+  }
+  return s;
+}
+
 /** Swap quadrants in place so index (0, 0) moves to (n/2, n/2) (its own inverse for even n). */
 export function fftShift(a: Float64Array | Float32Array, n: number): void {
   const h = n / 2;

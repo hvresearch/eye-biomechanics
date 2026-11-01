@@ -53,7 +53,7 @@ export { defaultPixelArcmin, polychromaticPsf, psf } from "./image/psf";
 export type { Psf, PsfOptions, WavefrontInput } from "./image/psf";
 export { diffractionMtf, mtf, otf, otfPair } from "./image/mtf";
 export type { Mtf, Otf } from "./image/mtf";
-export { grating, snellenE } from "./image/targets";
+export { OPTOTYPE, grating, snellenE, type Optotype } from "./image/targets";
 export type { Bitmap, EOrientation } from "./image/targets";
 export { retinalImage, retinalImagePair } from "./image/retinal";
 export { SPECTACLE_DEFAULTS, lensSurfaces } from "./lenses/prescription";

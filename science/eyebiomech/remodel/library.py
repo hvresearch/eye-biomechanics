@@ -28,10 +28,16 @@ superposes it:
    refraction change at time t is Σ_k L_k e_k (elastic) + Σ_l a_l γ_l (growth); "remodeled" is
    their sum. The reduction is validated up to a growth exposure r·t of `VALID_RATE_TIME`, and
    `simulate` refuses longer exposures: the slow growth modes, among them a spherical mode that
-   grows at the calibrated stiffness, do not converge with the Krylov depth.
+   grows at the calibrated stiffness, do not converge with the Krylov depth, and the explicit
+   FEM growth the bound is checked against runs away at the edge of the clamped optic-nerve
+   cap shortly beyond it. The growth table's thickness option (M6) makes every mode restoring
+   but does not move the FEM's runaway, so the in-plane law stays the default.
 
 Responses are tabled at several stiffness scales (relative to the calibrated stiffness) and
-interpolated linearly in ln s. Approximations, labeled wherever the library is used: linear
+interpolated linearly in ln s (an approximation: the Krylov patterns differ between levels, and
+blending them agrees with interpolating per-level results within about 3% inside the validated
+exposure); a stiffness outside the table raises `StiffnessOutOfTable` unless the caller asks to
+clamp it to the nearest level. Approximations, labeled wherever the library is used: linear
 superposition about the pressurized eye; the growth dynamics reduced to the span of the load
 patterns and their Krylov sequence, for growth exposures up to `VALID_RATE_TIME`; the
 reference eye's responses for every subject; the growth patterns and feedback of the stiffness
@@ -46,6 +52,7 @@ from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
+from typing import Literal
 
 import numpy as np
 from numpy.typing import NDArray
@@ -61,8 +68,11 @@ from eyebiomech.forces.from_viewer import load_force_table
 from eyebiomech.optics.paraxial import induced_refraction
 from eyebiomech.remodel.growth import (
     GrowthState,
+    Thickness,
     cauchy_stress,
+    growth_law,
     growth_mask,
+    growth_strain,
     membrane_stress,
     tangent_projector,
 )
@@ -91,7 +101,9 @@ KRYLOV_RTOL = 1e-6
 # Largest growth exposure r·t (rate times the time since growth started) at which the reduced
 # model is validated (numerical: beyond it the Krylov depths stop agreeing, because the slow
 # growth modes, including an unstable spherical one, are not converged in the basis; the slow
-# test `test_reduced_growth_follows_the_fem_growth` checks it against explicit FEM growth).
+# test `test_reduced_growth_follows_the_fem_growth` checks it against explicit FEM growth, which
+# inverts an element at the edge of the clamped optic-nerve cap at r·t = 0.011 with the in-plane
+# and the thickness law alike, so the bound stands; M6 plan, Task 6.6).
 VALID_RATE_TIME = 0.01
 COMPONENTS = ("M", "J0", "J45")
 
@@ -151,9 +163,13 @@ def build_level(
     reference: str = "unloaded",
     steps: int = 2,
     krylov: int = KRYLOV_DEPTH,
+    thickness: Thickness | None = None,
+    kappa: float | None = None,
 ) -> LevelResponse:
     """Steps 1-5 of the module notes at one stiffness scale, with `krylov` rounds of the
-    Krylov enrichment."""
+    Krylov enrichment; a drive pattern g grows as `growth_strain(g, thickness, kappa)`, the
+    growth table's law unless given."""
+    thickness, kappa = growth_law(thickness, kappa)
     shell = make_shell_mesh(doc, layers=layers, n_face=n_face)
     mats = region_materials(materials, age_years, shell.geometry, scale=scale)
     on = materials["opticNerve"]["radiusMm"]
@@ -212,7 +228,8 @@ def build_level(
         if size == 0:
             return np.zeros(3), np.zeros_like(g)
         eta = GROWTH_PROBE / size
-        plus, minus = GrowthState(eta * g), GrowthState(-eta * g)
+        eps = growth_strain(g, ctx, thickness, kappa)
+        plus, minus = GrowthState(eta * eps), GrowthState(-eta * eps)
         f_plus, _ = internal(ctx, mats, u0, tangent=False, growth=plus)
         f_minus, _ = internal(ctx, mats, u0, tangent=False, growth=minus)
         growth_u = linear(-(f_plus - f_minus) / (2 * eta))
@@ -261,6 +278,16 @@ def build_level(
     )
 
 
+OnEdge = Literal["raise", "clamp"]
+# Relative slack on the table's edges (numerical: a scale computed as exactly a tabled value may
+# differ from it by round-off).
+EDGE_TOLERANCE = 1e-9
+
+
+class StiffnessOutOfTable(ValueError):
+    """A stiffness scale outside the response library's tabled range."""
+
+
 @dataclass
 class Library:
     """Responses at several stiffness scales; see the module notes."""
@@ -269,24 +296,42 @@ class Library:
     levels: list[LevelResponse]
     meta: dict = field(default_factory=dict)
 
-    def _interp(self, attr: str, scale: float) -> NDArray:
+    @property
+    def stiffness_range(self) -> tuple[float, float]:
+        """The lowest and highest tabled stiffness scale."""
+        scales = [lv.scale for lv in self.levels]
+        return float(min(scales)), float(max(scales))
+
+    def _interp(self, attr: str, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        """Linear interpolation in ln s (approximation: the tabled levels' patterns and feedback
+        are blended, not rebuilt at the scale). Outside the table, `on_edge` "raise" refuses with
+        `StiffnessOutOfTable` and "clamp" takes the nearest tabled level."""
+        if on_edge not in ("raise", "clamp"):
+            raise ValueError(f"on_edge must be 'raise' or 'clamp', got {on_edge!r}")
+        lo, hi = self.stiffness_range
+        inside = lo * (1 - EDGE_TOLERANCE) <= scale <= hi * (1 + EDGE_TOLERANCE)
+        if on_edge == "raise" and not inside:
+            raise StiffnessOutOfTable(
+                f"stiffness scale {scale:.4g} is outside the response library's table "
+                f"({lo:g}-{hi:g}); pass on_edge='clamp' to use the nearest tabled level"
+            )
         s = np.log([lv.scale for lv in self.levels])
         x = float(np.clip(np.log(scale), s[0], s[-1]))
         values = np.stack([getattr(lv, attr) for lv in self.levels])
-        i = int(np.clip(np.searchsorted(s, x) - 1, 0, len(s) - 2)) if len(s) > 1 else 0
         if len(s) == 1:
             return values[0]
+        i = int(np.clip(np.searchsorted(s, x) - 1, 0, len(s) - 2))
         w = (x - s[i]) / (s[i + 1] - s[i])
         return (1 - w) * values[i] + w * values[i + 1]
 
-    def elastic(self, scale: float) -> NDArray:
-        return self._interp("elastic", scale)
+    def elastic(self, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        return self._interp("elastic", scale, on_edge)
 
-    def growth_refraction(self, scale: float) -> NDArray:
-        return self._interp("growth", scale)
+    def growth_refraction(self, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        return self._interp("growth", scale, on_edge)
 
-    def feedback(self, scale: float) -> NDArray:
-        return self._interp("feedback", scale)
+    def feedback(self, scale: float, on_edge: OnEdge = "raise") -> NDArray:
+        return self._interp("feedback", scale, on_edge)
 
     @property
     def valid_rate_time(self) -> float:
@@ -303,6 +348,7 @@ class Library:
         ratio: float,
         stiffness: Callable[[float], float],
         history_years: float = 0.0,
+        on_edge: OnEdge = "raise",
     ) -> NDArray:
         """Elastic and remodeled (M, J0, J45) changes at each age, (ages, 2, 3), D. The growth
         amplitudes start at zero `history_years` before the first age, grow over that history
@@ -312,7 +358,8 @@ class Library:
         so no step-size instability; Review Focus 3). With no history the amplitudes start at
         zero at the first age, and fast modes settle in the first interval from that state, not
         from the loads. The homeostatic intensity is multiplied by 1 − h. A growth exposure
-        r·(history + age span) beyond `valid_rate_time` is refused."""
+        r·(history + age span) beyond `valid_rate_time` is refused, and so is a stiffness outside
+        the table unless `on_edge` is "clamp"."""
         if not history_years >= 0:
             raise ValueError(f"the growth history must be non-negative, got {history_years}")
         ages = np.asarray(ages, dtype=float)
@@ -338,24 +385,26 @@ class Library:
         eig_cache: dict[float, tuple[NDArray, NDArray, NDArray]] = {}
         if history_years > 0:
             a = self._step(
-                a, L(ages[0]), rate_per_year * history_years, stiffness(ages[0]), eig_cache
+                a, L(ages[0]), rate_per_year * history_years, stiffness(ages[0]), eig_cache, on_edge
             )
         for i, age in enumerate(ages):
             if i > 0:
                 mid = 0.5 * (ages[i - 1] + age)
                 rdt = rate_per_year * (age - ages[i - 1])
-                a = self._step(a, L(mid), rdt, stiffness(mid), eig_cache)
+                a = self._step(a, L(mid), rdt, stiffness(mid), eig_cache, on_edge)
             s = stiffness(age)
-            el = L(age)[:n] @ self.elastic(s)
+            el = L(age)[:n] @ self.elastic(s, on_edge)
             out[i, 0] = el
-            out[i, 1] = el + a @ self.growth_refraction(s)
+            out[i, 1] = el + a @ self.growth_refraction(s, on_edge)
         return out
 
-    def _step(self, a: NDArray, L: NDArray, rdt: float, scale: float, cache: dict) -> NDArray:
+    def _step(
+        self, a: NDArray, L: NDArray, rdt: float, scale: float, cache: dict, on_edge: OnEdge
+    ) -> NDArray:
         """Exact solution over one interval of da/dτ = L + F a (τ = r t, Δτ = r dt), with
         F = V Λ V⁻¹: a ← V [e^{ΛΔτ} V⁻¹a + Δτ φ(ΛΔτ) V⁻¹L], φ(z) = (e^z − 1)/z, φ(0) = 1."""
         if scale not in cache:
-            lam, V = np.linalg.eig(self.feedback(scale))
+            lam, V = np.linalg.eig(self.feedback(scale, on_edge))
             cache[scale] = (lam, V, np.linalg.inv(V))
         lam, V, Vi = cache[scale]
         z = lam * rdt
@@ -425,6 +474,38 @@ _LEVEL_KEYS = {
 }
 
 
+def merge_libraries(parts: list[Library], provenance: dict | None = None) -> Library:
+    """One library from libraries of the same eye and settings built at different stiffness
+    scales (each level is independent, so a table too slow for one run is built level by level;
+    M6 plan, Task 6.6). The parts must share every setting and one source tree (`gitHash`);
+    their provenances are kept under `provenance.parts`."""
+    if not parts:
+        raise ValueError("nothing to merge")
+    shared = ("mesh", "krylovDepth", "growthLaw", "validRateTime", "ageYears", "iopMmHg",
+              "eyeId", "stiffnessRelativeTo", "citation")  # fmt: skip
+    first = parts[0].meta
+    for lib in parts[1:]:
+        for key in shared:
+            if lib.meta.get(key) != first.get(key):
+                raise ValueError(
+                    f"the libraries differ in {key}: {first.get(key)!r} and {lib.meta.get(key)!r}"
+                )
+    hashes = {lib.meta.get("provenance", {}).get("gitHash") for lib in parts}
+    if len(hashes) != 1:
+        raise ValueError(f"the libraries come from different trees: {sorted(map(str, hashes))}")
+    levels = sorted((lv for lib in parts for lv in lib.levels), key=lambda lv: lv.scale)
+    scales = [lv.scale for lv in levels]
+    if len(set(scales)) != len(scales):
+        raise ValueError(f"a stiffness scale appears twice: {scales}")
+    meta = dict(first)
+    meta["provenance"] = {
+        **(provenance or {}),
+        "gitHash": hashes.pop(),
+        "parts": [lib.meta.get("provenance", {}) for lib in parts],
+    }
+    return Library(parts[0].groups, levels, meta)
+
+
 def load_library(path: Path | str | None = None) -> Library:
     p = Path(path or data_root() / "results" / "response" / "library-v1.json")
     return Library.from_json(json.loads(p.read_text()))
@@ -444,11 +525,14 @@ def build_library(
     krylov: int = KRYLOV_DEPTH,
     provenance: dict | None = None,
     progress: Callable[[str], None] | None = None,
+    thickness: Thickness | None = None,
+    kappa: float | None = None,
 ) -> Library:
     """The library of `doc` at the given stiffness scales (relative to the calibrated stiffness
     of the materials table; the calibration's age and IOP unless given)."""
     materials = copy.deepcopy(materials or load_materials())
     eom = eom or load_eom_table()
+    thickness, kappa = growth_law(thickness, kappa)
     calibrated = materials.get("calibration", {}).get("stiffnessScale", 1.0)
     age = materials["ageStiffening"]["referenceAgeYears"] if age_years is None else age_years
     iop = materials["intraocularPressure"]["meanMmHg"]
@@ -470,6 +554,8 @@ def build_library(
                 iop_mmhg=iop,
                 reference=reference,
                 krylov=krylov,
+                thickness=thickness,
+                kappa=kappa,
             )
         )
     for lv, s in zip(levels, sorted(stiffness_scales), strict=True):
@@ -479,6 +565,7 @@ def build_library(
         or {"generatedBy": "build_library", "date": date.today().isoformat()},
         "mesh": {"nFace": n_face, "layers": layers, "reference": reference},
         "krylovDepth": krylov,
+        "growthLaw": {"thickness": thickness, "kappa": kappa},
         "validRateTime": VALID_RATE_TIME,
         "ageYears": age,
         "iopMmHg": iop,
@@ -490,7 +577,9 @@ def build_library(
             "reduced to the span of the load patterns enriched by a Krylov sequence (Galerkin), "
             "validated up to a growth exposure r·t of validRateTime; the reference eye's "
             "responses for every subject; patterns and feedback at the tabled stiffness, "
-            "interpolated in ln s. elastic: per unit load intensity; growth: per unit growth "
+            "interpolated in ln s (approximation: the Krylov patterns differ between levels; "
+            "outside the tabled scales the library refuses unless asked to clamp). "
+            "elastic: per unit load intensity; growth: per unit growth "
             "amplitude (the groups, then the Krylov patterns)."
         ),
     }

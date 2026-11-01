@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { CHART } from "./colormap";
 
 /** Frequency range shown, cycles per degree (a drawing choice; 60 cpd is about the foveal limit). */
 const MAX_CPD = 60;
@@ -54,6 +53,7 @@ export function MtfChart({
   return (
     <div className="chart" data-testid={testId}>
       <svg
+        className="chart-svg"
         width={width}
         height={height}
         role="img"
@@ -67,23 +67,23 @@ export function MtfChart({
       >
         {[0, 0.5, 1].map((v) => (
           <g key={v}>
-            <line x1={left} x2={width - right} y1={y(v)} y2={y(v)} stroke={CHART.grid} strokeWidth={1} />
-            <text x={left - 4} y={y(v) + 3} fill={CHART.muted} fontSize={9} textAnchor="end">
+            <line className="grid" x1={left} x2={width - right} y1={y(v)} y2={y(v)} />
+            <text x={left - 4} y={y(v) + 3} className="tick" textAnchor="end">
               {v}
             </text>
           </g>
         ))}
         {[0, 20, 40, 60].map((f) => (
-          <text key={f} x={x(f)} y={height - 3} fill={CHART.muted} fontSize={9} textAnchor="middle">
+          <text key={f} x={x(f)} y={height - 3} className="tick" textAnchor="middle">
             {f}
           </text>
         ))}
-        <path d={path(diffraction.freqCpd, diffraction.radial, x, y)} fill="none" stroke={CHART.diffraction} strokeWidth={1.5} strokeDasharray="4 3" />
+        <path d={path(diffraction.freqCpd, diffraction.radial, x, y)} className="reference" />
         {curves.map((c) => (
-          <path key={c.label} d={path(c.freqCpd, c.radial, x, y)} fill="none" stroke={c.color} strokeWidth={2} strokeLinejoin="round" />
+          <path key={c.label} d={path(c.freqCpd, c.radial, x, y)} className="series" style={{ stroke: c.color }} />
         ))}
-        {hover !== null && <line x1={x(hover)} x2={x(hover)} y1={top} y2={height - bottom} stroke={CHART.axis} strokeWidth={1} />}
-        <text x={width - right} y={top + 8} fill={CHART.muted} fontSize={9} textAnchor="end">
+        {hover !== null && <line className="crosshair" x1={x(hover)} x2={x(hover)} y1={top} y2={height - bottom} />}
+        <text x={width - right} y={top + 8} className="tick" textAnchor="end">
           cpd
         </text>
       </svg>

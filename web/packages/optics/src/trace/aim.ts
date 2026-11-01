@@ -32,8 +32,16 @@ export interface PupilBundle {
   chief: Ray;
   collimated: boolean;
   view: ViewSpec;
-  /** Rays whose aiming through the front surfaces failed (vignetted or not converged); they are traced as launched. */
+  /**
+   * Rays whose aiming through the front surfaces failed (vignetted or not converged). They are
+   * traced as launched, so they would cross the pupil away from their sample; `opdMap` treats
+   * them as invalid.
+   */
   unaimed: number;
+  /** 1 where the ray crosses the pupil plane at its sample (aimed, or nothing in front), 0 where aiming failed. */
+  converged: Uint8Array;
+  /** Whether the chief ray was aimed through the pupil center (always true without front surfaces). */
+  chiefConverged: boolean;
 }
 
 /** How far before the first front surface collimated rays start, mm (numerical). */
@@ -162,7 +170,9 @@ export function pupilBundle(view: ViewSpec, gridN: number, wavelengthNm: number,
   const rays: Ray[] = [];
   const xy: number[] = [];
   const idx: number[] = [];
+  const ok: number[] = [];
   let unaimed = 0;
+  let chiefConverged = true;
   // With front surfaces, aim the chief ray first; its aim point and Jacobian predict the others.
   let chiefAim: [number, number] = [cx, cy];
   let inv: Jacobian | null = null;
@@ -170,8 +180,10 @@ export function pupilBundle(view: ViewSpec, gridN: number, wavelengthNm: number,
     const c0 = crossing(launch.ray(chiefAim), front, zp);
     inv = c0 === null ? null : jacobian(launch, chiefAim, c0, front, zp);
     const a = aim(launch, [cx, cy], front, zp, inv, chiefAim);
-    if (a === null) unaimed++;
-    else chiefAim = a;
+    if (a === null) {
+      unaimed++;
+      chiefConverged = false;
+    } else chiefAim = a;
   }
   for (let i = 0; i < gridN; i++) {
     const y = -R + (2 * R * i) / (gridN - 1);
@@ -180,20 +192,36 @@ export function pupilBundle(view: ViewSpec, gridN: number, wavelengthNm: number,
       if (Math.hypot(x, y) > R * (1 + 1e-12)) continue;
       const target: [number, number] = [cx + x, cy + y];
       let ray: Ray;
+      let aimed = true;
       if (front.length === 0) {
         ray = launch.ray(target);
       } else {
         const start: [number, number] =
           inv === null ? target : [chiefAim[0] + inv.i11 * x + inv.i12 * y, chiefAim[1] + inv.i21 * x + inv.i22 * y];
         const a = aim(launch, target, front, zp, inv, start);
-        if (a === null) unaimed++;
+        if (a === null) {
+          unaimed++;
+          aimed = false;
+        }
         ray = launch.ray(a ?? target);
       }
       rays.push(ray);
+      ok.push(aimed ? 1 : 0);
       xy.push(x, y);
       idx.push(i * gridN + j);
     }
   }
   const chief = launch.ray(chiefAim);
-  return { rays, pupilXYMm: Float64Array.from(xy), gridIndex: Uint32Array.from(idx), gridN, chief, collimated, view, unaimed };
+  return {
+    rays,
+    pupilXYMm: Float64Array.from(xy),
+    gridIndex: Uint32Array.from(idx),
+    gridN,
+    chief,
+    collimated,
+    view,
+    unaimed,
+    converged: Uint8Array.from(ok),
+    chiefConverged,
+  };
 }
