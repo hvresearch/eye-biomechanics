@@ -63,6 +63,14 @@ export function serializeScenario(s: ScenarioInput, meta: { name: string; descri
   };
 }
 
+/**
+ * The Export JSON document: the current state under `name`, keeping the loaded scenario's
+ * description and timeline until it is detached, whatever the export is named.
+ */
+export function exportScenario(s: ScenarioInput, name: string, loaded: Scenario | null): Scenario {
+  return serializeScenario(s, { name, description: loaded?.description ?? "", timeline: loaded?.timeline ?? [] });
+}
+
 /** The file text of a scenario: two-space indent and a trailing newline. */
 export function scenarioJson(sc: Scenario): string {
   return `${JSON.stringify(sc, null, 2)}\n`;

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { RESULTS } from "../results/catalog";
 import { SCENARIOS } from "../scenario/catalog";
 import { downloadBlob, downloadText, fileStem, stagePng } from "../scenario/export";
-import { parseScenario, scenarioDurationS, scenarioJson, serializeScenario } from "../scenario/scenario";
+import { exportScenario, parseScenario, scenarioDurationS, scenarioJson } from "../scenario/scenario";
 import { useScene } from "../store/scene";
 import type { Scenario } from "@eye/eye-model";
 
@@ -35,16 +35,12 @@ export function Scenarios() {
     setError(null);
     const entry = doc.result ? RESULTS.find((r) => r.id === doc.result?.id) : undefined;
     await loadScenario(doc, entry);
+    if (useScene.getState().scenario?.doc === doc) setName(doc.name);
   };
 
   const exportJson = () => {
     const s = useScene.getState();
-    const keep = s.scenario?.doc;
-    const doc = serializeScenario(s.scenarioInput(), {
-      name,
-      description: keep && keep.name === name ? keep.description : "",
-      timeline: keep && keep.name === name ? keep.timeline : [],
-    });
+    const doc = exportScenario(s.scenarioInput(), name, s.scenario?.doc ?? null);
     downloadText(`${fileStem(name)}.json`, scenarioJson(doc), "application/json");
   };
 

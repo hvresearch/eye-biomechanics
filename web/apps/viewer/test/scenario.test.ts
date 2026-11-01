@@ -4,7 +4,7 @@ import { SCENE_DEFAULTS, type Scenario } from "@eye/eye-model";
 import { describe, expect, it } from "vitest";
 import { RESULTS } from "../src/results/catalog";
 import { SCENARIOS } from "../src/scenario/catalog";
-import { ScenarioError, animatedKeys, parseScenario, sceneAt, scenarioDurationS, scenarioJson, serializeScenario, toSceneState } from "../src/scenario/scenario";
+import { ScenarioError, animatedKeys, exportScenario, parseScenario, sceneAt, scenarioDurationS, scenarioJson, serializeScenario, toSceneState } from "../src/scenario/scenario";
 import { DEFAULT_LENS, createSceneStore, eyeOptics } from "../src/store/scene";
 import { handle } from "../src/worker/handle";
 
@@ -105,6 +105,24 @@ describe("scenario playback in the store", () => {
     expect(store.getState().scene.targetDistanceM).toBe(6);
     store.getState().restartScenario();
     expect(store.getState().scene.targetDistanceM).toBeCloseTo(0.33, 12);
+  });
+
+  it("exports a loaded bundled scenario with its timeline and description under any export name", async () => {
+    const bundled = parseScenario(SCENARIOS.find((s) => s.id === "near-to-far-refocus")!.text, RESULT_IDS);
+    expect(bundled.timeline.length).toBeGreaterThan(0);
+    const store = createSceneStore();
+    await store.getState().loadScenario(bundled);
+    const s = store.getState();
+    for (const name of [bundled.name, "My scenario"]) {
+      const out = exportScenario(s.scenarioInput(), name, s.scenario?.doc ?? null);
+      expect(out.name).toBe(name);
+      expect(out.timeline).toEqual(bundled.timeline);
+      expect(out.description).toBe(bundled.description);
+    }
+    store.getState().clearScenario();
+    const detached = exportScenario(store.getState().scenarioInput(), bundled.name, store.getState().scenario?.doc ?? null);
+    expect(detached.timeline).toEqual([]);
+    expect(detached.description).toBe("");
   });
 
   it("refuses a scenario whose result entry is missing, changing nothing", async () => {

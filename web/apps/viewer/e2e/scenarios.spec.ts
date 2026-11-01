@@ -1,5 +1,8 @@
 import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { expect, test, type Page } from "@playwright/test";
+
+const BUNDLED_ASTIGMAT = resolve(import.meta.dirname, "../../../../data/scenarios/astigmat-corrected-vs-uncorrected.json");
 
 /**
  * Demand at a 0.33 m target: 3 D less the relaxed far point, which is the minimum-RMS spherical
@@ -68,9 +71,12 @@ test("an exported scenario imports back to the same state, and the stage exports
   expect(json.suggestedFilename()).toBe("round-trip.json");
   const jsonPath = info.outputPath("round-trip.json");
   await json.saveAs(jsonPath);
-  const doc = JSON.parse(readFileSync(jsonPath, "utf8")) as { name: string; scene: { targetDistanceM: number } };
+  const doc = JSON.parse(readFileSync(jsonPath, "utf8")) as { name: string; description: string; timeline: unknown[]; scene: { targetDistanceM: number } };
   expect(doc.name).toBe("Round trip");
   expect(doc.scene.targetDistanceM).toBe(0.5);
+  const bundled = JSON.parse(readFileSync(BUNDLED_ASTIGMAT, "utf8")) as { description: string; timeline: unknown[] };
+  expect(doc.timeline).toEqual(bundled.timeline);
+  expect(doc.description).toBe(bundled.description);
 
   const [png] = await Promise.all([page.waitForEvent("download"), page.getByTestId("scenario-export-png").click()]);
   const pngPath = info.outputPath("round-trip.png");
