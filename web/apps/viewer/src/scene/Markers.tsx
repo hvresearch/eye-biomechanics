@@ -2,7 +2,7 @@ import { Polyline } from "./Polyline";
 import { MUSCLE_NAMES, musclesFromDocument } from "@eye/eye-model";
 import { useMemo } from "react";
 import { useScene, type Side } from "../store/scene";
-import { insertionArc } from "./markers";
+import { insertionArc } from "./markerGeometry";
 import { usePalette } from "./usePalette";
 
 /** Drawn size of a pulley marker, mm (drawing). */

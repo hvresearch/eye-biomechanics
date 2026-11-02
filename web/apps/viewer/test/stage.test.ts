@@ -51,7 +51,7 @@ describe("dragToTarget", () => {
 
 describe("insertionArc", () => {
   it("spans the insertion width across the muscle on the globe", async () => {
-    const { insertionArc, MARKER_LIFT } = await import("../src/scene/markers");
+    const { insertionArc, MARKER_LIFT } = await import("../src/scene/markerGeometry");
     const { musclePath, defaultMuscles, QUAT_IDENTITY, GLOBE_RADIUS_MM } = await import("@eye/eye-model");
     const m = defaultMuscles()[0]!;
     const path = musclePath(m, QUAT_IDENTITY);
